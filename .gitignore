@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+build/
+dist/
+
+# Rust
+core/target/
+
+# Node / viz
+node_modules/
+
+# OS / editor
+.DS_Store
+*.swp

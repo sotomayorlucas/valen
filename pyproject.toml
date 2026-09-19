@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "manifold"
+version = "0.1.0"
+description = "A mathematical engine for mapping vulnerabilities (spectral + topological + algebraic + formal)."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "tree-sitter>=0.22",
+    "tree-sitter-python",
+    "tree-sitter-javascript",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "litellm",
+]
+
+[tool.setuptools.packages.find]
+include = ["manifold*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
