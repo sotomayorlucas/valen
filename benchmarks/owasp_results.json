@@ -1,0 +1,290 @@
+{
+  "testcode": "/tmp/opencode/BenchmarkJava/src/main/java/org/owasp/benchmark/testcode",
+  "csv": "/tmp/opencode/expectedresults-1.2.csv",
+  "adapter_all": {
+    "pathtraver": {
+      "tp": 115,
+      "fp": 92,
+      "fn": 18,
+      "tn": 43,
+      "precision": 0.556,
+      "recall": 0.865,
+      "f1": 0.676,
+      "accuracy": 0.59
+    },
+    "hash": {
+      "tp": 89,
+      "fp": 0,
+      "fn": 40,
+      "tn": 107,
+      "precision": 1.0,
+      "recall": 0.69,
+      "f1": 0.817,
+      "accuracy": 0.831
+    },
+    "trustbound": {
+      "tp": 37,
+      "fp": 16,
+      "fn": 46,
+      "tn": 27,
+      "precision": 0.698,
+      "recall": 0.446,
+      "f1": 0.544,
+      "accuracy": 0.508
+    },
+    "crypto": {
+      "tp": 97,
+      "fp": 0,
+      "fn": 33,
+      "tn": 116,
+      "precision": 1.0,
+      "recall": 0.746,
+      "f1": 0.855,
+      "accuracy": 0.866
+    },
+    "cmdi": {
+      "tp": 123,
+      "fp": 120,
+      "fn": 3,
+      "tn": 5,
+      "precision": 0.506,
+      "recall": 0.976,
+      "f1": 0.667,
+      "accuracy": 0.51
+    },
+    "sqli": {
+      "tp": 199,
+      "fp": 161,
+      "fn": 73,
+      "tn": 71,
+      "precision": 0.553,
+      "recall": 0.732,
+      "f1": 0.63,
+      "accuracy": 0.536
+    },
+    "weakrand": {
+      "tp": 218,
+      "fp": 275,
+      "fn": 0,
+      "tn": 0,
+      "precision": 0.442,
+      "recall": 1.0,
+      "f1": 0.613,
+      "accuracy": 0.442
+    },
+    "ldapi": {
+      "tp": 26,
+      "fp": 27,
+      "fn": 1,
+      "tn": 5,
+      "precision": 0.491,
+      "recall": 0.963,
+      "f1": 0.65,
+      "accuracy": 0.525
+    },
+    "xss": {
+      "tp": 237,
+      "fp": 182,
+      "fn": 9,
+      "tn": 27,
+      "precision": 0.566,
+      "recall": 0.963,
+      "f1": 0.713,
+      "accuracy": 0.58
+    },
+    "securecookie": {
+      "tp": 36,
+      "fp": 0,
+      "fn": 0,
+      "tn": 31,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "accuracy": 1.0
+    },
+    "xpathi": {
+      "tp": 15,
+      "fp": 20,
+      "fn": 0,
+      "tn": 0,
+      "precision": 0.429,
+      "recall": 1.0,
+      "f1": 0.6,
+      "accuracy": 0.429
+    },
+    "overall": {
+      "tp": 1192,
+      "fp": 893,
+      "fn": 223,
+      "tn": 432,
+      "precision": 0.572,
+      "recall": 0.842,
+      "f1": 0.681,
+      "accuracy": 0.593
+    }
+  },
+  "adapter_taint": {
+    "pathtraver": {
+      "tp": 115,
+      "fp": 92,
+      "fn": 18,
+      "tn": 43,
+      "precision": 0.556,
+      "recall": 0.865,
+      "f1": 0.676,
+      "accuracy": 0.59
+    },
+    "trustbound": {
+      "tp": 37,
+      "fp": 16,
+      "fn": 46,
+      "tn": 27,
+      "precision": 0.698,
+      "recall": 0.446,
+      "f1": 0.544,
+      "accuracy": 0.508
+    },
+    "cmdi": {
+      "tp": 123,
+      "fp": 120,
+      "fn": 3,
+      "tn": 5,
+      "precision": 0.506,
+      "recall": 0.976,
+      "f1": 0.667,
+      "accuracy": 0.51
+    },
+    "sqli": {
+      "tp": 199,
+      "fp": 161,
+      "fn": 73,
+      "tn": 71,
+      "precision": 0.553,
+      "recall": 0.732,
+      "f1": 0.63,
+      "accuracy": 0.536
+    },
+    "ldapi": {
+      "tp": 26,
+      "fp": 27,
+      "fn": 1,
+      "tn": 5,
+      "precision": 0.491,
+      "recall": 0.963,
+      "f1": 0.65,
+      "accuracy": 0.525
+    },
+    "xss": {
+      "tp": 237,
+      "fp": 182,
+      "fn": 9,
+      "tn": 27,
+      "precision": 0.566,
+      "recall": 0.963,
+      "f1": 0.713,
+      "accuracy": 0.58
+    },
+    "xpathi": {
+      "tp": 15,
+      "fp": 20,
+      "fn": 0,
+      "tn": 0,
+      "precision": 0.429,
+      "recall": 1.0,
+      "f1": 0.6,
+      "accuracy": 0.429
+    },
+    "overall": {
+      "tp": 752,
+      "fp": 618,
+      "fn": 150,
+      "tn": 178,
+      "precision": 0.549,
+      "recall": 0.834,
+      "f1": 0.662,
+      "accuracy": 0.548
+    }
+  },
+  "z3_taint": {
+    "pathtraver": {
+      "tp": 115,
+      "fp": 92,
+      "fn": 18,
+      "tn": 43,
+      "precision": 0.556,
+      "recall": 0.865,
+      "f1": 0.676,
+      "accuracy": 0.59
+    },
+    "trustbound": {
+      "tp": 37,
+      "fp": 16,
+      "fn": 46,
+      "tn": 27,
+      "precision": 0.698,
+      "recall": 0.446,
+      "f1": 0.544,
+      "accuracy": 0.508
+    },
+    "cmdi": {
+      "tp": 123,
+      "fp": 120,
+      "fn": 3,
+      "tn": 5,
+      "precision": 0.506,
+      "recall": 0.976,
+      "f1": 0.667,
+      "accuracy": 0.51
+    },
+    "sqli": {
+      "tp": 199,
+      "fp": 161,
+      "fn": 73,
+      "tn": 71,
+      "precision": 0.553,
+      "recall": 0.732,
+      "f1": 0.63,
+      "accuracy": 0.536
+    },
+    "ldapi": {
+      "tp": 26,
+      "fp": 27,
+      "fn": 1,
+      "tn": 5,
+      "precision": 0.491,
+      "recall": 0.963,
+      "f1": 0.65,
+      "accuracy": 0.525
+    },
+    "xss": {
+      "tp": 237,
+      "fp": 182,
+      "fn": 9,
+      "tn": 27,
+      "precision": 0.566,
+      "recall": 0.963,
+      "f1": 0.713,
+      "accuracy": 0.58
+    },
+    "xpathi": {
+      "tp": 15,
+      "fp": 20,
+      "fn": 0,
+      "tn": 0,
+      "precision": 0.429,
+      "recall": 1.0,
+      "f1": 0.6,
+      "accuracy": 0.429
+    },
+    "overall": {
+      "tp": 752,
+      "fp": 618,
+      "fn": 150,
+      "tn": 178,
+      "precision": 0.549,
+      "recall": 0.834,
+      "f1": 0.662,
+      "accuracy": 0.548
+    }
+  }
+}

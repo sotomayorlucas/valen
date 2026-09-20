@@ -22,3 +22,4 @@ node_modules/
 viz/out/
 benchmarks/oracle_cache.pkl
 benchmarks/results/
+dashboard.html

@@ -65,6 +65,10 @@ echo "== 7. demos (toy corpora) =="
 "$VENV/bin/python" scripts/demo.py
 "$VENV/bin/python" benchmarks/run.py | tee benchmarks/results/toy.txt
 
+echo "== 7b. dashboard =="
+"$VENV/bin/python" -m manifold.dashboard --out dashboard.html
+echo "wrote dashboard.html"
+
 echo "== 8. compile the paper and slides =="
 if command -v tectonic >/dev/null 2>&1; then
   for lang in en es; do

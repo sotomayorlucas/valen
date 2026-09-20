@@ -101,7 +101,16 @@ export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLL
 
 # Demo end-to-end: analiza todos los ejemplos y genera HTML + summary.json
 .venv/bin/python scripts/demo.py   # escribe en viz/out/
+
+# Dashboard: todos los experimentos + metodología + explorador del manifold
+.venv/bin/python -m manifold.dashboard --out dashboard.html
 ```
+
+El dashboard (autocontenido) muestra las **metodologías** (pipeline, capas→señal→
+evidencia con su AUC, leyes de mapeo con estado, protocolo de evaluación), la tabla
+del oráculo de priorización, OWASP Benchmark, la ablación, la escalabilidad, un
+explorador del manifold de los ejemplos y recetas de uso con los datos de los
+experimentos.
 
 ## Multi-dominio (F7)
 

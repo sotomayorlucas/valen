@@ -1,0 +1,42 @@
+{
+  "baseline": {
+    "tp": 513,
+    "fp": 518,
+    "fn": 389,
+    "tn": 278,
+    "precision": 0.498,
+    "recall": 0.569,
+    "f1": 0.531,
+    "accuracy": 0.466
+  },
+  "+branch_join_state_sinks": {
+    "tp": 772,
+    "fp": 685,
+    "fn": 130,
+    "tn": 111,
+    "precision": 0.53,
+    "recall": 0.856,
+    "f1": 0.655,
+    "accuracy": 0.52
+  },
+  "full": {
+    "tp": 752,
+    "fp": 618,
+    "fn": 150,
+    "tn": 178,
+    "precision": 0.549,
+    "recall": 0.834,
+    "f1": 0.662,
+    "accuracy": 0.548
+  },
+  "without_branch_join": {
+    "tp": 501,
+    "fp": 471,
+    "fn": 401,
+    "tn": 325,
+    "precision": 0.515,
+    "recall": 0.555,
+    "f1": 0.535,
+    "accuracy": 0.486
+  }
+}
