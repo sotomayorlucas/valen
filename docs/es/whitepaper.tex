@@ -238,8 +238,13 @@ preserva $\bot$, así que la etiqueta se mata y el cuadrado conmuta. $\square$
 
 \noindent La Proposición 2 es exactamente la regla operacional implementada como
 L4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
-violación de naturalidad. Una prueba verificada por máquina (Lean/Coq) queda como
-trabajo futuro y \emph{no} se reclama aquí.
+violación de naturalidad. Ambas proposiciones están \emph{mecanizadas} en Lean~4
+(solo core, sin Mathlib) en \texttt{formal/Manifold.lean}:
+\texttt{prop1\_soundness} prueba la solidez de la abstracción booleana de taint
+frente a la semántica recolectora de etiquetas (\S3 allí), y
+\texttt{no\_auth\_bounded} prueba la ley de naturalidad a nivel de camino (\S4
+allí). La verificación de pruebas es parte del artefacto de reproducibilidad
+(\texttt{scripts/check\_formal.sh}).
 
 \section{El campo escalar de vulnerabilidad}
 \begin{figure}[h]

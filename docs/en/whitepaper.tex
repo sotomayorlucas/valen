@@ -235,8 +235,12 @@ $\square$
 
 \noindent Proposition 2 is exactly the operational rule implemented as L4
 (§8/C4): a taint finding inside an auth-gated function is a naturality violation.
-A machine-checked proof (Lean/Coq) is left as future work and is \emph{not}
-claimed here.
+Both propositions are \emph{mechanized} in Lean~4 (core only, no Mathlib) in
+\texttt{formal/Manifold.lean}: \texttt{prop1\_soundness} proves the boolean taint
+abstraction sound against the tag-collecting semantics (\S3 there), and
+\texttt{no\_auth\_bounded} proves the path-level naturality law (\S4 there). The
+proof checking is part of the reproducibility artifact
+(\texttt{scripts/check\_formal.sh}).
 
 \section{The vulnerability scalar field}
 \begin{figure}[h]

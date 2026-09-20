@@ -159,6 +159,8 @@ topológico / geométrico y el verificador se aplican sin cambios.
 ```
 
 - **Docker**: `docker build -t manifold . && docker run --rm manifold`
+- **Núcleo formal mecanizado** (Lean 4, sin Mathlib): `bash scripts/check_formal.sh`
+  verifica `formal/Manifold.lean` (`prop1_soundness`, `no_auth_bounded`).
 - Versiones fijadas en `requirements.txt` y `core/Cargo.lock`; semillas fijas en el
   oráculo (20 semillas) y en el calibrador; TODAS las figuras/tablas del paper se
   regeneran con `scripts/make_figures.py` desde `benchmarks/oracle_results.json`.

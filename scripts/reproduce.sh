@@ -75,6 +75,9 @@ echo "== 7d. real CVE fixes (needs network) =="
 echo "== 7c. web UI (serve on http://127.0.0.1:8000) =="
 echo "run:  $VENV/bin/python -m manifold.server --port 8000"
 
+echo "== 7e. mechanized formal core (Lean 4, optional) =="
+bash scripts/check_formal.sh || true
+
 echo "== 8. compile the paper and slides =="
 if command -v tectonic >/dev/null 2>&1; then
   for lang in en es; do
