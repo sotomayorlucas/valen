@@ -12,6 +12,7 @@ dependencies = [
     "tree-sitter>=0.22",
     "tree-sitter-python",
     "tree-sitter-javascript",
+    "z3-solver",
 ]
 
 [project.optional-dependencies]

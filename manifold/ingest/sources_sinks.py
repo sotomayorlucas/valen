@@ -19,6 +19,7 @@ class LanguageProfile:
     name: str
     sources: Dict[str, str]  # dotted call name -> description
     sinks: Dict[str, str]  # dotted call name -> category
+    sanitizers: Dict[str, str]  # dotted call name -> description (kill taint)
 
 
 # Severity ordering per sink category (used to rank findings).
@@ -102,6 +103,26 @@ PYTHON = LanguageProfile(
         "logging.warning": "logging",
         "logging.error": "logging",
     },
+    sanitizers={
+        # Casting / validation
+        "int": "numeric cast",
+        "float": "numeric cast",
+        "str": "string cast",
+        "bool": "boolean cast",
+        # HTML / markup escaping
+        "html.escape": "HTML escaping",
+        "markupsafe.escape": "HTML escaping",
+        "cgi.escape": "HTML escaping",
+        "bleach.clean": "HTML sanitization",
+        "django.utils.html.escape": "HTML escaping",
+        # SQL / shell / regex escaping
+        "re.escape": "regex escaping",
+        "shlex.quote": "shell quoting",
+        "pymysql.escape_string": "SQL escaping",
+        # Cryptographic / validation helpers
+        "hmac.compare_digest": "constant-time comparison",
+        "uuid.UUID": "UUID validation",
+    },
 )
 
 JAVASCRIPT = LanguageProfile(
@@ -139,6 +160,15 @@ JAVASCRIPT = LanguageProfile(
         "fs.writeFileSync": "file_write",
         "fs.writeFile": "file_write",
         "fs.rmSync": "path_traversal",
+    },
+    sanitizers={
+        "escapeHtml": "HTML escaping",
+        "encodeURIComponent": "URI encoding",
+        "sanitizeHtml": "HTML sanitization",
+        "mongo-sanitize": "NoSQL sanitization",
+        "validator.escape": "string escaping",
+        "Number": "numeric cast",
+        "parseInt": "numeric cast",
     },
 )
 

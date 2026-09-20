@@ -114,6 +114,9 @@ def _expr_taint(node: Node, engine: TaintEngine) -> Set[str]:
     if t == "call":
         fn = node.child_by_field_name("function")
         name = _dotted_name(fn)
+        # A sanitizer maps any input to clean (bottom of the taint lattice).
+        if engine.is_sanitizer(name):
+            return set()
         tags: Set[str] = set()
         # A call to a known source introduces fresh taint.
         if engine.is_source(name):
@@ -188,12 +191,12 @@ class PythonIngest:
 
         # Process each function body (module-level statements run in a synthetic
         # "<module>" function so top-level taint is not missed).
-        engine = TaintEngine(self.profile.sources, self.profile.sinks)
+        engine = TaintEngine(self.profile.sources, self.profile.sinks, self.profile.sanitizers)
         module_body = self._body_of(tree.root_node)
         self._process_block(module_body, graph, module_id, "<module>", path, engine, findings)
 
         for func_id, (qualname, body, params) in self._funcs.items():
-            fengine = TaintEngine(self.profile.sources, self.profile.sinks)
+            fengine = TaintEngine(self.profile.sources, self.profile.sinks, self.profile.sanitizers)
             self._seed_parameters(fengine, params, graph, path)
             self._process_block(body, graph, func_id, qualname, path, fengine, findings)
 

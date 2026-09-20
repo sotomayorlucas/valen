@@ -26,7 +26,7 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 - [x] **F1** — IR + ingesta SAST (Python, tree-sitter) + taint intraprocedural
 - [x] **F2** — Núcleo espectral (Fiedler) + geométrico (Ricci) (Rust)
 - [x] **F3** — Topología (homología persistente H0/H1, Mapper) (Rust)
-- [ ] **F4** — Verificación formal (lattice de taint, Z3, angr)
+- [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3)
 - [ ] **F5** — Agente LLM autónomo (LiteLLM)
 - [ ] **F6** — Visualización + demo end-to-end
 - [ ] **F7** — Adaptadores binario / web / LLM

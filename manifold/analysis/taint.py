@@ -53,9 +53,15 @@ class TaintEngine:
     into a proper abstract-interpretation lattice (the algebraic layer).
     """
 
-    def __init__(self, sources: Dict[str, str], sinks: Dict[str, str]) -> None:
+    def __init__(
+        self,
+        sources: Dict[str, str],
+        sinks: Dict[str, str],
+        sanitizers: Optional[Dict[str, str]] = None,
+    ) -> None:
         self._sources = sources
         self._sinks = sinks
+        self._sanitizers = sanitizers or {}
         self._env: Dict[str, Set[str]] = {}
         self.findings: List[Finding] = []
 
@@ -76,6 +82,9 @@ class TaintEngine:
 
     def is_sink(self, name: str) -> bool:
         return name in self._sinks
+
+    def is_sanitizer(self, name: str) -> bool:
+        return name in self._sanitizers
 
     def source_description(self, name: str) -> str:
         if name.startswith("param:"):
