@@ -149,6 +149,12 @@ genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer
 de respuesta** (`System.out.println` no es XSS). Ablación en el whitepaper.
 
+El whitepaper incluye además una tabla comparativa con las métricas oficiales de
+OWASP Benchmark (índice de Youden $J=\mathrm{TPR}-\mathrm{FPR}$) frente a
+SonarQube y CodeQL, notas metodológicas (hardware, versiones, timeout Z3 de 5 s)
+y el objetivo neuro-simbólico proyectado ($V(x)+$Z3). El adaptador medido alcanza
+$J=+0.168$ (all-categories).
+
 Categorías taint: sqli/cmdi/pathtraver/xss/ldapi/xpathi/trustbound. Las categorías
 por-patrón `crypto`/`hash` se configuran vía `.properties`; `weakrand`/`securecookie`
 son detectables por fuente. **SARD**: el cargador (`load_directory`, convención

@@ -407,6 +407,61 @@ parameterized-query and \texttt{ProcessBuilder}-list cases --- and cross-categor
 distractor flows: precisely the precision that the topological/spectral signals,
 the Z3 verifier and the calibrated field are designed to recover.
 
+\subsection{Comparison with industrial SAST, and the neuro-symbolic target}
+The official OWASP Benchmark score is the \emph{Youden index}
+$J = \mathrm{TPR} - \mathrm{FPR}$ (\emph{Benchmark Accuracy Score}). Table~\ref{tab:cmp}
+places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
+\emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; the
+``MANIFOLD adapter'' row is our measured result; the last two rows are the
+Stage-2 \emph{projected target} (\textbf{not yet measured}), under the protocol
+described below.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lcccccc}
+\toprule
+Tool / configuration & TPR & FPR & Prec. & F1 & $J$ & Time \\
+\midrule
+SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & $+0.010$ & $\sim$3 min \\
+GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & $+0.220$ & $\sim$18 min \\
+\emph{MANIFOLD} adapter (measured) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & $+0.168$ & $\sim$45 s \\
+\emph{MANIFOLD} $+V(x)$ (projected) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
+\emph{MANIFOLD} $+V(x)+\mathrm{Z3}$ (projected) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
+\bottomrule
+\end{tabular}
+\caption{OWASP Benchmark 1.2 (2740 cases: 1415 vulnerable / 1325 safe).
+\textsuperscript{(a)}~reported in public evaluations, not re-run here.
+\textsuperscript{(b)}~our measured Java adapter (all eleven categories).
+\textsuperscript{(c)}~\textbf{projected} target under the Stage-2 protocol, not
+measured; Java SMT verification is future work.}
+\label{tab:cmp}
+\end{table}
+
+\noindent\textbf{Methodology notes.} Hardware: 8-core x86-64, 32\,GB RAM, NVMe
+SSD. MANIFOLD: Python 3.14, \texttt{tree-sitter-java}; Z3 5.x with a
+\emph{5\,s per-query timeout} --- on timeout the case is marked
+\emph{unknown/conservative}, never counted as a detection, so the projected
+precision is not inflated by aborts. CodeQL: \texttt{java-security-extended.qls}
+on a clean database. SonarQube: Community Edition with SonarJava security rules.
+CWE mapping: the eleven categories of Benchmark~1.2; \texttt{crypto}/\texttt{hash}
+(CWE-327/328) are configuration-driven and require a static-configuration
+extractor into the IR. The measured adapter flags a case vulnerable iff it emits
+any finding; precision is bounded by the benchmark's adversarial ``false'' cases
+(debatable parameterized-query and \texttt{ProcessBuilder}-list patterns) and by
+cross-category distractor flows --- the gap the neuro-symbolic rows target.
+
+\subsection{Dual binary backend}
+The binary adapter ships two interchangeable backends that emit the same IR:
+(i) a zero-dependency \texttt{objdump}-text path (function labels $+$ \texttt{call}
+edges $+$ interprocedural taint reachability) and (ii) an \emph{optional}
+\texttt{angr} backend (\texttt{CFGFast} recovery of the interprocedural call graph
+$+$ the same taint reachability), selected by \texttt{--adapter angr-binary}. The
+fast path keeps MANIFOLD usable without heavy dependencies; the angr path
+recovers control flow that disassembly heuristics miss. This parity is the
+substrate for future ELF/PE benchmarks from SARD.
+
 \begin{thebibliography}{9}
 \item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
 \item F.~Chung, \emph{Spectral Graph Theory}, 1997.
