@@ -76,10 +76,12 @@ def load_data() -> Dict[str, Any]:
     oracle = _read_json(BENCH / "oracle_results.json") or {}
     owasp = _read_json(BENCH / "owasp_results.json") or {}
     ablation = _read_json(BENCH / "ablation_results.json") or {}
+    cves = _read_json(BENCH / "cve_results.json") or []
     return {
         "oracle": oracle,
         "owasp": owasp,
         "ablation": ablation,
+        "cves": cves,
         "scale": _read_scale(),
         "examples": _build_examples(),
     }
@@ -157,6 +159,7 @@ select,button{background:var(--panel2);color:var(--text);border:1px solid var(--
   </section>
 
   <section id="owasp"><h2>OWASP Benchmark 1.2</h2><div id="owasp-tables"></div></section>
+  <section id="cves"><h2>Real CVE fixes</h2><div id="cve-table"></div></section>
   <section id="ablation"><h2>Ablation (Java adapter)</h2><div id="ablation-table"></div></section>
   <section id="scale"><h2>Scalability</h2><div class="chart"><svg id="scale" viewBox="0 0 900 340"></svg></div></section>
 
@@ -354,6 +357,14 @@ function table(rows, cols){
   const ab=DATA.ablation||{};
   const rows=Object.keys(ab).map(k=>{const v=ab[k];return [k,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3)];});
   $("#ablation-table").innerHTML=table(rows,["variant","precision","recall","F1"]);
+})();
+
+(function(){
+  const crows=[];
+  (DATA.cves||[]).forEach(c=>(c.files||[]).forEach(f=>{
+    const res=f.resolved.length?`<span style="color:var(--green)">resolved</span>`:(f.persisting.length?`<span style="color:var(--amber)">persisting</span>`:"—");
+    crows.push([c.cve,f.file,f.vuln_findings,f.patched_findings,res]);}));
+  $("#cve-table").innerHTML=crows.length?table(crows,["CVE","file","vuln","patched","result"]):"<div class='small'>no data</div>";
 })();
 
 // ---------- scale chart ----------

@@ -619,6 +619,24 @@ $\sim10^5$ edges for the near-linear signals, which covers the corpora used here
 
 \input{figs/scale}
 
+\subsection{Real CVE fixes}
+We ran the vulnerable-vs-patched comparison on real CVE fix commits drawn from
+OSV / GitHub Security Advisories (\texttt{benchmarks/run\_cves.py}; the harness
+reconstructs the \emph{before} revision by reverse-applying the commit diff to
+the commit's raw content, so it needs no API quota). On 9 CVEs and 21 changed
+source files, \textbf{2 files resolved a finding}: both are \texttt{eval}
+injections --- \texttt{senaite.core} (CVE-2026-54569; \texttt{value = eval(value)}
+on a method parameter) and \texttt{xinference} (CVE-2026-61539;
+\texttt{eval(text)} on LLM output) --- flagged in the vulnerable revision and
+clean in the patch. The remaining CVEs are \emph{framework-internal} fixes
+(Django ORM SQL injection at CVE-2021-35042/2022-28466/2020-9402, Jinja,
+requests): the taint flow is indirect (user input reaches the ORM through
+\texttt{**kwargs}/query construction), so the intraprocedural adapter sees
+nothing. This mirrors the Juliet result and locates the frontier precisely:
+MANIFOLD already catches application-level \texttt{eval}/\texttt{exec}/
+deserialization fixes; framework-mediated flows need interprocedural,
+library-aware analysis.
+
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
 (i) a zero-dependency \texttt{objdump}-text path (function labels $+$ \texttt{call}

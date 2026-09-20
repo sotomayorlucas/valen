@@ -112,6 +112,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
   </div>
   <div id="oracle-table" style="margin-top:12px"></div>
   <h2 style="margin-top:18px">OWASP Benchmark 1.2</h2><div id="owasp-tables"></div>
+  <h2 style="margin-top:18px">Real CVE fixes</h2><div id="cve-table"></div>
   <h2 style="margin-top:18px">Ablation</h2><div id="ablation-table"></div>
   <h2 style="margin-top:18px">Scalability</h2><div class="panel"><svg id="scale" viewBox="0 0 900 320"></svg></div>
 </section>
@@ -294,6 +295,11 @@ function renderExperiments(R){
     return `<h3 style="font-size:12px;color:#8b949e">${t}</h3>`+table(rows,["category","TP","FP","FN","TN","P","R","F1","J"]);}
   $("#owasp-tables").innerHTML=block("adapter — all categories",ow.adapter_all)+block("adapter — taint",ow.adapter_taint)+block("adapter + Z3 — taint",ow.z3_taint);
   const ab=R.ablation||{}; $("#ablation-table").innerHTML=table(Object.keys(ab).map(k=>[k,ab[k].precision.toFixed(3),ab[k].recall.toFixed(3),ab[k].f1.toFixed(3)]),["variant","P","R","F1"]);
+  const cves=R.cves||[]; const crows=[];
+  cves.forEach(c=>{(c.files||[]).forEach(f=>{
+    const res=f.resolved.length?`<span style="color:var(--green)">resolved</span>`:(f.persisting.length?`<span style="color:var(--amber)">persisting</span>`:"—");
+    crows.push([c.cve, f.file, f.vuln_findings, f.patched_findings, res]);});});
+  $("#cve-table").innerHTML = crows.length? table(crows,["CVE","file","vuln","patched","result"]) : "<div class='small'>no CVE data (run benchmarks/run_cves.py)</div>";
   (function(){const by={};R.scale.forEach(r=>{(by[r.kernel]=by[r.kernel]||[]).push([r.edges,r.ms]);});
     const col={forman:"#3fb950",mapper:"#58a6ff",homology:"#f85149",sinkhorn:"#d29922",ollivier_exact:"#bc8cff",spectral_fiedler:"#79c0ff",directed_laplacian:"#ffa657"};
     const ser=Object.keys(by).map(k=>({name:k,color:col[k]||"#999",pts:by[k].sort((x,y)=>x[0]-y[0])}));

@@ -641,6 +641,25 @@ suficiente para los corpus usados aquí.
 
 \input{figs/scale}
 
+\subsection{Fixes de CVEs reales}
+Ejecutamos la comparación vulnerable-vs-parcheado sobre commits de fix de CVEs
+reales tomados de OSV / GitHub Security Advisories
+(\texttt{benchmarks/run\_cves.py}; el arnés reconstruye la revisión \emph{before}
+aplicando el diff inverso del commit sobre el contenido crudo, por lo que no
+necesita cuota de API). Sobre 9 CVEs y 21 archivos fuente, \textbf{2 archivos
+resolvieron un hallazgo}: ambos son inyecciones \texttt{eval} ---
+\texttt{senaite.core} (CVE-2026-54569; \texttt{value = eval(value)} sobre un
+parámetro) y \texttt{xinference} (CVE-2026-61539; \texttt{eval(text)} sobre salida
+del LLM) --- detectadas en la revisión vulnerable y limpias en el parche. Los
+CVEs restantes son fixes \emph{internos a frameworks} (SQL injection del ORM de
+Django en CVE-2021-35042/2022-28466/2020-9402, Jinja, requests): el flujo de
+taint es indirecto (la entrada del usuario llega al ORM vía
+\texttt{**kwargs}/construcción de query), así que el adaptador intraprocedural no
+ve nada. Esto refleja el resultado de Juliet y localiza la frontera con
+precisión: MANIFOLD ya captura fixes de \texttt{eval}/\texttt{exec}/
+deserialización a nivel aplicación; los flujos mediados por frameworks
+necesitan análisis interprocedural consciente de librerías.
+
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
 (i) una ruta de texto \texttt{objdump} sin dependencias (etiquetas de función

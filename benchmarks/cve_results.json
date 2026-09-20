@@ -1,0 +1,242 @@
+[
+  {
+    "cve": "CVE-2021-35042",
+    "repo": "django/django",
+    "url": "https://www.djangoproject.com/weblog/2021/jul/01/security-releases/",
+    "files": [
+      {
+        "file": "django/db/models/sql/constants.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "django/db/models/sql/query.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2022-28346",
+    "repo": "django/django",
+    "url": "",
+    "files": [
+      {
+        "file": "django/db/backends/postgresql/features.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "django/db/backends/postgresql/operations.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "django/db/models/sql/query.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2020-9402",
+    "repo": "django/django",
+    "url": "",
+    "files": [
+      {
+        "file": "django/contrib/gis/db/models/aggregates.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "django/contrib/gis/db/models/functions.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2019-10906",
+    "repo": "pallets/jinja",
+    "url": "",
+    "files": [
+      {
+        "file": "jinja2/__init__.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "setup.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2018-18074",
+    "repo": "psf/requests",
+    "url": "",
+    "files": [
+      {
+        "file": "requests/sessions.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2020-5224",
+    "repo": "jazzband/django-user-sessions",
+    "url": "",
+    "files": []
+  },
+  {
+    "cve": "CVE-2026-54569",
+    "repo": "senaite/senaite.core",
+    "url": "https://github.com/advisories/GHSA-jrw6-7x4q-w25j",
+    "files": [
+      {
+        "file": "src/bika/lims/jsonapi/__init__.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "src/senaite/core/browser/fields/parsing.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "src/senaite/core/browser/fields/record.py",
+        "adapter": "python",
+        "vuln_findings": 1,
+        "patched_findings": 0,
+        "resolved": [
+          [
+            "code_execution",
+            "eval"
+          ]
+        ],
+        "persisting": []
+      },
+      {
+        "file": "src/senaite/core/browser/fields/records.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-61539",
+    "repo": "xorbitsai/inference",
+    "url": "https://github.com/advisories/GHSA-x2rj-828p-hx9m",
+    "files": [
+      {
+        "file": "xinference/model/llm/tool_parsers/llama3_tool_parser.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "xinference/model/llm/utils.py",
+        "adapter": "python",
+        "vuln_findings": 1,
+        "patched_findings": 0,
+        "resolved": [
+          [
+            "code_execution",
+            "eval"
+          ]
+        ],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-33264",
+    "repo": "apache/airflow",
+    "url": "https://github.com/advisories/GHSA-2943-9672-r45w",
+    "files": [
+      {
+        "file": "airflow-core/src/airflow/models/taskinstance.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "airflow-core/src/airflow/models/trigger.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "airflow-core/src/airflow/serialization/enums.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "airflow-core/src/airflow/serialization/serialized_objects.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "airflow-core/src/airflow/triggers/base.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  }
+]

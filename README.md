@@ -215,6 +215,13 @@ Forman–Ricci y Mapper casi lineales ($10^3\to10^5$ aristas en $<0.2$ s);
 homología superlineal (159 s @ $10^5$); Sinkhorn/Ollivier cuadráticos;
 Laplacianos densos cúbicos (tope práctico ~$1200$ nodos sin solver disperso).
 
+**CVEs reales** (`benchmarks/run_cves.py`): 9 CVEs de OSV/GitHub Advisories, 21
+archivos fuente; **2 resueltos** (ambos `eval` injection: `senaite.core`
+CVE-2026-54569, `xinference` CVE-2026-61539). Los SQLi internos del ORM de Django
+son flujos indirectos → 0 detecciones (misma frontera que Juliet: falta análisis
+interprocedural). El arnés reconstruye el "before" aplicando el diff inverso (sin
+cuota de API).
+
 Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
 genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer

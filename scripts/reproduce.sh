@@ -69,6 +69,9 @@ echo "== 7b. dashboard =="
 "$VENV/bin/python" -m manifold.dashboard --out dashboard.html
 echo "wrote dashboard.html"
 
+echo "== 7d. real CVE fixes (needs network) =="
+"$VENV/bin/python" benchmarks/run_cves.py | tee benchmarks/results/cves.txt || true
+
 echo "== 7c. web UI (serve on http://127.0.0.1:8000) =="
 echo "run:  $VENV/bin/python -m manifold.server --port 8000"
 

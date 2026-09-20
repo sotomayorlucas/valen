@@ -1,0 +1,54 @@
+[
+  {
+    "cve": "CVE-2021-35042",
+    "repo": "django/django",
+    "commit": "a34a5f724c5d5adb2109374ba3989ebb7b11f81f",
+    "url": "https://www.djangoproject.com/weblog/2021/jul/01/security-releases/",
+    "message": "[3.2.x] Fixed CVE-2021-35042 -- Prevented SQL injection in QuerySet.order_by()."
+  },
+  {
+    "cve": "CVE-2022-28346",
+    "repo": "django/django",
+    "commit": "29a6c98b4c13af82064f993f0acc6e8fafa4d3f5",
+    "message": "[2.2.x] Fixed CVE-2022-28347 -- Protected QuerySet.explain(**options) against SQL injection on PostgreSQL."
+  },
+  {
+    "cve": "CVE-2020-9402",
+    "repo": "django/django",
+    "commit": "02d97f3c9a88adc890047996e5606180bd1c6166",
+    "message": "[1.11.x] Fixed CVE-2020-9402 -- Properly escaped tolerance parameter in GIS functions and aggregates on Oracle."
+  },
+  {
+    "cve": "CVE-2019-10906",
+    "repo": "pallets/jinja",
+    "commit": "c4c4088945a2c12535f539be7f5453b9ca94666c"
+  },
+  {
+    "cve": "CVE-2018-18074",
+    "repo": "psf/requests",
+    "commit": "c45d7c49ea75133e52ab22a8e9e13173938e36ff"
+  },
+  {
+    "cve": "CVE-2020-5224",
+    "repo": "jazzband/django-user-sessions",
+    "commit": "f0c4077e7d1436ba6d721af85cee89222ca5d2d9"
+  },
+  {
+    "cve": "CVE-2026-54569",
+    "repo": "senaite/senaite.core",
+    "commit": "a24d65e99a17ac43c5374ed9f0a60d0fe60d2f74",
+    "url": "https://github.com/advisories/GHSA-jrw6-7x4q-w25j"
+  },
+  {
+    "cve": "CVE-2026-61539",
+    "repo": "xorbitsai/inference",
+    "commit": "1b3d220f342ce68d34cec4586d9409d457dadc42",
+    "url": "https://github.com/advisories/GHSA-x2rj-828p-hx9m"
+  },
+  {
+    "cve": "CVE-2026-33264",
+    "repo": "apache/airflow",
+    "commit": "69b6c54ef17b048ebb0e9a656d0d9e1c99480d6b",
+    "url": "https://github.com/advisories/GHSA-2943-9672-r45w"
+  }
+]
