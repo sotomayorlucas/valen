@@ -24,27 +24,33 @@
 \newcommand{\catProg}{\mathbf{Prog}}
 \newcommand{\catAuth}{\mathbf{Auth}}
 
-\title{\bfseries MANIFOLD\\[2mm]\Large A Mathematical Engine for Mapping Vulnerabilities}
+\title{\bfseries MANIFOLD\\[2mm]\Large Prioritizing What to Verify: a Reproducible\\ Neuro-Symbolic Vulnerability Pipeline, and an\\ Honest Measurement on OWASP Benchmark~1.2}
 \author{MANIFOLD Project}
-\date{Whitepaper v0.1 --- working draft, not peer reviewed}
+\date{Whitepaper v0.3 --- working draft, not peer reviewed}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent MANIFOLD treats a software artifact not as a bag of rules to match, but
-as a \emph{mathematical object}: a typed, weighted graph enriched with
-\emph{algebraic}, \emph{spectral}, \emph{topological} and \emph{geometric}
-structure. Over this object we compute a scalar field of \textbf{vulnerability
-potential} $V(x)$, which surfaces anomalous regions as geometric / topological /
-spectral \emph{features} rather than as literal string matches. An
-\textbf{autonomous LLM agent} navigates the resulting ``manifold'', formulates
-hypotheses about those regions, and dispatches \textbf{formal verifiers} (SMT,
-symbolic execution, abstract interpretation) that confirm or refute each
-hypothesis --- closing the loop between statistical intuition and mathematical
-proof. This document defines the intermediate representation, formalizes each
-mathematical layer, states the mapping laws that connect mathematical features
-to vulnerability classes, and specifies the agent architecture and roadmap.
+\noindent The bottleneck of static analysis is not \emph{detecting} sinks but
+\emph{deciding which one to verify}. MANIFOLD turns a software artifact into a
+typed, weighted graph (the IR) enriched with algebraic, spectral, topological and
+geometric structure, computes a \emph{vulnerability scalar field} $V(x)$, and
+lets a neuro-symbolic loop (LLM hypothesis generation + Z3 verification with
+concrete witnesses) act on the prioritized regions. This document makes three
+contributions and reports them honestly. \textbf{(1)} A \emph{prioritization-oracle}
+harness with standard ranking metrics (MRR, R@1, NDCG@$k$, cost curve) and
+baselines. \textbf{(2)} An end-to-end Java pipeline (SAST adapter + Z3 symbolic
+verifier with witnesses) and a reproducible artifact. \textbf{(3)} A measurement
+study on the full \textbf{OWASP Benchmark~1.2} (2740 cases) and a cross-corpus
+transfer to \textbf{Juliet}. The headline result is \emph{negative and useful}:
+raw taint ranks the vulnerable sink best (MRR $0.894$, AUC $0.895$) while the
+\emph{spectral} ($0.496$) and \emph{topological} ($0.500$) signals are at chance
+and \emph{curvature} is below chance ($0.376$); the Z3 verifier reproduces the
+adapter's precision ($P=0.549$, $R=0.834$) and adds proof, not precision; and the
+OWASP-tuned adapter transfers poorly to Juliet ($P=0.333$, $R=0.562$), exposing
+the need for interprocedural taint. We state a naturality theorem with proof,
+give per-kernel scalability curves, and release the artifact, datasets and seeds.
 \end{abstract}
 
 \section{Motivation}
@@ -388,6 +394,19 @@ F7 & Binary / web / LLM adapters & done \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\section{Threats to validity}
+\emph{Internal.} The Java adapter is intraprocedural; OWASP's distractor flows and
+Juliet's cross-class variants are therefore measured with an inherent recall gap.
+Ground truth is the benchmark's own (OWASP's ``false'' cases are partly
+definitional and debatable). \emph{External.} Results cover Java servlets and the
+Juliet suite; Python, binaries and LLM agents are implemented but not benchmarked
+at the same scale. \emph{Construct.} ``Vulnerable'' is a per-case label; the field
+is per-node, so the prioritization experiment is a proxy, not a downstream
+exploitability measure. \emph{Conclusion.} The negative result (geometric priors
+do not beat taint) is specific to these corpora and signals; it should be
+re-tested on path-sensitive, interprocedural analyses and on real CVEs before
+being generalized.
 
 \section{Validation and responsible use}
 Validation is two-stage. Stage 1 (complete) runs the toy micro-benchmarks of

@@ -1,6 +1,6 @@
-# MANIFOLD — A Mathematical Engine for Mapping Vulnerabilities
+# MANIFOLD — Prioritizing What to Verify: a Reproducible Neuro-Symbolic Vulnerability Pipeline
 
-**Whitepaper v0.1 (rev 7)** · *Working draft — not peer reviewed*
+**Whitepaper v0.3 (rev 8)** · *Working draft — not peer reviewed*
 
 > *"Map the code as a space; let the geometry of that space reveal the flaw."*
 
@@ -8,17 +8,17 @@
 
 ## Abstract
 
-MANIFOLD treats a software artifact not as a bag of rules to match but as a
-**mathematical object**: a typed, weighted graph enriched with *algebraic*,
-*spectral*, *topological* and *geometric* structure. Over it we compute a scalar
-field of **vulnerability potential** $V(x)$, and an **autonomous LLM agent**
-navigates the resulting "manifold", formulates hypotheses, and dispatches
-**formal verifiers** (SMT, symbolic execution, abstract interpretation) that
-confirm or refute them. This document defines the IR, formalizes each layer,
-states the mapping laws, specifies the agent, and reports an empirical study on
-the full **OWASP Benchmark 1.2** (2740 Java cases).
-
----
+The bottleneck of static analysis is not *detecting* sinks but *deciding which one
+to verify*. MANIFOLD turns an artifact into a typed graph (IR), computes a
+vulnerability scalar field $V(x)$, and lets a neuro-symbolic loop (LLM + Z3 with
+witnesses) act on prioritized regions. Contributions: (1) a prioritization-oracle
+harness (MRR/R@1/NDCG@k, cost curve, baselines); (2) an end-to-end Java pipeline
+(SAST + Z3 verifier) and a reproducible artifact; (3) a measurement study on
+**OWASP Benchmark 1.2** (2740 cases) and a Juliet transfer. Headline (negative)
+result: raw taint ranks best (MRR 0.894, AUC 0.895); spectral (0.496) and
+topological (0.500) are at chance and curvature is below chance (0.376); Z3 adds
+proof, not precision; OWASP→Juliet transfers poorly (P=0.333, R=0.562), exposing
+the need for interprocedural taint.
 
 ## 1. Motivation
 

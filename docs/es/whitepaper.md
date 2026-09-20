@@ -1,6 +1,6 @@
-# MANIFOLD — Un Motor Matemático para Mapear Vulnerabilidades
+# MANIFOLD — Priorizar Qué Verificar: un Pipeline Neuro-Simbólico Reproducible
 
-**Whitepaper v0.1 (rev 7)** · *Borrador de trabajo — no revisado por pares*
+**Whitepaper v0.3 (rev 8)** · *Borrador de trabajo — no revisado por pares*
 
 > *"Mapea el código como un espacio; deja que la geometría de ese espacio revele la falla."*
 
@@ -8,17 +8,18 @@
 
 ## Resumen
 
-MANIFOLD trata un artefacto de software no como un conjunto de reglas a emparejar,
-sino como un **objeto matemático**: un grafo tipado y ponderado enriquecido con
-estructura *algebraica*, *espectral*, *topológica* y *geométrica*. Sobre él se
-computa un campo escalar de **potencial de vulnerabilidad** $V(x)$, y un **agente
-LLM autónomo** navega el "manifold" resultante, formula hipótesis y despacha
-**verificadores formales** (SMT, ejecución simbólica, interpretación abstracta) que
-las confirman o refutan. Este documento define la IR, formaliza cada capa, enuncia
-las leyes de mapeo, especifica el agente y reporta un estudio empírico sobre el
-**OWASP Benchmark 1.2** completo (2740 casos Java).
-
----
+El cuello de botella del análisis estático no es *detectar* sinks sino *decidir
+cuál verificar*. MANIFOLD convierte un artefacto en un grafo tipado (IR), computa
+un campo escalar de vulnerabilidad $V(x)$ y deja que un ciclo neuro-simbólico
+(LLM + Z3 con witnesses) actúe sobre las regiones priorizadas. Contribuciones: (1)
+un arnés de oráculo de priorización (MRR/R@1/NDCG@k, curva de costo, baselines);
+(2) un pipeline Java end-to-end (SAST + verificador Z3) y un artefacto
+reproducible; (3) un estudio de medición sobre **OWASP Benchmark 1.2** (2740
+casos) y una transferencia a Juliet. Resultado central (negativo): el taint crudo
+ordena mejor (MRR 0.894, AUC 0.895); espectral (0.496) y topológica (0.500) están
+en el azar y la curvatura por debajo (0.376); Z3 aporta prueba, no precisión;
+OWASP→Juliet transfiere mal (P=0.333, R=0.562), exponiendo la necesidad de taint
+interprocedural.
 
 ## 1. Motivación
 

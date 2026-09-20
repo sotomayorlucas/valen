@@ -407,6 +407,19 @@ F7 & Adaptadores binario / web / LLM & hecho \\
 \end{tabular}
 \end{center}
 
+\section{Amenazas a la validez}
+\emph{Interna.} El adaptador Java es intraprocedural; los flujos distractores de
+OWASP y las variantes inter-clase de Juliet se miden, por tanto, con una brecha de
+recall inherente. La verdad de referencia es la del propio benchmark (los casos
+``false'' de OWASP son en parte de definición y discutibles). \emph{Externa.} Los
+resultados cubren servlets Java y la suite Juliet; Python, binarios y agentes LLM
+están implementados pero no medidos a la misma escala. \emph{De constructo.}
+``Vulnerable'' es una etiqueta por caso; el campo es por nodo, así que el
+experimento de priorización es un proxy, no una medida de explotabilidad aguas
+abajo. \emph{Conclusión.} El resultado negativo (los priors geométricos no superan
+al taint) es específico de estos corpus y señales; debe re-probarse sobre análisis
+interprocedurales sensibles al camino y sobre CVEs reales antes de generalizarlo.
+
 \section{Validación y uso responsable}
 La validación es de dos etapas. La etapa 1 (completa) ejecuta los
 micro-benchmarks de juguete de F1--F7 contra una verdad de referencia conocida:
