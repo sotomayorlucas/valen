@@ -5,7 +5,7 @@ import threading
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-from manifold.server import Handler, _analyze, _example_index, _read_example, _results
+from manifold.server import Handler, _analyze, _compare, _example_index, _read_example, _results
 
 
 def test_analyze_python_offline():
@@ -39,6 +39,18 @@ def test_examples_and_results():
     assert "code" in sample
     res = _results()
     assert set(res.keys()) >= {"oracle", "owasp", "ablation", "scale"}
+
+
+def test_compare_resolves_vulnerability():
+    out = _compare({
+        "vulnerable": "def f(db, q):\n    db.execute('SELECT ' + q)\n",
+        "patched": "def f(db, q):\n    db.execute('SELECT %s', (q,))\n",
+        "adapter": "python",
+    })
+    assert out["vulnerable"]["findings"]
+    assert not out["patched"]["findings"]
+    assert out["diff"]["resolved"]           # the sqli finding was resolved
+    assert out["diff"]["introduced"] == []
 
 
 def test_http_roundtrip_ephemeral_port():

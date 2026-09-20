@@ -124,6 +124,35 @@ def _read_scale() -> List[dict]:
     return rows
 
 
+def _compare(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze a vulnerable/patched pair and diff their findings."""
+    vuln_code = payload.get("vulnerable", "") or ""
+    patched_code = payload.get("patched", "") or ""
+    path = payload.get("path") or "<web>"
+    adapter = payload.get("adapter") or infer_adapter(vuln_code, path)
+
+    def run(code: str) -> Dict[str, Any]:
+        return _analyze({"code": code, "path": path, "adapter": adapter,
+                         "verify": payload.get("verify")})
+
+    vuln, patched = run(vuln_code), run(patched_code)
+
+    def keys(out: Dict[str, Any]) -> set:
+        return {(f["category"], f["sink_name"]) for f in out["findings"]}
+
+    vk, pk = keys(vuln), keys(patched)
+    return {
+        "adapter": adapter,
+        "vulnerable": vuln,
+        "patched": patched,
+        "diff": {
+            "resolved": sorted([list(k) for k in vk - pk]),
+            "introduced": sorted([list(k) for k in pk - vk]),
+            "persisting": sorted([list(k) for k in vk & pk]),
+        },
+    }
+
+
 def _results() -> Dict[str, Any]:
     def j(name):
         p = BENCH / name
@@ -173,7 +202,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         u = urlparse(self.path)
-        if u.path != "/api/analyze":
+        if u.path not in ("/api/analyze", "/api/compare"):
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
         try:
@@ -181,6 +210,8 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return self._json({"error": "invalid JSON body"}, 400)
         try:
+            if u.path == "/api/compare":
+                return self._json(_compare(payload))
             return self._json(_analyze(payload))
         except Exception as exc:
             return self._json({"error": str(exc)}, 500)

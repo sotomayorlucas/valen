@@ -44,6 +44,9 @@ th{background:var(--panel2);color:var(--muted);font-weight:600;}
 pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px;}
 #map{width:100%;height:440px;background:radial-gradient(circle at 50% 50%,#161b22,#0d1117);border:1px solid var(--border);border-radius:10px;}
 .badge{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted);}
+.mode{cursor:pointer;padding:4px 10px;}
+.mode.on{background:var(--accent);color:#08111c;font-weight:700;}
+.resolved{color:var(--green);} .introduced{color:var(--red);} .persisting{color:var(--amber);}
 .bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;} .bar>i{display:block;height:100%;background:var(--accent);}
 </style>
 </head>
@@ -68,24 +71,31 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
       <option>python</option><option>java</option><option>binary</option>
       <option>angr-binary</option><option>web</option><option>llm-agent</option>
     </select>
-    <input id="path" placeholder="path (optional)" style="width:220px"/>
+    <input id="path" placeholder="path (optional)" style="width:200px"/>
     <label class="chk"><input type="checkbox" id="verify"/> verify (Z3)</label>
     <label class="chk"><input type="checkbox" id="agent"/> agent</label>
     <button class="primary" id="run">Analyze</button>
     <span class="badge" id="status"></span>
   </div>
-  <div class="two">
-    <div><textarea id="code" spellcheck="false"></textarea>
-      <div class="small" style="margin-top:6px">Paste code, pick an example, or drop a file (the tool is static; it never runs your code).</div>
-    </div>
-    <div>
-      <h2 style="margin-top:0">Findings</h2>
-      <div id="findings" class="small">Run an analysis to see results.</div>
-      <h2 style="margin-top:14px">V(x) ranking (top nodes)</h2>
-      <div id="top" class="small"></div>
-      <div id="verify-block" style="margin-top:14px"></div>
-      <div id="agent-block" style="margin-top:14px"></div>
-    </div>
+  <div class="row">
+    <span class="mode on" id="mode-single">Single</span>
+    <span class="mode" id="mode-compare">Compare (vulnerable vs patched)</span>
+  </div>
+  <div id="single-pane">
+    <textarea id="code" spellcheck="false"></textarea>
+  </div>
+  <div id="compare-pane" class="two" style="display:none">
+    <div><textarea id="code-vuln" spellcheck="false"></textarea><div class="small">vulnerable version</div></div>
+    <div><textarea id="code-patched" spellcheck="false"></textarea><div class="small">patched version</div></div>
+  </div>
+  <div class="small" style="margin-top:6px">Drag &amp; drop a file onto an editor to load it. Static analysis — your code is never executed.</div>
+
+  <h2 style="margin-top:16px">Findings</h2>
+  <div id="findings" class="small">Run an analysis to see results.</div>
+  <div id="diff-block"></div>
+  <div class="two" style="margin-top:14px">
+    <div><h2 style="font-size:13px">V(x) ranking (top nodes)</h2><div id="top" class="small"></div></div>
+    <div><div id="verify-block"></div><div id="agent-block"></div></div>
   </div>
   <h2 style="margin-top:18px">Manifold</h2>
   <svg id="map" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet"></svg>
@@ -139,34 +149,90 @@ async function loadExamples(){
 }
 loadExamples();
 
+// ---- mode + drag & drop ----
+let MODE="single";
+function setMode(m){ MODE=m;
+  $("#mode-single").classList.toggle("on",m==="single");
+  $("#mode-compare").classList.toggle("on",m==="compare");
+  $("#single-pane").style.display=m==="single"?"":"none";
+  $("#compare-pane").style.display=m==="compare"?"":"none";
+  $("#diff-block").innerHTML=""; }
+$("#mode-single").onclick=()=>setMode("single");
+$("#mode-compare").onclick=()=>setMode("compare");
+
+function makeDrop(el){
+  el.addEventListener("dragover",e=>{e.preventDefault();el.style.borderColor="#58a6ff";});
+  el.addEventListener("dragleave",()=>{el.style.borderColor="";});
+  el.addEventListener("drop",e=>{e.preventDefault();el.style.borderColor="";
+    const f=e.dataTransfer.files[0]; if(!f)return;
+    const r=new FileReader();
+    r.onload=()=>{el.value=r.result;
+      const ext=(f.name.split(".").pop()||"").toLowerCase();
+      const map={py:"python",java:"java",asm:"binary"}; if(map[ext])$("#adapter").value=map[ext];
+      $("#path").value=f.name;};
+    r.readAsText(f);});
+}
+["#code","#code-vuln","#code-patched"].forEach(s=>makeDrop($(s)));
+
 // ---- analyze ----
 $("#run").onclick=async()=>{
   $("#status").textContent="analyzing…";
-  const body={code:$("#code").value, path:$("#path").value||"<web>", adapter:$("#adapter").value||null,
-    verify:$("#verify").checked, agent:$("#agent").checked};
+  const common={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,verify:$("#verify").checked,agent:$("#agent").checked};
   try{
-    const r=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
-    const d=await r.json();
-    if(d.error){$("#status").textContent="error: "+d.error;return;}
-    render(d);
-    $("#status").textContent=`${d.adapter} · ${d.nodes.length} nodes · ${d.findings.length} findings`;
+    if(MODE==="compare"){
+      const body={...common,vulnerable:$("#code-vuln").value,patched:$("#code-patched").value};
+      const d=await (await fetch("/api/compare",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+      if(d.error){$("#status").textContent="error: "+d.error;return;}
+      renderCompare(d); $("#status").textContent=`${d.adapter} · compare`;
+    } else {
+      const body={...common,code:$("#code").value};
+      const d=await (await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+      if(d.error){$("#status").textContent="error: "+d.error;return;}
+      render(d); $("#diff-block").innerHTML="";
+      $("#status").textContent=`${d.adapter} · ${d.nodes.length} nodes · ${d.findings.length} findings`;
+    }
   }catch(e){$("#status").textContent="error: "+e;}
 };
+
+function findingsHtml(d){
+  return d.findings.length? d.findings.map(f=>`<div class="finding ${f.severity}">
+    <div class="sev" style="color:var(--${f.severity==='critical'?'red':(f.severity==='high'?'amber':'accent')})">${f.severity} · ${f.category}</div>
+    <div>${f.title}</div><div class="small">line ${f.line} · sink ${f.sink_name} · sources ${(f.source_names||[]).join(", ")}</div></div>`).join("")
+    : `<div class="small">no findings</div>`;
+}
+function topHtml(d){
+  return (d.top||[]).map(t=>{const w=Math.max(2,Math.round(t.value*100));
+    return `<div style="margin-bottom:5px"><div class="small">${t.label||t.id}</div><div class="bar"><i style="width:${w}%"></i></div></div>`;}).join("") || "<div class='small'>—</div>";
+}
+function verifyHtml(d){
+  if(!d.verifications) return "";
+  return `<h2 style="font-size:13px">Z3 verifications</h2>`+ (d.verifications.length? d.verifications.map(v=>`<div class="small">✓ ${v.category} · ${v.sink_name} (line ${v.line}) ${v.witness?('· witness '+JSON.stringify(v.witness)):''}</div>`).join("") : "<div class='small'>none confirmed</div>");
+}
+function agentHtml(d){
+  if(!d.agent) return "";
+  return `<h2 style="font-size:13px">Agent report</h2>`+ (d.agent.length? d.agent.map(a=>`<div class="small">[${a.status}] ${a.cwe} ${a.title} — ${a.signal}</div>`).join("") : "<div class='small'>no findings</div>");
+}
+function render(d){
+  $("#findings").innerHTML=findingsHtml(d);
+  $("#top").innerHTML=topHtml(d);
+  $("#verify-block").innerHTML=verifyHtml(d);
+  $("#agent-block").innerHTML=agentHtml(d);
+  renderMap(d);
+}
+function renderCompare(d){
+  const rows=(k,cls)=>`<div class="${cls}"><b>${k}</b>: ${d.diff[k].length? d.diff[k].map(x=>x[0]+":"+x[1]).join(", ") : "—"}</div>`;
+  $("#diff-block").innerHTML=`<h2 style="margin-top:14px">Diff (vulnerable → patched)</h2>
+    ${rows("resolved","resolved")}${rows("persisting","persisting")}${rows("introduced","introduced")}`;
+  $("#findings").innerHTML=`<b>vulnerable</b>`+findingsHtml(d.vulnerable)+`<h2 style="font-size:13px;margin-top:12px">patched</h2>`+findingsHtml(d.patched);
+  $("#top").innerHTML=topHtml(d.vulnerable);
+  $("#verify-block").innerHTML=verifyHtml(d.vulnerable);
+  $("#agent-block").innerHTML="";
+  renderMap(d.vulnerable);
+}
 
 const COLORS={source:"#f85149",sink:"#d29922",function:"#58a6ff",gate:"#bc8cff",module:"#30363d",
   assign:"#a5d6ff",call:"#bc8cff",statement:"#8b949e",block:"#8b949e",variable:"#79c0ff",parameter:"#79c0ff"};
 const ECOL={taint:"#f85149",call:"#58a6ff",data:"#3fb950",control:"#6e7681",trust:"#bc8cff",auth:"#d2a8ff"};
-function render(d){
-  $("#findings").innerHTML = d.findings.length? d.findings.map(f=>`<div class="finding ${f.severity}">
-    <div class="sev" style="color:var(--${f.severity==='critical'?'red':(f.severity==='high'?'amber':'accent')})">${f.severity} · ${f.category}</div>
-    <div>${f.title}</div><div class="small">line ${f.line} · sink ${f.sink_name} · sources ${(f.source_names||[]).join(", ")}</div></div>`).join("")
-    : `<div class="small">no findings</div>`;
-  $("#top").innerHTML = (d.top||[]).map(t=>{const w=Math.max(2,Math.round(t.value*100));
-    return `<div style="margin-bottom:5px"><div class="small">${t.label||t.id}</div><div class="bar"><i style="width:${w}%"></i></div></div>`;}).join("") || "<div class='small'>—</div>";
-  $("#verify-block").innerHTML = d.verifications? `<h2 style="font-size:13px">Z3 verifications</h2>`+ (d.verifications.length? d.verifications.map(v=>`<div class="small">✓ ${v.category} · ${v.sink_name} (line ${v.line}) ${v.witness?('· witness '+JSON.stringify(v.witness)):''}</div>`).join("") : "<div class='small'>none confirmed</div>") : "";
-  $("#agent-block").innerHTML = d.agent? `<h2 style="font-size:13px">Agent report</h2>`+ (d.agent.length? d.agent.map(a=>`<div class="small">[${a.status}] ${a.cwe} ${a.title} — ${a.signal}</div>`).join("") : "<div class='small'>no findings</div>") : "";
-  renderMap(d);
-}
 function renderMap(d){
   const svg=$("#map"); const W=1000,H=440;
   const nodes=d.nodes.map(n=>({...n,x:Math.random()*W,y:Math.random()*H})); const by={}; nodes.forEach(n=>by[n.id]=n);
