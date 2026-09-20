@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from .angr_binary import AngrBinaryIngest
 from .binary import BinaryIngest
+from .java import JavaIngest
 from .llm_agent import LLMAgentIngest
 from .python import PythonIngest
 from .web import WebIngest
 
 __all__ = [
     "PythonIngest",
+    "JavaIngest",
     "BinaryIngest",
     "AngrBinaryIngest",
     "WebIngest",
@@ -21,6 +23,7 @@ __all__ = [
 
 LANGUAGE_TO_INGEST = {
     "python": PythonIngest,
+    "java": JavaIngest,
     "binary": BinaryIngest,
     "angr-binary": AngrBinaryIngest,
     "web": WebIngest,

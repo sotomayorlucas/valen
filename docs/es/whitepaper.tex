@@ -365,7 +365,12 @@ recall mientras mantiene la precisión en $1.0$. Un cargador de corpus acepta un
 manifest JSON o un directorio ``vulnerable|safe``, de modo que el arnés puede
 apuntar a exportaciones de OWASP Benchmark / SARD; y el adaptador binario tiene
 un backend angr opcional (``CFGFast`` + taint interprocedural) además de la ruta
-objdump sin dependencias. MANIFOLD es una herramienta de
+objdump sin dependencias. Ejecutar el adaptador Java sobre el OWASP Benchmark 1.2
+completo (2740 casos) da el baseline naive: precisión $0.515$ / recall $0.426$ /
+F1 $0.466$ en las siete categorías de taint, y precisión $0.544$ / recall
+$0.634$ / F1 $0.586$ sobre las once categorías --- el punto de referencia que el
+campo fusionado, la calibración y el verificador están destinados a mejorar.
+MANIFOLD es una herramienta de
 defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
 alentamos la divulgación coordinada.
 

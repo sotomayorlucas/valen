@@ -108,6 +108,7 @@ export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLL
 .venv/bin/python -m manifold.cli examples/binary/vuln.asm      # binario (objdump)
 .venv/bin/python -m manifold.cli examples/web/api.json         # OpenAPI
 .venv/bin/python -m manifold.cli examples/llm_agent/agent.json # agente LLM
+.venv/bin/python -m manifold.cli Foo.java --adapter java        # Java (SAST)
 
 # Binario con angr (CFGFast real + taint interprocedural); requiere: pip install ".[angr]"
 gcc -o /tmp/vuln /tmp/vuln.c
@@ -125,3 +126,26 @@ topológico / geométrico y el verificador se aplican sin cambios.
 ```
 Evalúa precisión/recall/F1 (taint crudo vs verificado Z3) y **calibra los pesos
 αᵢ** del campo V(x) con regresión logística pura-Python (validación leave-one-out).
+
+### OWASP Benchmark 1.2 (corpus real, 2740 casos Java)
+
+```bash
+pip install tree-sitter-java
+# descarga: https://github.com/OWASP-Benchmark/BenchmarkJava (testcode/ + expectedresults-1.2.csv)
+.venv/bin/python benchmarks/run_owasp.py \
+    --testcode .../src/main/java/org/owasp/benchmark/testcode \
+    --csv .../expectedresults-1.2.csv
+```
+
+Resultados del adaptador Java (baseline naive):
+
+| scope | precisión | recall | F1 |
+|---|---|---|---|
+| categorías de taint (7, 1698 casos) | 0.515 | 0.426 | 0.466 |
+| todas las categorías (11, 2740 casos) | 0.544 | 0.634 | 0.586 |
+
+Categorías taint: sqli/cmdi/pathtraver/xss/ldapi/xpathi/trustbound. Las categorías
+por-patrón `crypto`/`hash` se configuran vía `.properties` (recall 1.0 con regex
+sobre literales); `weakrand`/`securecookie` son detectables por fuente. **SARD**:
+el cargador (`load_directory`, convención `good`/`bad`) está listo; el corpus
+completo (Juliet) es una descarga de gran tamaño y mayormente C/C++/Java.

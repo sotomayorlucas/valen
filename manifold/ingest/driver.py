@@ -21,6 +21,12 @@ def _load_languages() -> Dict[str, Language]:
         langs["javascript"] = Language(tree_sitter_javascript.language())
     except ImportError:  # pragma: no cover
         pass
+    try:
+        import tree_sitter_java
+
+        langs["java"] = Language(tree_sitter_java.language())
+    except ImportError:  # pragma: no cover
+        pass
     return langs
 
 

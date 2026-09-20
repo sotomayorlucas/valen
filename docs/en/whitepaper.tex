@@ -347,7 +347,12 @@ signal) that the taint pass misses, raising recall while keeping precision at
 $1.0$. A corpus loader accepts a JSON manifest or a ``vulnerable|safe``
 directory, so the harness can be pointed at OWASP Benchmark / SARD exports; and
 the binary adapter has an optional angr backend (``CFGFast`` + interprocedural
-taint) in addition to the zero-dependency objdump path. MANIFOLD is a defensive /
+taint) in addition to the zero-dependency objdump path. Running the Java SAST
+adapter over the full OWASP Benchmark 1.2 (2740 test cases) gives the naive
+baseline: precision $0.515$ / recall $0.426$ / F1 $0.466$ on the seven taint
+categories, and precision $0.544$ / recall $0.634$ / F1 $0.586$ over all eleven
+categories --- the reference point that the fused field, calibration and the
+verifier are meant to improve on. MANIFOLD is a defensive /
 authorized-testing tool; we release under the assumption of authorized use and
 encourage coordinated disclosure.
 
