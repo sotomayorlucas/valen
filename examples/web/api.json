@@ -1,0 +1,27 @@
+{
+  "openapi": "3.0.0",
+  "info": {"title": "demo", "version": "1.0.0"},
+  "paths": {
+    "/users/search": {
+      "get": {
+        "operationId": "searchUsers",
+        "parameters": [{"name": "q", "in": "query"}],
+        "x-manifold-sinks": ["q"]
+      }
+    },
+    "/admin/users": {
+      "get": {
+        "operationId": "listAdminUsers",
+        "parameters": [{"name": "filter", "in": "query"}],
+        "security": [{"apiKey": []}],
+        "x-manifold-sinks": ["filter"]
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "parameters": []
+      }
+    }
+  }
+}

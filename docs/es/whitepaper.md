@@ -285,7 +285,7 @@ esquema; el lado Rust se verifica con `cargo test`).
 | F4 | Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3) | ✅ implementado, testeado |
 | F5 | Agente LLM autónomo (LiteLLM, fallback offline) | ✅ implementado, testeado |
 | F6 | Visualización (HTML autocontenido) + demo end-to-end | ✅ implementado, testeado |
-| F7 | Adaptadores binario / web / LLM (multi-dominio) | ⬜ |
+| F7 | Adaptadores binario / web / LLM (multi-dominio) | ✅ implementado, testeado |
 
 ## 10. Plan de validación
 

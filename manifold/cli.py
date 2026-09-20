@@ -1,4 +1,4 @@
-"""Minimal command-line interface for the F1 SAST pipeline."""
+"""Command-line interface for the MANIFOLD pipeline."""
 
 from __future__ import annotations
 
@@ -8,27 +8,17 @@ import sys
 from pathlib import Path
 
 from .analysis.verifier import verify
-from .ingest import LANGUAGE_TO_INGEST
-
-
-def _language_for(path: Path) -> str:
-    ext = path.suffix.lower().lstrip(".")
-    mapping = {
-        "py": "python",
-        "js": "javascript",
-        "mjs": "javascript",
-    }
-    return mapping.get(ext, ext)
+from .ingest import analyze, infer_adapter
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="manifold", description="Analyze a target for vulnerabilities.")
-    parser.add_argument("target", help="source file to analyze")
+    parser.add_argument("target", help="source file / OpenAPI JSON / agent JSON / disassembly to analyze")
+    parser.add_argument("--adapter", help="adapter: python, binary, web, llm-agent (inferred if omitted)")
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
-    parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
-    parser.add_argument("--agent", action="store_true", help="run the autonomous agent (map->rank->hypothesize->verify)")
+    parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3, python only)")
+    parser.add_argument("--agent", action="store_true", help="run the autonomous agent (python only)")
     parser.add_argument("--viz", metavar="FILE.html", help="render the vulnerability manifold to a self-contained HTML file")
-    parser.add_argument("--language", help="override language detection")
     args = parser.parse_args(argv)
 
     path = Path(args.target)
@@ -36,20 +26,19 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {path} does not exist", file=sys.stderr)
         return 1
 
-    language = args.language or _language_for(path)
-    if language not in LANGUAGE_TO_INGEST:
-        print(f"error: unsupported language {language!r}", file=sys.stderr)
-        return 1
-
     code = path.read_text()
-    ingest_cls = LANGUAGE_TO_INGEST[language]
-    result = ingest_cls().analyze(code, path=str(path))
+    adapter = args.adapter or infer_adapter(code, str(path))
+    try:
+        result = analyze(code, path=str(path), adapter=adapter)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
 
     if args.json:
         print(json.dumps(result.graph.to_dict(), indent=2))
         return 0
 
-    print(f"== {path} ({language}) -> {result.graph.node_count} nodes, "
+    print(f"== {path} ({adapter}) -> {result.graph.node_count} nodes, "
           f"{result.graph.edge_count} edges")
     for finding in result.findings:
         print(f"  [{finding.severity:>8}] {finding.title}")
@@ -57,7 +46,7 @@ def main(argv: list[str] | None = None) -> int:
     if not result.findings:
         print("  (no taint findings)")
 
-    if args.verify and language == "python":
+    if args.verify and adapter == "python":
         print("== formal verification (Z3) ==")
         verifications = verify(code, path=str(path))
         for v in verifications:
@@ -67,7 +56,7 @@ def main(argv: list[str] | None = None) -> int:
         if not verifications:
             print("  (no flows confirmed)")
 
-    if args.agent and language == "python":
+    if args.agent and adapter == "python":
         from agent.agent import ManifoldAgent
 
         print("== autonomous agent report ==")
@@ -80,12 +69,10 @@ def main(argv: list[str] | None = None) -> int:
         if not report.entries:
             print("  (no findings)")
 
-    if args.viz and language == "python":
-        from agent.agent import ManifoldAgent
+    if args.viz:
         from .analysis.math_core import run_core
         from .viz import write_html
 
-        report = ManifoldAgent().run(code, path=str(path))
         try:
             math = run_core(result.graph)
         except Exception:
@@ -94,9 +81,9 @@ def main(argv: list[str] | None = None) -> int:
             result.graph,
             args.viz,
             math=math,
-            report=report,
+            report=None,
             title="MANIFOLD",
-            subtitle=f"{path} — {result.graph.node_count} nodes, {result.graph.edge_count} edges",
+            subtitle=f"{path} ({adapter}) — {result.graph.node_count} nodes, {result.graph.edge_count} edges",
         )
         print(f"== manifold written to {args.viz}")
     return 0

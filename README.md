@@ -29,7 +29,7 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 - [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3, auth gates/L4)
 - [x] **F5** — Agente LLM autónomo (LiteLLM, fallback offline)
 - [x] **F6** — Visualización (HTML autocontenido) + demo end-to-end
-- [ ] **F7** — Adaptadores binario / web / LLM
+- [x] **F7** — Adaptadores multi-dominio (binario / OpenAPI / agente LLM)
 
 ## Estructura / Layout
 
@@ -101,3 +101,13 @@ export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLL
 # Demo end-to-end: analiza todos los ejemplos y genera HTML + summary.json
 .venv/bin/python scripts/demo.py   # escribe en viz/out/
 ```
+
+## Multi-dominio (F7)
+
+```bash
+.venv/bin/python -m manifold.cli examples/binary/vuln.asm      # binario (objdump)
+.venv/bin/python -m manifold.cli examples/web/api.json         # OpenAPI
+.venv/bin/python -m manifold.cli examples/llm_agent/agent.json # agente LLM
+```
+Los adaptadores producen el mismo IR tipado, así que el núcleo espectral /
+topológico / geométrico y el verificador se aplican sin cambios.

@@ -1,0 +1,11 @@
+{
+  "name": "coding-agent",
+  "entry": "user_prompt",
+  "tools": [
+    {"name": "read_file", "description": "read a file", "dangerous": false},
+    {"name": "search_code", "description": "search the codebase", "dangerous": false},
+    {"name": "write_file", "description": "write a file", "dangerous": true},
+    {"name": "run_shell", "description": "execute a shell command", "dangerous": true, "requires_approval": true},
+    {"name": "run_code", "description": "execute arbitrary code", "dangerous": true}
+  ]
+}

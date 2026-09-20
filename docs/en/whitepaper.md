@@ -279,7 +279,7 @@ identical schema; the Rust side is verified by `cargo test`).
 | F4 | Formal verification (taint lattice + sanitizers, Z3 symbolic verifier) | ✅ implemented, tested |
 | F5 | Autonomous LLM agent (LiteLLM, offline fallback) | ✅ implemented, tested |
 | F6 | Visualization (self-contained HTML) + end-to-end demo | ✅ implemented, tested |
-| F7 | Binary / web / LLM adapters (multi-domain) | ⬜ |
+| F7 | Binary / web / LLM adapters (multi-domain) | ✅ implemented, tested |
 
 ## 10. Validation plan
 
