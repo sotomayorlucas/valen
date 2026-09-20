@@ -559,6 +559,24 @@ intraprocedural actual no aporta. Es la evidencia más clara del siguiente paso 
 sistemas (taint interprocedural) y una amenaza a la validez externa de los
 números de OWASP.
 
+\subsection{Escalabilidad de cada kernel}
+Cronometramos cada kernel sobre grafos sintéticos (log--log,
+Fig.~\ref{fig:scale}). \textbf{Forman--Ricci} ($1.8$\,ms @ $10^3$ aristas
+$\to 114$\,ms @ $10^5$) y \textbf{Mapper} ($0.7\to67$\,ms) son casi lineales. La
+\textbf{homología persistente} es superlineal ($28$\,ms @ $10^3 \to 1.5$\,s @
+$10^4 \to 159$\,s @ $10^5$) porque la extracción de ciclos fundamentales hace
+BFS del bosque de expansión por ciclo; un union--find consciente de persistencia
+la haría casi lineal. \textbf{Sinkhorn} ($0.86$\,s @ $10^3 \to 21.5$\,s @
+$5\times10^3$) y \textbf{Ollivier--Ricci exacto} ($52$\,ms @ $200 \to 937$\,ms @
+$10^3$) son cuadráticos, así que el último es solo para grafos pequeños (motivo
+de que Forman--Ricci sea el prior por defecto, \S8/C3). Los \textbf{Laplacianos
+espectral y dirigido densos} son cúbicos ($33$\,ms @ $300 \to 2.6$\,s @ $1200$
+nodos) y \emph{no} alcanzan $10^5$ nodos sin los solvers dispersos planeados en
+F2. El sobre práctico hoy es $\sim10^5$ aristas para las señales casi lineales,
+suficiente para los corpus usados aquí.
+
+\input{figs/scale}
+
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
 (i) una ruta de texto \texttt{objdump} sin dependencias (etiquetas de función

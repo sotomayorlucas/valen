@@ -21,6 +21,11 @@ if [ ! -d "$VENV" ]; then python3 -m venv "$VENV"; fi
 echo "== 1. build the Rust core =="
 cargo build --release --manifest-path core/Cargo.toml
 
+echo "== 1b. scalability benchmark (curves) =="
+cargo run --release --manifest-path core/Cargo.toml --bin scale 2>/dev/null \
+  | grep -E "^[a-z_]+," | grep -v "^kernel," > benchmarks/scale_results.csv
+echo "wrote benchmarks/scale_results.csv"
+
 echo "== 2. unit tests =="
 "$VENV/bin/python" -m pytest tests/ -q -p no:cacheprovider
 

@@ -534,6 +534,23 @@ provide. This is the clearest evidence for the next systems step
 (interprocedural taint) and a threat to the external validity of the OWASP
 numbers.
 
+\subsection{Scalability of each kernel}
+We timed every kernel on synthetic graphs (log--log, Fig.~\ref{fig:scale}).
+\textbf{Forman--Ricci} ($1.8$\,ms @ $10^3$ edges $\to 114$\,ms @ $10^5$) and
+\textbf{Mapper} ($0.7\to67$\,ms) are near-linear. \textbf{Persistent homology} is
+super-linear ($28$\,ms @ $10^3 \to 1.5$\,s @ $10^4 \to 159$\,s @ $10^5$) because
+the fundamental-cycle extraction BFSes the spanning forest per cycle; a
+persistence-aware union--find would make it near-linear. \textbf{Sinkhorn}
+($0.86$\,s @ $10^3 \to 21.5$\,s @ $5\times10^3$) and \textbf{exact
+Ollivier--Ricci} ($52$\,ms @ $200 \to 937$\,ms @ $10^3$) are quadratic, so the
+latter is only for small graphs (the reason Forman--Ricci is the default,
+\S8/C3). The \textbf{dense spectral and directed Laplacians} are cubic
+($33$\,ms @ $300 \to 2.6$\,s @ $1200$ nodes) and \emph{cannot} reach $10^5$
+nodes without the sparse solvers planned in F2. The practical envelope today is
+$\sim10^5$ edges for the near-linear signals, which covers the corpora used here.
+
+\input{figs/scale}
+
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
 (i) a zero-dependency \texttt{objdump}-text path (function labels $+$ \texttt{call}

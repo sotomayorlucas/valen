@@ -180,6 +180,11 @@ errores residuales son casos adversariales del benchmark, no caminos espurios.
 (`_a`/`_base`/`_bad`) y exige taint **interprocedural** — evidencia para el
 siguiente paso de sistemas y amenaza a la validez externa.
 
+**Escalabilidad** (`core/src/bin/scale.rs`, `benchmarks/scale_results.csv`):
+Forman–Ricci y Mapper casi lineales ($10^3\to10^5$ aristas en $<0.2$ s);
+homología superlineal (159 s @ $10^5$); Sinkhorn/Ollivier cuadráticos;
+Laplacianos densos cúbicos (tope práctico ~$1200$ nodos sin solver disperso).
+
 Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
 genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer
