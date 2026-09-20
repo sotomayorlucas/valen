@@ -9,7 +9,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
-\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{codegray},xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -181,9 +181,8 @@ with the concrete collecting semantics; soundness is proved in \S4.6.
 program points $v \in V$ (with an abstract state), whose morphisms are directed
 edges, and whose composition is path concatenation. The \emph{authorization
 functor} $F : \catProg \to \catAuth$ maps each point to a privilege level in the
-poset $\catAuth$ (e.g.\ $\text{untrusted} \sqsubseteq \text{user} \sqsubseteq
-\text{admin}$). A \emph{sanitizer} is an endomorphism $s : v \to v$ that is
-$\bot$-preserving (maps any tag to clean). \textbf{Naturality law:} a taint flow
+poset $\catAuth$ (e.g.\ \texttt{untrusted <= user <= admin}). A \emph{sanitizer} is an endomorphism $s : v \to v$ that is
+maps every tag to clean. \textbf{Naturality law:} a taint flow
 is a morphism whose image under the taint functor is non-$\bot$; it is a
 \emph{violation} when $F$ fails to commute on an $\texttt{auth}$ edge. This is
 made precise and proved in \S4.6.
@@ -196,7 +195,7 @@ taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
 
 \subsection{Formal core: naturality and soundness}
-\emph{Small-step semantics of the IR.} A state $\sigma$ maps variables to
+\emph{Small-step semantics of the IR.} A state maps variables to
 concrete values; the transition relation $v \xrightarrow{\sigma} v'$ steps
 through the IR. The concrete taint collecting semantics $\mathcal{C}$ maps each
 point to the set of executions that carry an untrusted value there. The abstract

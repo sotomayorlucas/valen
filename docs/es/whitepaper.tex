@@ -9,7 +9,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
-\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{codegray},xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -181,11 +181,10 @@ $(\alpha, \gamma)$ con la semántica recolectora concreta; la solidez se prueba 
 son puntos de programa $v \in V$ (con un estado abstracto), cuyos morfismos son
 aristas dirigidas y cuya composición es la concatenación de caminos. El
 \emph{funtor de autorización} $F : \catProg \to \catAuth$ mapea cada punto a un
-nivel de privilegio en el poset $\catAuth$ (p.~ej.\ $\text{no confiable}
-\sqsubseteq \text{usuario} \sqsubseteq \text{admin}$). Un \emph{sanitizador} es
-un endomorfismo $s : v \to v$ que preserva $\bot$ (mapea toda etiqueta a limpio).
+nivel de privilegio en el poset $\catAuth$ (p.~ej.\ \texttt{no confiable <= usuario <= admin}). Un \emph{sanitizador} es
+un endomorfismo $s : v \to v$ que mapea toda etiqueta a limpio.
 \textbf{Ley de naturalidad:} un flujo de taint es un morfismo cuya imagen bajo el
-funtor de taint no es $\bot$; es una \emph{violación} cuando $F$ no conmuta en una
+funtor de taint no es vacía; es una \emph{violación} cuando $F$ no conmuta en una
 arista \texttt{auth}. Esto se precisa y prueba en \S4.6.
 
 \subsection{Capa formal (ejecución simbólica y model checking)}
@@ -197,7 +196,7 @@ taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto d
 caminos fuente $\to$ sumidero.
 
 \subsection{Núcleo formal: naturalidad y solidez}
-\emph{Semántica small-step de la IR.} Un estado $\sigma$ mapea variables a
+\emph{Semántica small-step de la IR.} Un estado de ejecución mapea variables a
 valores concretos; la relación de transición $v \xrightarrow{\sigma} v'$ avanza
 por la IR. La semántica recolectora concreta de taint $\mathcal{C}$ mapea cada
 punto al conjunto de ejecuciones que llevan un valor no confiable allí. El
@@ -231,10 +230,10 @@ $\mathrm{San}(p) = \emptyset$.}
 guarda una frontera de privilegio, $F$ asigna a su destino un nivel estrictamente
 mayor que a su origen; componer con el morfismo de taint da
 $F(p)\circ \eta_s \neq \eta_k \circ T(p)$ para una etiqueta que cruza $e_i$, así
-que el cuadrado no conmuta. No hay sanitizador que restaure $\bot$, así que la
+que el cuadrado no conmuta. No hay sanitizador que restaure la limpieza, así que la
 falla es irreparable. $(\Rightarrow)$ Si $p \cap E_A = \emptyset$ toda arista
 preserva el nivel y el cuadrado conmuta; si hay un sanitizador, por definición
-preserva $\bot$, así que la etiqueta se mata y el cuadrado conmuta. $\square$
+mapea toda etiqueta a limpio, así que la etiqueta se mata y el cuadrado conmuta. $\square$
 
 \noindent La Proposición 2 es exactamente la regla operacional implementada como
 L4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una

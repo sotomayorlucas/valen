@@ -4,7 +4,7 @@
 \begin{tikzpicture}
 \begin{axis}[
   width=0.95\linewidth, height=6cm, xmode=log, ymode=log,
-  xlabel={aristas $|E|$}, ylabel={tiempo (ms)}, title={Escalabilidad de cada kernel (log--log)},
+  xlabel={aristas $|E|$}, ylabel={tiempo (ms)},
   legend pos=north west, legend style={font=\tiny}, grid=both, grid style=dotted,
 ]
 \addplot+[mark=*, solid, color=black] coordinates {(1000,0.58) (10000,7.28) (100000,55.32)};
@@ -23,4 +23,6 @@
 \addlegendentry{directed\_laplacian}
 \end{axis}
 \end{tikzpicture}
+\caption{Escalabilidad de cada kernel (log--log)}
+\label{fig:scale}
 \end{figure}

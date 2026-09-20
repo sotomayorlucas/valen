@@ -52,11 +52,12 @@ def figure_tex(data: dict, lang: str) -> str:
   xlabel={{{lb['x']}}}, ylabel={{{lb['y']}}},
   xmin=1, xmax={budget}, ymin=0.4, ymax=1.03,
   legend pos=south east, grid=both, grid style=dotted,
-  title={{{lb['title']}}},
 ]
 {chr(10).join(ax)}
 \\end{{axis}}
 \\end{{tikzpicture}}
+\\caption{{{lb['title']}}}
+\\label{{fig:oracle}}
 \\end{{figure}}
 
 \\begin{{center}}
@@ -108,12 +109,14 @@ def scale_figure_tex(lang: str) -> str:
 \\begin{{tikzpicture}}
 \\begin{{axis}}[
   width=0.95\\linewidth, height=6cm, xmode=log, ymode=log,
-  xlabel={{{xlabel}}}, ylabel={{{ylabel}}}, title={{{title}}},
+  xlabel={{{xlabel}}}, ylabel={{{ylabel}}},
   legend pos=north west, legend style={{font=\\tiny}}, grid=both, grid style=dotted,
 ]
 {chr(10).join(plots)}
 \\end{{axis}}
 \\end{{tikzpicture}}
+\\caption{{{title}}}
+\\label{{fig:scale}}
 \\end{{figure}}
 """
 

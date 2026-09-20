@@ -7,7 +7,6 @@
   xlabel={\# verification queries (sink candidates)}, ylabel={cumulative recall},
   xmin=1, xmax=6, ymin=0.4, ymax=1.03,
   legend pos=south east, grid=both, grid style=dotted,
-  title={Cost curve: cumulative recall vs.\ verification budget},
 ]
 \addplot+[mark=*, dashed, thick] coordinates {(1,0.755) (2,0.887) (3,0.912) (4,0.940) (5,0.989) (6,1.000)};
 \addlegendentry{dfs}
@@ -19,6 +18,8 @@
 \addlegendentry{random}
 \end{axis}
 \end{tikzpicture}
+\caption{Cost curve: cumulative recall vs.\ verification budget}
+\label{fig:oracle}
 \end{figure}
 
 \begin{center}
