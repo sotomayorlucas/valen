@@ -462,9 +462,19 @@ def write_dashboard(path: str) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Generate the MANIFOLD dashboard.")
-    ap.add_argument("--out", default="dashboard.html")
+    ap = argparse.ArgumentParser(description="Generate or serve the MANIFOLD dashboard / web UI.")
+    ap.add_argument("--out", default="dashboard.html", help="write a static dashboard file (default)")
+    ap.add_argument("--serve", action="store_true", help="serve the interactive web UI instead")
+    ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--port", type=int, default=None, help="implies --serve")
     args = ap.parse_args()
+
+    if args.serve or args.port is not None:
+        from .server import serve
+
+        serve(args.host, args.port or 8000)
+        return 0
+
     write_dashboard(args.out)
     print(f"dashboard -> {args.out}")
     return 0
