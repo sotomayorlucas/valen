@@ -27,6 +27,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
     parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
     parser.add_argument("--agent", action="store_true", help="run the autonomous agent (map->rank->hypothesize->verify)")
+    parser.add_argument("--viz", metavar="FILE.html", help="render the vulnerability manifold to a self-contained HTML file")
     parser.add_argument("--language", help="override language detection")
     args = parser.parse_args(argv)
 
@@ -78,6 +79,26 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"      evidence: {e.evidence}")
         if not report.entries:
             print("  (no findings)")
+
+    if args.viz and language == "python":
+        from agent.agent import ManifoldAgent
+        from .analysis.math_core import run_core
+        from .viz import write_html
+
+        report = ManifoldAgent().run(code, path=str(path))
+        try:
+            math = run_core(result.graph)
+        except Exception:
+            math = None
+        write_html(
+            result.graph,
+            args.viz,
+            math=math,
+            report=report,
+            title="MANIFOLD",
+            subtitle=f"{path} — {result.graph.node_count} nodes, {result.graph.edge_count} edges",
+        )
+        print(f"== manifold written to {args.viz}")
     return 0
 
 

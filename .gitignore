@@ -17,3 +17,6 @@ node_modules/
 # OS / editor
 .DS_Store
 *.swp
+
+# viz output
+viz/out/

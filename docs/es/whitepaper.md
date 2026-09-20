@@ -284,7 +284,7 @@ esquema; el lado Rust se verifica con `cargo test`).
 | F3 | TDA (homología persistente H0/H1, Mapper) | ✅ implementado, testeado |
 | F4 | Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3) | ✅ implementado, testeado |
 | F5 | Agente LLM autónomo (LiteLLM, fallback offline) | ✅ implementado, testeado |
-| F6 | Visualización + demo end-to-end | ⬜ |
+| F6 | Visualización (HTML autocontenido) + demo end-to-end | ✅ implementado, testeado |
 | F7 | Adaptadores binario / web / LLM (multi-dominio) | ⬜ |
 
 ## 10. Plan de validación

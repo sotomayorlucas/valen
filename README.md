@@ -28,7 +28,7 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 - [x] **F3** — Topología (homología persistente H0/H1, Mapper) (Rust)
 - [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3)
 - [x] **F5** — Agente LLM autónomo (LiteLLM, fallback offline)
-- [ ] **F6** — Visualización + demo end-to-end
+- [x] **F6** — Visualización (HTML autocontenido) + demo end-to-end
 - [ ] **F7** — Adaptadores binario / web / LLM
 
 ## Estructura / Layout
@@ -87,4 +87,14 @@ un LLM vía LiteLLM, define las variables de entorno y se activa automáticament
 export MANIFOLD_LLM_MODEL="gpt-4o-mini"      # o claude-3-5-sonnet-*, ollama/llama3, ...
 export MANIFOLD_LLM_API_KEY="..."             # opcional para endpoints locales
 export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLLM)
+```
+
+## Visualización y demo (F6)
+
+```bash
+# Renderiza el manifold (grafo IR + señales + findings) a un HTML autocontenido
+.venv/bin/python -m manifold.cli examples/python/sqli.py --viz /tmp/sqli.html
+
+# Demo end-to-end: analiza todos los ejemplos y genera HTML + summary.json
+.venv/bin/python scripts/demo.py   # escribe en viz/out/
 ```
