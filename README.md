@@ -217,7 +217,7 @@ siguiente paso de sistemas y amenaza a la validez externa.
 
 **Escalabilidad** (`core/src/bin/scale.rs`, `benchmarks/scale_results.csv`):
 Forman–Ricci y Mapper casi lineales ($10^3\to10^5$ aristas en $<0.2$ s);
-homología superlineal (159 s @ $10^5$); Sinkhorn/Ollivier cuadráticos;
+homología superlineal (123 s @ $10^5$); Sinkhorn/Ollivier cuadráticos;
 Laplacianos densos cúbicos (tope práctico ~$1200$ nodos sin solver disperso).
 
 **CVEs reales** (`benchmarks/run_cves.py`): 9 CVEs de OSV/GitHub Advisories, 21

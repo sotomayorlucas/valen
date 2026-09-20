@@ -7,19 +7,19 @@
   xlabel={aristas $|E|$}, ylabel={tiempo (ms)}, title={Escalabilidad de cada kernel (log--log)},
   legend pos=north west, legend style={font=\tiny}, grid=both, grid style=dotted,
 ]
-\addplot+[mark=*, solid, color=black] coordinates {(1000,1.81) (10000,8.26) (100000,114.39)};
+\addplot+[mark=*, solid, color=black] coordinates {(1000,0.58) (10000,7.28) (100000,55.32)};
 \addlegendentry{forman}
-\addplot+[mark=*, dotted, color=red] coordinates {(1000,27.66) (10000,1514.11) (100000,159011.90)};
+\addplot+[mark=*, dotted, color=red] coordinates {(1000,11.15) (10000,1132.54) (100000,123013.55)};
 \addlegendentry{homology}
-\addplot+[mark=*, dashed, color=teal] coordinates {(1000,0.72) (10000,7.03) (100000,66.97)};
+\addplot+[mark=*, dashed, color=teal] coordinates {(1000,0.51) (10000,3.68) (100000,56.29)};
 \addlegendentry{mapper}
-\addplot+[mark=*, dashdotted, color=orange] coordinates {(1000,864.90) (2000,3781.27) (5000,21512.07)};
+\addplot+[mark=*, dashdotted, color=orange] coordinates {(1000,713.84) (2000,2802.92) (5000,16395.86)};
 \addlegendentry{sinkhorn}
-\addplot+[mark=*, densely dotted, color=purple] coordinates {(200,52.27) (500,247.48) (1000,937.10)};
+\addplot+[mark=*, densely dotted, color=purple] coordinates {(200,33.71) (500,193.93) (1000,719.83)};
 \addlegendentry{ollivier\_exact}
-\addplot+[mark=*, solid, color=blue] coordinates {(897,33.01) (1796,254.80) (3598,2583.31)};
+\addplot+[mark=*, solid, color=blue] coordinates {(897,25.75) (1796,194.74) (3598,1721.04)};
 \addlegendentry{spectral\_fiedler}
-\addplot+[mark=*, dashed, color=brown] coordinates {(897,30.10) (1796,220.50) (3598,2091.59)};
+\addplot+[mark=*, dashed, color=brown] coordinates {(897,22.73) (1796,165.81) (3598,1255.42)};
 \addlegendentry{directed\_laplacian}
 \end{axis}
 \end{tikzpicture}

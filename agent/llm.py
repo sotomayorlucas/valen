@@ -22,10 +22,15 @@ from typing import List, Optional
 try:
     import litellm  # type: ignore
 
+    litellm.suppress_debug_info = True
     _LITELLM_AVAILABLE = True
 except ImportError:  # pragma: no cover
     litellm = None
     _LITELLM_AVAILABLE = False
+
+_PROVIDER_ENV = ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "AZURE_API_KEY",
+                 "GEMINI_API_KEY", "GROQ_API_KEY", "DEEPSEEK_API_KEY",
+                 "OPENROUTER_API_KEY")
 
 
 class LLMClient:
@@ -42,14 +47,21 @@ class LLMClient:
         self.temperature = temperature
 
     @property
+    def configured(self) -> bool:
+        """True if an endpoint/credential is available through any supported env."""
+        return bool(self.api_key or self.base_url) or any(
+            os.environ.get(v) for v in _PROVIDER_ENV
+        )
+
+    @property
     def available(self) -> bool:
-        """True if LiteLLM is importable (an actual call may still fail)."""
-        return _LITELLM_AVAILABLE
+        """True if LiteLLM is importable *and* an endpoint is configured."""
+        return _LITELLM_AVAILABLE and self.configured
 
     def complete(self, messages: List[dict]) -> Optional[str]:
         """Send a chat completion request; return the text or ``None`` on any
         failure (missing library, no credentials, network error, ...)."""
-        if not _LITELLM_AVAILABLE:
+        if not self.available:
             return None
         try:
             kwargs = {}
