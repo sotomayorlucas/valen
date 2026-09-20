@@ -374,6 +374,59 @@ MANIFOLD es una herramienta de
 defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
 alentamos la divulgación coordinada.
 
+\subsection{Estudio empírico sobre OWASP Benchmark 1.2}
+Ejecutamos el adaptador Java sobre el corpus completo y perfilamos los falsos
+negativos. Tres carencias \emph{generalizables} explicaban casi toda la pérdida,
+y se corrigieron (ninguna está ajustada al benchmark):
+
+\begin{enumerate}[label=(\roman*)]
+  \item \textbf{Taint con conciencia de ramas.} Un pase secuencial
+        insensible al camino permitía que un chequeo de nulo
+        (\texttt{if (param == null) param = "";}) borrara el taint, aunque el
+        valor manchado sobrevive en el otro camino. Ahora tomamos una instantánea
+        de ambas ramas y \emph{unimos} sus entornos (unión de etiquetas), el
+        análogo de taint del supremo de un retículo.
+  \item \textbf{Taint del receptor y de estado.} Sinks como
+        \texttt{statement.execute()} y \texttt{pb.start()} no reciben argumentos
+        --- el taint vive en el objeto \emph{receptor}, obtenido de un
+        constructor/mutador manchado. Propagamos el taint del receptor y
+        marcamos una variable como manchada cuando un mutador
+        (\texttt{add}/\texttt{put}/\texttt{command}/...) le almacena un valor
+        manchado.
+  \item \textbf{Cobertura de sinks.} La familia XSS incluye
+        \texttt{printf}/\texttt{format}, y solo las escrituras al \emph{writer de
+        la respuesta HTTP} son XSS --- \texttt{System.out.println} de datos
+        manchados no lo es. Restringir los sinks XSS al writer de respuesta
+        eliminó una gran clase de falsos positivos.
+\end{enumerate}
+
+La ablación aísla cada contribución (precisión $P$, recall $R$, F1; categorías de
+taint, 1698 casos):
+\begin{center}
+\begin{tabular}{lccc}
+\toprule
+variante & $P$ & $R$ & F1 \\
+\midrule
+adaptador naive inicial & 0.515 & 0.426 & 0.466 \\
++ branch-join, taint receptor/estado, cobertura de sinks & 0.530 & 0.856 & 0.655 \\
++ restricción de writer XSS (final) & 0.549 & 0.834 & 0.662 \\
+\midrule
+final, sin branch-join & 0.515 & 0.555 & 0.535 \\
+final, sin restricción XSS & 0.530 & 0.856 & 0.655 \\
+\bottomrule
+\end{tabular}
+\end{center}
+El taint con conciencia de ramas es la palanca dominante de recall ($+0.28$); la
+restricción del writer de respuesta es la palanca de precisión. El adaptador
+final alcanza $P=0.549$, $R=0.834$, $\mathrm{F1}=0.662$ en las categorías de
+taint y $P=0.572$, $R=0.842$, $\mathrm{F1}=0.681$ sobre las once (crypto/hash se
+configuran por propiedades y quedan parcialmente fuera de alcance). Los errores
+\emph{residuales} son los casos ``false'' deliberadamente adversariales del
+benchmark --- casos discutibles de query parametrizada y de lista de
+\texttt{ProcessBuilder} --- y flujos distractores entre categorías: precisamente
+la precisión que las señales topológicas/espectrales, el verificador Z3 y el
+campo calibrado están diseñados para recuperar.
+
 \begin{thebibliography}{9}
 \item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
 \item F.~Chung, \emph{Spectral Graph Theory}, 1997.

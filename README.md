@@ -137,15 +137,20 @@ pip install tree-sitter-java
     --csv .../expectedresults-1.2.csv
 ```
 
-Resultados del adaptador Java (baseline naive):
+Resultados del adaptador Java (corpus completo):
 
 | scope | precisión | recall | F1 |
 |---|---|---|---|
-| categorías de taint (7, 1698 casos) | 0.515 | 0.426 | 0.466 |
-| todas las categorías (11, 2740 casos) | 0.544 | 0.634 | 0.586 |
+| categorías de taint (7, 1698 casos) | 0.549 | 0.834 | 0.662 |
+| todas las categorías (11, 2740 casos) | 0.572 | 0.842 | 0.681 |
+
+Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
+genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
+receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer
+de respuesta** (`System.out.println` no es XSS). Ablación en el whitepaper.
 
 Categorías taint: sqli/cmdi/pathtraver/xss/ldapi/xpathi/trustbound. Las categorías
-por-patrón `crypto`/`hash` se configuran vía `.properties` (recall 1.0 con regex
-sobre literales); `weakrand`/`securecookie` son detectables por fuente. **SARD**:
-el cargador (`load_directory`, convención `good`/`bad`) está listo; el corpus
-completo (Juliet) es una descarga de gran tamaño y mayormente C/C++/Java.
+por-patrón `crypto`/`hash` se configuran vía `.properties`; `weakrand`/`securecookie`
+son detectables por fuente. **SARD**: el cargador (`load_directory`, convención
+`good`/`bad`) está listo; el corpus completo (Juliet) es una descarga de gran
+tamaño y mayormente C/C++/Java.

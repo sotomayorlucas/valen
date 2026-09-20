@@ -35,7 +35,7 @@ _SINKS: Dict[str, str] = {
     "prepareCall": "sqli", "addBatch": "sqli",
     "exec": "cmdi", "start": "cmdi", "loadLibrary": "cmdi", "eval": "cmdi",
     "write": "xss", "println": "xss", "print": "xss", "append": "xss",
-    "sendError": "xss",
+    "printf": "xss", "format": "xss", "sendError": "xss",
     "search": "ldapi", "lookup": "ldapi",
     "evaluate": "xpathi", "compile": "xpathi",
     "setAttribute": "trustbound",
@@ -45,6 +45,12 @@ _SINKS: Dict[str, str] = {
 _PATHTRAVER_TYPES = {"FileInputStream", "FileReader", "FileWriter", "RandomAccessFile", "File", "FileOutputStream"}
 
 _SANITIZERS = {"encodeForSQL", "encodeForHTML", "encodeForJavaScript", "encodeForOS", "encodeForLDAP", "escapeSql", "escapeHtml"}
+
+# methods that store their argument into the receiver object (state taint).
+_MUTATORS = {
+    "add", "put", "putAll", "append", "command", "setString", "setObject",
+    "setInt", "setHeader", "setAttribute", "insert", "write", "println", "print",
+}
 
 
 def _name_of(node: Optional[Node]) -> str:
@@ -71,10 +77,31 @@ class JavaIngest:
         graph.meta = {"language": "java", "file": path}
         findings: List[Finding] = []
         env: Dict[str, Set[str]] = {}
+        self._seen: Set[tuple] = set()
+        self._writers: Set[str] = set()
 
         self._walk(root, graph, env, findings, path)
         findings.extend(self._pattern_findings(code, path))
         return AnalysisResult(graph=graph, findings=findings)
+
+    def _emit(self, node: Node, name: str, category: str, findings: List[Finding], path: str) -> None:
+        key = (category, name, node.start_point[0])
+        if key in self._seen:
+            return
+        self._seen.add(key)
+        findings.append(
+            Finding(
+                kind="taint",
+                title=f"{category} via {name}",
+                description=f"Untrusted input reaches {category} sink {name}.",
+                severity="high" if category in ("sqli", "cmdi") else "medium",
+                category=category,
+                file=path,
+                line=node.start_point[0] + 1,
+                source_names=["input"],
+                sink_name=name,
+            )
+        )
 
     # -- taint over statements --------------------------------------------
     def _walk(self, node: Node, graph: Graph, env: Dict[str, Set[str]], findings: List[Finding], path: str) -> None:
@@ -88,12 +115,42 @@ class JavaIngest:
                 self._expression(child.named_children[0] if child.named_children else None, env, findings, path)
             elif t == "assignment_expression":
                 self._assign(child, env, findings, path)
+            elif t == "if_statement":
+                self._if_statement(child, graph, env, findings, path)
             elif t == "return_statement":
                 for c in child.named_children:
                     if c.type not in ("return", ";"):
                         self._taint(c, env, findings, path)
             else:
                 self._walk(child, graph, env, findings, path)
+
+    @staticmethod
+    def _clone_env(env: Dict[str, Set[str]]) -> Dict[str, Set[str]]:
+        return {k: set(v) for k, v in env.items()}
+
+    def _if_statement(self, node: Node, graph: Graph, env: Dict[str, Set[str]], findings: List[Finding], path: str) -> None:
+        """Branch-aware taint: join (union) the two branch environments."""
+        consequence = node.child_by_field_name("consequence")
+        alternative = node.child_by_field_name("alternative")
+
+        snapshot = self._clone_env(env)
+        if consequence is not None:
+            self._walk(consequence, graph, env, findings, path)
+        then_env = self._clone_env(env)
+
+        env.clear()
+        env.update(snapshot)
+        if alternative is not None:
+            self._walk(alternative, graph, env, findings, path)
+        else_env = self._clone_env(env)
+
+        merged: Dict[str, Set[str]] = {}
+        for key in set(then_env) | set(else_env):
+            tags = set(then_env.get(key, set())) | set(else_env.get(key, set()))
+            if tags:
+                merged[key] = tags
+        env.clear()
+        env.update(merged)
 
     def _assign(self, node: Node, env: Dict[str, Set[str]], findings: List[Finding], path: str) -> None:
         # variable_declarator: name = value ; assignment_expression: left = right
@@ -107,10 +164,21 @@ class JavaIngest:
         if not target:
             return
         tags = self._taint(right, env, findings, path)
+        if right is not None and "getWriter" in right.text.decode():
+            self._writers.add(target)
         if tags:
             env[target] = tags
         else:
             env.pop(target, None)
+
+    def _is_response_writer(self, obj: Optional[Node]) -> bool:
+        if obj is None:
+            return False
+        if obj.type == "method_invocation" and _name_of(obj) == "getWriter":
+            return True
+        if obj.type == "identifier" and obj.text.decode() in self._writers:
+            return True
+        return False
 
     def _expression(self, expr: Optional[Node], env: Dict[str, Set[str]], findings: List[Finding], path: str) -> None:
         if expr is None:
@@ -131,31 +199,45 @@ class JavaIngest:
         if t == "method_invocation":
             name = _name_of(node)
             obj = node.child_by_field_name("object")
+            if name in _SANITIZERS:
+                return set()
             tags: Set[str] = set()
             if name in _SOURCE_METHODS or "getParameter" in name or "getHeader" in name or "getCookie" in name:
                 tags.add("input")
-            if name in _SANITIZERS:
-                return set()
-            if name in _SINKS:
-                self._sink(node, name, obj, _SINKS[name], env, findings, path)
-                return set()
-            # Propagate the receiver's taint (e.g. taintedEnum.nextElement()).
+            # receiver taint (e.g. taintedEnum.nextElement(), taintedStmt.execute()).
             if obj is not None:
                 tags |= self._taint(obj, env, findings, path)
-            # Propagate through arguments.
+            # argument taint.
+            arg_tags: Set[str] = set()
             for arg in _args(node):
-                tags |= self._taint(arg, env, findings, path)
+                arg_tags |= self._taint(arg, env, findings, path)
+            tags |= arg_tags
+
+            if name in _SINKS:
+                category = _SINKS[name]
+                # Only writes to the HTTP response writer are XSS; System.out /
+                # logger / exception prints are not.
+                if category == "xss" and not self._is_response_writer(obj):
+                    return tags
+                if tags:
+                    self._emit(node, name, category, findings, path)
+                # Propagate so the result object stays tainted (prepareStatement
+                # -> statement -> execute()).
+                return tags
+
+            # state taint: a mutator stores its argument into the receiver.
+            if name in _MUTATORS and arg_tags and obj is not None and obj.type == "identifier":
+                env.setdefault(obj.text.decode(), set()).update(arg_tags)
             return tags
 
         if t == "object_creation_expression":
             type_node = node.child_by_field_name("type")
             type_name = type_node.text.decode() if type_node else ""
-            if type_name.split(".")[-1] in _PATHTRAVER_TYPES:
-                self._sink(node, type_name, None, "pathtraver", env, findings, path)
-                return set()
             tags = set()
             for arg in _args(node):
                 tags |= self._taint(arg, env, findings, path)
+            if type_name.split(".")[-1] in _PATHTRAVER_TYPES and tags:
+                self._emit(node, type_name, "pathtraver", findings, path)
             return tags
 
         if t == "binary_expression":
@@ -175,27 +257,6 @@ class JavaIngest:
         for c in node.named_children:
             tags |= self._taint(c, env, findings, path)
         return tags
-
-    def _sink(self, node, name, obj, category, env, findings, path) -> None:
-        args = _args(node)
-        arg_tags: Set[str] = set()
-        for arg in args:
-            arg_tags |= self._taint(arg, env, findings, path)
-        if not arg_tags:
-            return
-        findings.append(
-            Finding(
-                kind="taint",
-                title=f"{category} via {name}",
-                description=f"Untrusted input reaches {category} sink {name}.",
-                severity="high" if category in ("sqli", "cmdi") else "medium",
-                category=category,
-                file=path,
-                line=node.start_point[0] + 1,
-                source_names=["input"],
-                sink_name=name,
-            )
-        )
 
     # -- pattern categories -------------------------------------------------
     def _pattern_findings(self, code: str, path: str) -> List[Finding]:
