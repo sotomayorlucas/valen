@@ -172,7 +172,7 @@ alto grado.
 
 \subsection{Capa algebraica (retículos y teoría de categorías)}
 \emph{Interpretación abstracta.} El \emph{retículo de taint}
-$\mathbb{T} = \{\bot = \text{limpio} \sqsubseteq \top = \text{manchado}\}$ (un
+$\mathbb{T} = \{\bot = \text{limpio},\ \top = \text{manchado}\}$ (un
 retículo producto sobre etiquetas) da una \emph{conexión de Galois}
 $(\alpha, \gamma)$ entre la semántica recolectora concreta y el dominio abstracto
 de taint, garantizando solidez. \emph{Teoría de categorías.} El programa es una
@@ -183,8 +183,8 @@ vulnerabilidad es un flujo de taint que rompe el cuadrado de naturalidad de $F$.
 \subsection{Capa formal (ejecución simbólica y model checking)}
 La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
 simbólico $\sigma$; un solucionador SMT comprueba
-$\mathrm{SAT}(\Phi \wedge \text{malo})$, cuyo modelo es un exploit concreto. La
-alcanzabilidad es la fórmula CTL $\mathbf{EF}\,\mathrm{malo}$; la propagación de
+$\mathrm{SAT}(\phi_{\text{malo}})$, cuyo modelo es un exploit concreto. La
+alcanzabilidad es la fórmula CTL $\mathbf{EF}\,\phi_{\text{malo}}$; la propagación de
 taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto de
 caminos fuente $\to$ sumidero.
 
@@ -238,7 +238,7 @@ L2 & Ciclo ($H_1$ persistente) & reentrancia, recursión infinita \\
 L3 & Corte de confianza (corte de Fiedler) & inyección que cruza la frontera de confianza \\
 L4 & Ruptura de naturalidad & violación arbitraria de taint \\
 L5 & Outlier de persistencia & rasgo real vs.\ espurio \\
-L6 & Alcanzabilidad ($\mathrm{SAT}(\Phi \wedge \text{malo})$) & exploit concreto \\
+L6 & Alcanzabilidad ($\mathrm{SAT}(\phi_{\text{malo}})$) & exploit concreto \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -435,8 +435,8 @@ campo calibrado están diseñados para recuperar.
 
 \subsection{Comparación con SAST industrial y el objetivo neuro-simbólico}
 El puntaje oficial de OWASP Benchmark es el \emph{índice de Youden}
-($J = \mathrm{TPR} - \mathrm{FPR}$, es decir TPR menos FPR; el \emph{Benchmark
-Accuracy Score}). La
+$J = \text{TPR} - \text{FPR}$ (el \emph{Benchmark Accuracy Score}, es decir TPR
+menos FPR). La
 Tabla~\ref{tab:cmp-es} sitúa a MANIFOLD frente a dos herramientas ampliamente
 desplegadas. Las filas de SonarQube y CodeQL son números \emph{reportados} en
 evaluaciones públicas de OWASP~Benchmark~1.2; la fila ``adaptador MANIFOLD'' es
@@ -451,17 +451,17 @@ de la Etapa~2 (\textbf{aún no medido}), bajo el protocolo de abajo.
 \toprule
 \textbf{Herramienta / config.} & \textbf{TPR} & \textbf{FPR} & \textbf{Prec.} & \textbf{F1} & \textbf{J} & \textbf{Tiempo} \\
 \midrule
-SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
-GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
-\emph{MANIFOLD} adaptador (medido) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & \textasciitilde45 s \\
-\emph{MANIFOLD} $+V(x)$ (proyectado) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & \textasciitilde1.3 min \\
-\emph{MANIFOLD} $+V(x)+$Z3 (proyectado) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & \textasciitilde4 min \\
+SonarQube (SAST) (a) & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & 3 min \\
+GitHub CodeQL (default) (a) & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & 18 min \\
+\emph{MANIFOLD} adaptador (medido) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
+\emph{MANIFOLD} +V(x) (proyectado) (c) & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & 1.3 min \\
+\emph{MANIFOLD} +V(x)+Z3 (proyectado) (c) & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & 4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 casos: 1415 vulnerables / 1325 seguros).
-\textsuperscript{(a)}~reportado en evaluaciones públicas, no re-ejecutado aquí.
-\textsuperscript{(b)}~nuestro adaptador Java medido (once categorías).
-\textsuperscript{(c)}~\textbf{proyectado} bajo el protocolo de la Etapa~2, no
+(a)~reportado en evaluaciones públicas, no re-ejecutado aquí.
+(b)~nuestro adaptador Java medido (once categorías).
+(c)~\textbf{proyectado} bajo el protocolo de la Etapa~2, no
 medido; la verificación SMT de Java es trabajo futuro.}
 \label{tab:cmp-es}
 \end{table}

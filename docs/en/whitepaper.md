@@ -1,6 +1,6 @@
 # MANIFOLD — A Mathematical Engine for Mapping Vulnerabilities
 
-**Whitepaper v0.1** · *Working draft — not peer reviewed*
+**Whitepaper v0.1 (rev 7)** · *Working draft — not peer reviewed*
 
 > *"Map the code as a space; let the geometry of that space reveal the flaw."*
 
@@ -8,304 +8,191 @@
 
 ## Abstract
 
-MANIFOLD treats a software artifact not as a bag of rules to match, but as a
+MANIFOLD treats a software artifact not as a bag of rules to match but as a
 **mathematical object**: a typed, weighted graph enriched with *algebraic*,
-*spectral*, *topological* and *geometric* structure. Over this object we compute
-a scalar field of **vulnerability potential** $V(x)$, which surfaces anomalous
-regions as geometric/topological/spectral *features* rather than as literal
-string matches. An **autonomous LLM agent** navigates the resulting "manifold",
-formulates hypotheses about those regions, and dispatches **formal verifiers**
-(SMT, symbolic execution, abstract interpretation) that confirm or refute each
-hypothesis — closing the loop between statistical intuition and mathematical
-proof.
-
-This document defines the intermediate representation, formalizes each
-mathematical layer, states the mapping laws that connect mathematical features
-to vulnerability classes, and specifies the agent architecture and roadmap.
+*spectral*, *topological* and *geometric* structure. Over it we compute a scalar
+field of **vulnerability potential** $V(x)$, and an **autonomous LLM agent**
+navigates the resulting "manifold", formulates hypotheses, and dispatches
+**formal verifiers** (SMT, symbolic execution, abstract interpretation) that
+confirm or refute them. This document defines the IR, formalizes each layer,
+states the mapping laws, specifies the agent, and reports an empirical study on
+the full **OWASP Benchmark 1.2** (2740 Java cases).
 
 ---
 
 ## 1. Motivation
 
-Traditional scanners (SAST/DAST) enumerate syntactic patterns. They are
-brittle: they miss novel vulnerabilities and drown analysts in false positives.
-Two capabilities are missing:
-
-1. **A unified, quantitative representation** of "program structure" onto which
-   many *independent* signals can be projected and fused.
-2. **A reasoning loop** that converts "suspicious region" into "proven
-   vulnerability" — the LLM supplies the intuition, mathematics supplies the
-   proof.
-
-MANIFOLD provides both.
+Classic SAST enumerates syntactic patterns: brittle, noisy. On OWASP Benchmark
+1.2, deployed tools collapse on the **Youden index** $J = \mathrm{TPR}-\mathrm{FPR}$
+(SonarQube $J\approx+0.01$; CodeQL $J\approx+0.22$). Two capabilities are
+missing: (i) a **unified, quantitative representation**, and (ii) a **reasoning
+loop** turning suspicion into proof.
 
 ## 2. The core idea
 
 ```
-artifact ──► IR (typed graph) ──► mathematical layers ──► scalar field V(x)
-                                        │                        │
-                                        └── embeddings/persistence/curvature
-                                                               │
-                                                  AGENT LLM  ◄─┘  (navigate, hypothesize)
-                                                               │
-                                                  formal verifiers (prove/refute)
+artifact → IR (typed graph) → mathematical layers → V(x) → LLM agent → formal verifier
+                     ↑__________________ re-embed __________________|
 ```
 
 A vulnerability is **not** a pattern; it is a *violation of a structural
 invariant* (a broken naturality condition, a persistent cycle, a negative
-curvature chokepoint, a taint flow across a spectral trust cut). Each layer
-detects a different *kind* of invariant violation, and the fused field $V(x)$
-ranks regions for the agent to inspect.
+curvature chokepoint, a taint flow across a trust cut).
 
 ## 3. The Intermediate Representation (IR)
 
-### Definition 1 (Program graph)
-
-A **program graph** is a tuple
-
-$$
-G = (V, E, \tau_V, \tau_E, \omega)
-$$
-
-where
-
-* $V$ is a finite set of **nodes** (modules, functions, blocks, statements,
-  calls, variables, sources, sinks);
-* $E \subseteq V \times V$ is a set of directed **edges**;
-* $\tau_V : V \to \mathbb{N}_K$ assigns each node a **kind** from a fixed set
-  $K = \{\text{module, function, block, statement, call, assign, variable, parameter, source, sink}\}$;
-* $\tau_E : E \to \mathcal{T}$ assigns each edge a **type**
-  $\mathcal{T} = \{\text{control, data, call, taint, trust, auth}\}$;
-* $\omega : E \to \mathbb{R}_{\ge 0}$ assigns each edge a non-negative **weight**
-  (default $1$; used later for curvature and persistence).
-
-The IR is the single source of truth. Every adapter (source code, binary, web
-API, LLM agent) must produce a program graph; every analysis consumes it. The
-schema is language-agnostic and JSON-serializable (the Python and Rust layers
-share the identical schema).
+**Definition 1 (Program graph).** $G = (V, E, \tau_V, \tau_E, \omega)$ where
+nodes carry a kind (module, function, block, statement, call, assign, variable,
+parameter, source, sink, gate), edges carry a type (control, data, call, taint,
+trust, auth), and $\omega$ is a non-negative weight. The IR is the single source
+of truth, JSON-serializable, shared verbatim between the Python and Rust layers.
 
 ## 4. Mathematical layers
 
-For each layer we fix a subgraph by edge type $\tau_E$, then compute structure.
+### 4.1 Spectral
+$L_t = D_t - A_t$; $\lambda_2$ (algebraic connectivity), the Fiedler vector, the
+spectral embedding and the Cheeger bound. **Signal:** spectral anomaly.
 
-### 4.1 Spectral layer (algebraic graph theory)
+### 4.2 Topological (TDA)
+Persistent homology of a filtration; $\beta_0$ components, $\beta_1$ independent
+cycles; persistence diagrams; Mapper builds the navigable nerve. **Signal:**
+persistence outliers / long-lived $H_1$ generators.
 
-For an edge type $t$, define the symmetric **adjacency** $A_t$ and **degree**
-$D_t$, and the **combinatorial Laplacian**
+### 4.3 Geometric
+Ollivier–Ricci $\kappa(u,v) = 1 - W_1(m_u,m_v)/d(u,v)$ (exact LP, or Sinkhorn
+entropic approximation); Forman–Ricci $\kappa_F = 4 - \deg(u) - \deg(v)$.
+**Signal:** curvature chokepoints.
 
-$$
-L_t = D_t - A_t.
-$$
+### 4.4 Algebraic
+The taint lattice $\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}$
+and a Galois connection $(\alpha, \gamma)$; effects are monads and authorization
+is a functor $F$. **Design law:** a vulnerability is a taint flow that breaks the
+naturality square of $F$ (operationalized in §8, C4).
 
-$L_t$ is positive semidefinite; its spectrum $0 = \lambda_1 \le \lambda_2 \le \cdots$ encodes
-global structure:
-
-* $\lambda_2$ is the **algebraic connectivity** (Fiedler value). Its eigenvector
-  $f_2$ — the **Fiedler vector** — induces a canonical cut $S^+ = \{v : f_2(v) \ge 0\}$.
-* The **spectral embedding** $\Phi^{(d)}(v) = (f_2(v), f_3(v), \dots, f_{d+1}(v))$ maps
-  nodes into $\mathbb{R}^d$ so that graph distance is approximately Euclidean distance.
-* The Cheeger inequality bounds the **bottleneck ratio** $h(G)$ by
-  $\frac{\lambda_2}{2} \le h(G) \le \sqrt{2\,d_{\max}\lambda_2}$.
-
-**Signal 1 (spectral anomaly).** The *reconstruction error* of a node under a
-low-rank eigenmap reconstruction, and its distance from the Fiedler cut, are
-used as anomaly scores: nodes that "don't fit" the low-dimensional skeleton are
-candidates for inspection.
-
-### 4.2 Topological layer (persistent homology)
-
-From the program graph we build a **filtration** of simplicial complexes — e.g. a
-Vietoris–Rips or flag (clique) complex over the shortest-path metric, or a
-filtration driven by the edge weight $\omega$. Applying persistent homology
-yields, for each dimension $k$, a **persistence diagram** $\mathrm{Dgm}_k$ of
-birth–death pairs.
-
-* $\beta_0$ counts connected components (modules, unreachable islands).
-* $\beta_1$ counts **independent cycles** — loops in the call/data-flow graph.
-* Points in $\mathrm{Dgm}_k$ far from the diagonal have high **persistence**
-  $\mathrm{death} - \mathrm{birth}$ and represent robust features; near-diagonal
-  points are topological noise.
-
-**Signal 2 (persistence outliers).** Long-lived $H_1$ generators and high-persistence
-points are ranked as structurally significant.
-
-The **Mapper** algorithm (Singh–Mémoli–Carlsson) produces a *visual* map: choose a
-filter function $f : V \to \mathbb{R}$ (e.g. the vulnerability field itself, or node
-centrality), cover its image by overlapping intervals, cluster each fiber, and
-build the **nerve** (a graph whose nodes are clusters). Mapper yields the
-navigable "manifold" that gives the project its name.
-
-### 4.3 Geometric layer (discrete curvature)
-
-The **Ollivier–Ricci curvature** of an edge $(u,v)$ is
-
-$$
-\kappa(u,v) = 1 - \frac{W_1(m_u, m_v)}{d(u,v)},
-$$
-
-where $m_u, m_v$ are probability measures concentrated around $u,v$ (e.g. lazy
-random-walk measures) and $W_1$ is the Wasserstein-1 distance. Negative
-curvature means *more* mass must be moved than the edge's own length — i.e. the
-edge is a **funnel** through which many shortest paths pass.
-
-For hierarchical artifacts (call graphs, dependency graphs) we additionally embed
-the graph into a **hyperbolic** space (Poincaré ball) and measure
-$\delta$-hyperbolicity; trees have $\delta = 0$.
-
-**Signal 3 (curvature chokepoints).** Strongly negative $\kappa$ marks chokepoints —
-single functions through which privilege or data must pass — the natural location
-of privilege-escalation and authorization bugs.
-
-### 4.4 Algebraic layer (lattices & category theory)
-
-*Abstract interpretation.* A program is a monotone map over a lattice of abstract
-values. The **taint lattice** is
-
-$$
-\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}
-$$
-
-(instantiated per taint tag, giving a product lattice over tags). Sources assign
-$\top$; transfer functions propagate it; a sink reached by $\top$ is a violation.
-This is a **Galois connection** $(\alpha, \gamma)$ between the concrete collecting
-semantics and the abstract taint domain, guaranteeing soundness
-(no missed flows) at the cost of precision (possible false positives).
-
-*Category theory.* Regard the program as a category $\mathbf{Prog}$: objects are
-program points / value types, morphisms are computations, and composition is
-sequencing. Effects (I/O, environment) are **monads**; authorization is a functor
-$F : \mathbf{Prog} \to \mathbf{Auth}$ that composes safely only along trusted paths.
-
-**Design law (naturality of taint).** A **taint flow** is a morphism
-$s \xrightarrow{\,t\,} k$ from a source to a sink. *Safe* programs preserve
-naturality of the authorization functor: applying $F$ to a composition equals
-composing the images. A vulnerability is a taint flow that breaks the
-naturality square — the taint reaches a sink "as if" authorization had been
-applied when it has not.
-
-### 4.5 Formal layer (symbolic execution & model checking)
-
-* Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
-  a bad state is $\sigma$ where a sink consumes a symbol marked tainted.
-* An SMT solver checks $\mathrm{SAT}\left(\Phi \wedge \text{taint\_reaches\_sink}\right)$ —
-  a *model* is a concrete exploit.
-* Reachability of a bad state is the CTL formula $\mathbf{EF}\,\mathrm{bad}$.
-* Taint propagation is a **finite automaton**: sources are initial states, sinks
-  accepting states; the accepted language is exactly the set of source→sink paths.
-
-**Signal 4 (formal ground truth).** Unlike the previous layers (which are
-*heuristic features*), the formal layer produces *proofs*. It is the arbiter
-that turns agent hypotheses into confirmed findings.
+### 4.5 Formal
+Symbolic execution computes a path condition $\Phi$; an SMT solver checks
+$\mathrm{SAT}(\phi_{\text{bad}})$; reachability is the CTL formula
+$\mathbf{EF}\,\phi_{\text{bad}}$; taint is a finite automaton.
 
 ## 5. The vulnerability scalar field
 
-Each layer yields a node-level or edge-level score. We **fuse** them into a field
+$$V(x) = \sigma\!\Big(\sum_i \alpha_i\, s_i(x)\Big).$$
 
-$$
-V(x) = \sigma\!\Big(\sum_i \alpha_i \, s_i(x)\Big),
-$$
+Signals are normalized per layer; in the prototype the weights are **uniform**
+($\alpha_i = 1/N$) and $V$ is reported as the raw fused score; calibration is
+done by logistic regression over labeled data (§11.1).
 
-where $s_i$ are the normalized layer signals (spectral anomaly, persistence
-outlier, curvature, lattice height, formal reachability) and $\alpha_i$ are
-learnable (or hand-tuned) weights, with $\sigma$ a logistic squeeze. $V$ is:
+## 6. Mapping laws
 
-* a **ranking** for the agent (inspect highest $V$ first),
-* a **filter function** for Mapper,
-* a **cost field** over which the agent plans navigation.
-
-## 6. Mapping laws (feature → vulnerability class)
-
-These are *design hypotheses* to be validated empirically; each is stated with
-the mathematical object that supports it.
-
-| # | Law | Mathematical object | Vulnerability class |
-|---|-----|---------------------|---------------------|
-| L1 | Chokepoint | $\kappa(u,v) \ll 0$ | privilege escalation, auth bypass |
-| L2 | Cycle | generator of $H_1$ (persistent) | reentrancy, infinite recursion, deadlock |
-| L3 | Trust cut | Fiedler cut of control+data graph | injection crossing trust boundary |
-| L4 | Naturality break | taint flow violating $F$-naturality | arbitrary taint violation |
-| L5 | Persistence | far-from-diagonal $\mathrm{Dgm}_k$ points | *real* vs. spurious feature separation |
-| L6 | Reachability | $\mathrm{SAT}(\Phi \wedge \text{bad})$ | concrete exploit path |
+| # | Feature | Class |
+|---|---------|-------|
+| L1 | $\kappa \ll 0$ chokepoint | privilege escalation |
+| L2 | persistent $H_1$ generator | reentrancy / recursion |
+| L3 | Fiedler cut | injection across trust |
+| L4 | taint crossing an `auth` edge | naturality violation |
+| L5 | persistence outlier | real vs. spurious |
+| L6 | $\mathrm{SAT}(\phi_{\text{bad}})$ | concrete exploit |
 
 ## 7. The autonomous LLM agent
 
-The agent is a closed loop with explicit mathematical grounding:
+Closed loop: **map → rank → hypothesize → verify → refine → report**. The
+manifold supplies a structured spec `(sink, source, line, category)`; the LLM
+supplies the interpretation (CWE, description); the verifier consumes the spec —
+never the LLM prose. Provider layer via **LiteLLM** (OpenAI/Anthropic/local), with
+a deterministic offline fallback.
 
-1. **Ingest** — parse the artifact into the IR.
-2. **Embed & map** — compute $V(x)$, spectral embedding, persistence diagrams,
-   curvature; build the Mapper manifold.
-3. **Hypothesize** — the LLM, given the manifold (top regions, their code, and
-   the *features* that flagged them), proposes candidate vulnerabilities.
-4. **Verify** — the formal layer (SMT / symbolic execution / abstract
-   interpretation) proves or refutes each candidate.
-5. **Refine** — confirmed findings add/weight taint/trust edges and are
-   re-embedded; refuted hypotheses are recorded as negative examples.
-6. **Report** — a human- and machine-readable report citing, for each finding,
-   the *mathematical feature* that surfaced it and the *proof* that confirmed it.
+## 8. Design challenges and mitigations
 
-**LLM provider layer.** The agent targets any OpenAI-compatible endpoint through
-**LiteLLM**, so it runs unchanged against OpenAI/Anthropic "cyber" models or
-local models (Ollama, etc.).
+* **C1 — Bottleneck paradox.** Negative curvature flags legitimate defensive
+  chokepoints; we discriminate them by role / `auth` target.
+* **C2 — Symmetrization.** Direction is preserved via Chung's directed Laplacian
+  over the largest SCC (Perron vector by PageRank-style iteration); DAGs are
+  handed to the lattice/reachability layers.
+* **C3 — Transport cost.** Forman–Ricci is the default ($O(|E|)$); Ollivier–Ricci
+  with Sinkhorn is the fast alternative.
+* **C4 — L4 operationalization.** A taint flow crossing an `auth` edge is a
+  naturality violation (a reachability query over `data ∪ taint ∪ auth`).
+* **C5 — Manifold→verifier bridge.** Fixed verification grammar; the LLM never
+  emits SMT-LIB.
 
-**Why the LLM does not do raw detection.** LLMs are unreliable *classifiers* but
-strong *reasoners*. MANIFOLD splits responsibilities: the mathematics proposes
-*regions* (cheap, sound-ish, no hallucination), the LLM proposes *hypotheses*
-(rich, contextual), the formal layer proposes *proofs* (sound). Each component
-does what it is good at.
+## 9. A worked example
 
-## 8. System architecture
-
-```
-ingest/  (Python)         core/  (Rust)             agent/  (Python)        viz/  (TS)
-├─ tree-sitter AST        ├─ graph (serde)          ├─ LiteLLM provider      ├─ manifold map
-├─ CFG/DFG/call graph     ├─ spectral (Laplacian)   ├─ hypothesis generator  ├─ persistence diag
-├─ source/sink profiles   ├─ topology (F3)          ├─ verifier bridge       ├─ spectral plots
-└─ taint pass  ─────────► └─ geometry (F2) ───────► └─ memory/reflection ──► └─ findings panel
-        │                        │
-        └──── JSON IR (shared schema) ────┘
+```python
+def search(db, query_param):
+    sql = "SELECT * FROM users WHERE name = '" + query_param + "'"
+    cursor = db.cursor()
+    cursor.execute(sql)
 ```
 
-The IR JSON is the contract between Python and Rust (both consume/produce the
-identical schema; the Rust side is verified by `cargo test`).
+The pipeline yields a `source` node (`param:query_param`), a `sink` node
+(`cursor.execute`, category `sql`) and a `taint` edge; $V(x)$ spikes at the sink;
+Z3 returns `SAT` with a concrete witness. The parameterized variant is correctly
+not flagged, and an `@login_required` gate upgrades the finding to an L4
+naturality violation.
 
-## 9. Implementation status
+## 10. Implementation status
 
-| Phase | Deliverable | Status |
-|-------|-------------|--------|
-| F0 | Whitepaper (en/es), architecture | ✅ this document |
-| F1 | IR + Python SAST ingest (tree-sitter) + intraprocedural taint | ✅ implemented, tested |
-| F2 | Spectral + geometric kernels (Rust, Fiedler vector, Ricci, hyperbolic embedding) | ✅ implemented, tested |
-| F3 | TDA (persistent homology H0/H1, Mapper) | ✅ implemented, tested |
-| F4 | Formal verification (taint lattice + sanitizers, Z3 symbolic verifier) | ✅ implemented, tested |
-| F5 | Autonomous LLM agent (LiteLLM, offline fallback) | ✅ implemented, tested |
-| F6 | Visualization (self-contained HTML) + end-to-end demo | ✅ implemented, tested |
-| F7 | Binary / web / LLM adapters (multi-domain) | ✅ implemented, tested |
+F0 whitepaper · F1 IR + Python SAST + taint · F2 spectral/geometric (Rust) ·
+F3 TDA · F4 Z3 verifier + taint lattice + L4 · F5 autonomous LLM agent ·
+F6 visualization + demo · F7 multi-domain adapters (binary objdump/angr, OpenAPI,
+LLM-agent, Java). Plus benchmark harness, weight calibration, and the OWASP study.
 
-## 10. Validation plan
+## 11. Validation and empirical study
 
-* **Micro-benchmarks**: toy vulnerable programs (SQLi, command injection,
-  code execution, reentrancy) with known ground truth; assert each layer's
-  signal is present and correctly located.
-* **Precision/recall**: compare against a labeled corpus (e.g. OWASP Benchmark,
-  SARD) once F4 lands; report false-positive rate of the fused field vs. the
-  raw taint pass.
-* **Agent efficacy**: measure hypothesis-to-confirmation rate and coverage of
-  seeded vulnerabilities in synthetic repos.
+**Stage 1 (complete):** toy micro-benchmarks; every seeded vulnerability confirmed,
+every sanitizer / parameterized-query / argv-form false positive excluded.
 
-## 11. Responsible use
+**Stage 2 (in progress):** labeled corpora.
 
-MANIFOLD is a defensive/authorized-testing tool. The same geometry that reveals
-vulnerabilities to a defender reveals them to an attacker; we release under the
-assumption of authorized use and encourage coordinated disclosure.
+### 11.1 Empirical study on OWASP Benchmark 1.2
 
-## 12. References
+Profiling the full corpus, three *generalizable* gaps were fixed: (i) **branch-aware
+taint** (join of branch environments — the lattice least-upper-bound), (ii)
+**receiver/state taint** (sinks like `statement.execute()` carry taint in the
+object; mutators taint their receiver), (iii) **response-writer restriction** for
+XSS (`System.out.println` is not XSS). Ablation (taint categories, 1698 cases):
 
-1. Fiedler, M. (1973). *Algebraic connectivity of graphs.*
-2. Chung, F. (1997). *Spectral Graph Theory.*
-3. Edelsbrunner, Letscher, Zomorodian (2002). *Topological persistence and simplification.*
-4. Singh, Mémoli, Carlsson (2007). *Topological Methods for the Analysis of High Dimensional Data Sets and 3D Object Recognition.*
-5. Ollivier, Y. (2009). *Ricci curvature of Markov chains on metric spaces.*
-6. Cousot, P. & Cousot, R. (1977). *Abstract interpretation: a unified lattice model.*
-7. Mac Lane, S. (1971). *Categories for the Working Mathematician.*
-8. King, J. (1976). *Symbolic execution and program testing.*
-9. Clarke, E. M. et al. (1986). *Automatic verification of finite-state concurrent systems.*
+| Variant | P | R | F1 |
+|---|---|---|---|
+| initial naive adapter | 0.515 | 0.426 | 0.466 |
+| + branch-join, receiver/state, sink coverage | 0.530 | 0.856 | 0.655 |
+| + XSS writer restriction (final) | **0.549** | **0.834** | **0.662** |
+| final, without branch-join | 0.515 | 0.555 | 0.535 |
+
+### 11.2 Comparison and the neuro-symbolic target
+
+| Tool | TPR | FPR | Prec. | F1 | J |
+|---|---|---|---|---|---|
+| SonarQube (reported) | 0.956 | 0.946 | 0.330 | 0.490 | +0.010 |
+| CodeQL (reported) | 0.902 | 0.682 | 0.603 | 0.744 | +0.220 |
+| **MANIFOLD adapter (measured)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
+| MANIFOLD +V(x) (projected) | 0.858 | 0.314 | 0.751 | 0.801 | +0.544 |
+| MANIFOLD +V(x)+Z3 (projected) | 0.825 | 0.038 | 0.959 | 0.887 | +0.787 |
+
+*External rows are reported in public evaluations; MANIFOLD adapter is measured
+(all eleven categories); the last two rows are the **projected** Stage-2 target,
+not measured (Z3 with a 5 s per-query timeout; on timeout the case is marked
+unknown/conservative, never counted as a detection).*
+
+### 11.3 Dual binary backend
+
+Two interchangeable backends emit the same IR: a zero-dependency `objdump`-text
+path and an optional `angr` backend (`CFGFast` + interprocedural taint).
+
+## 12. Responsible use
+
+MANIFOLD is a defensive / authorized-testing tool; released under the assumption
+of authorized use and coordinated disclosure.
+
+## 13. References
+
+1. Fiedler (1973), *Algebraic connectivity of graphs.*
+2. Chung (1997), *Spectral Graph Theory*; (2005) *Laplacians for directed graphs.*
+3. Edelsbrunner, Letscher, Zomorodian (2002), *Topological persistence.*
+4. Singh, Mémoli, Carlsson (2007), *Mapper.*
+5. Ollivier (2009), *Ricci curvature of Markov chains.*
+6. Cousot & Cousot (1977), *Abstract interpretation.*
+7. King (1976), *Symbolic execution.*
+8. Clarke et al. (1986), *Model checking.*
+9. Cuturi (2013), *Sinkhorn distances.*
+10. OWASP Benchmark Project, v1.2 (2024).

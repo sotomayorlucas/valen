@@ -166,7 +166,7 @@ The \emph{Forman--Ricci} curvature (unweighted) is $\kappa_F(u,v) = 4 - \deg(u)
 
 \subsection{Algebraic layer (lattices \& category theory)}
 \emph{Abstract interpretation.} The \emph{taint lattice}
-$\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}$ (a
+$\mathbb{T} = \{\bot = \text{clean},\ \top = \text{tainted}\}$ (a
 product lattice over tags) gives a \emph{Galois connection}
 $(\alpha, \gamma)$ between the concrete collecting semantics and the abstract
 taint domain, guaranteeing soundness. \emph{Category theory.} The program is a
@@ -176,8 +176,8 @@ vulnerability is a taint flow that breaks the naturality square of $F$.
 
 \subsection{Formal layer (symbolic execution \& model checking)}
 Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
-an SMT solver checks $\mathrm{SAT}(\Phi \wedge \text{bad})$, whose model is a
-concrete exploit. Reachability is the CTL formula $\mathbf{EF}\,\mathrm{bad}$;
+an SMT solver checks $\mathrm{SAT}(\phi_{\text{bad}})$, whose model is a
+concrete exploit. Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
 taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
 
@@ -229,7 +229,7 @@ L2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
 L3 & Trust cut (Fiedler cut) & injection across trust boundary \\
 L4 & Naturality break & arbitrary taint violation \\
 L5 & Persistence outlier & real vs.\ spurious features \\
-L6 & Reachability ($\mathrm{SAT}(\Phi \wedge \text{bad})$) & concrete exploit \\
+L6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & concrete exploit \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -415,8 +415,8 @@ the Z3 verifier and the calibrated field are designed to recover.
 
 \subsection{Comparison with industrial SAST, and the neuro-symbolic target}
 The official OWASP Benchmark score is the \emph{Youden index}
-($J = \mathrm{TPR} - \mathrm{FPR}$, i.e.\ TPR minus FPR; the \emph{Benchmark
-Accuracy Score}). Table~\ref{tab:cmp}
+$J = \text{TPR} - \text{FPR}$ (the \emph{Benchmark Accuracy Score}, i.e.\ TPR
+minus FPR). Table~\ref{tab:cmp}
 places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
 \emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; the
 ``MANIFOLD adapter'' row is our measured result; the last two rows are the
@@ -431,17 +431,17 @@ described below.
 \toprule
 \textbf{Tool / config.} & \textbf{TPR} & \textbf{FPR} & \textbf{Prec.} & \textbf{F1} & \textbf{J} & \textbf{Time} \\
 \midrule
-SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
-GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
-\emph{MANIFOLD} adapter (measured) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & \textasciitilde45 s \\
-\emph{MANIFOLD} $+V(x)$ (projected) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & \textasciitilde1.3 min \\
-\emph{MANIFOLD} $+V(x)+$Z3 (projected) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & \textasciitilde4 min \\
+SonarQube (SAST) (a) & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & 3 min \\
+GitHub CodeQL (default) (a) & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & 18 min \\
+\emph{MANIFOLD} adapter (measured) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
+\emph{MANIFOLD} +V(x) (projected) (c) & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & 1.3 min \\
+\emph{MANIFOLD} +V(x)+Z3 (projected) (c) & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & 4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 cases: 1415 vulnerable / 1325 safe).
-\textsuperscript{(a)}~reported in public evaluations, not re-run here.
-\textsuperscript{(b)}~our measured Java adapter (all eleven categories).
-\textsuperscript{(c)}~\textbf{projected} target under the Stage-2 protocol, not
+(a)~reported in public evaluations, not re-run here.
+(b)~our measured Java adapter (all eleven categories).
+(c)~\textbf{projected} target under the Stage-2 protocol, not
 measured; Java SMT verification is future work.}
 \label{tab:cmp}
 \end{table}
