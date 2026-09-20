@@ -108,6 +108,10 @@ export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLL
 .venv/bin/python -m manifold.cli examples/binary/vuln.asm      # binario (objdump)
 .venv/bin/python -m manifold.cli examples/web/api.json         # OpenAPI
 .venv/bin/python -m manifold.cli examples/llm_agent/agent.json # agente LLM
+
+# Binario con angr (CFGFast real + taint interprocedural); requiere: pip install ".[angr]"
+gcc -o /tmp/vuln /tmp/vuln.c
+.venv/bin/python -m manifold.cli /tmp/vuln --adapter angr-binary
 ```
 Los adaptadores producen el mismo IR tipado, así que el núcleo espectral /
 topológico / geométrico y el verificador se aplican sin cambios.
@@ -116,6 +120,8 @@ topológico / geométrico y el verificador se aplican sin cambios.
 
 ```bash
 .venv/bin/python benchmarks/run.py
+# Corpus externo (manifest JSON o directorio vulnerable|safe, bad|good):
+.venv/bin/python benchmarks/run_external.py benchmarks/fixtures --adapter python
 ```
 Evalúa precisión/recall/F1 (taint crudo vs verificado Z3) y **calibra los pesos
 αᵢ** del campo V(x) con regresión logística pura-Python (validación leave-one-out).

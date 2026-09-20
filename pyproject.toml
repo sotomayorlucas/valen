@@ -20,6 +20,9 @@ dev = [
     "pytest",
     "litellm",
 ]
+angr = [
+    "angr",
+]
 
 [tool.setuptools.packages.find]
 include = ["manifold*"]

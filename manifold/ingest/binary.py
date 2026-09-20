@@ -34,6 +34,46 @@ def _strip_plt(name: str) -> str:
     return name.split("@", 1)[0]
 
 
+def is_binary_source(name: str) -> bool:
+    """True if ``name`` is an input routine (handles glibc scanf variants)."""
+    return name in _SOURCES or "scanf" in name or "gets" in name or "recv" in name
+
+
+def is_binary_sink(name: str) -> bool:
+    """True if ``name`` is a dangerous call."""
+    return name in _SINKS
+
+
+def binary_category(sink: str) -> str:
+    if sink in ("system", "execve", "execv", "execvp", "execl", "execlp", "popen"):
+        return "command_execution"
+    if sink in ("strcpy", "strcat", "sprintf", "vsprintf", "gets", "memcpy"):
+        return "memory_corruption"
+    return "dangerous_call"
+
+
+def taint_closure(calls: List[tuple], sources: Set[str]) -> Set[str]:
+    """Transitive closure of ``calls`` (caller -> callee) from ``sources``.
+
+    A caller is tainted if it (transitively) calls a source routine.
+    """
+    tainted: Set[str] = {c for c, callee, _ in calls if callee in sources}
+    call_map: Dict[str, Set[str]] = {}
+    for caller, callee, _ in calls:
+        call_map.setdefault(caller, set()).add(callee)
+
+    changed = True
+    while changed:
+        changed = False
+        for caller, callees in call_map.items():
+            if caller in tainted:
+                continue
+            if callees & tainted:
+                tainted.add(caller)
+                changed = True
+    return tainted
+
+
 class BinaryIngest:
     def analyze(self, disassembly: str, path: str = "<binary>") -> AnalysisResult:
         graph = Graph()
@@ -72,28 +112,13 @@ class BinaryIngest:
         return AnalysisResult(graph=graph, findings=findings)
 
     def _taint_findings(self, graph, functions, calls, path) -> List[Finding]:
-        # Directly tainted: functions that call an input routine.
-        tainted: Set[str] = {c for c, callee, _ in calls if callee in _SOURCES}
-
-        # Transitive closure over the call graph (function -> called functions).
-        call_map: Dict[str, Set[str]] = {}
-        for caller, callee, _ in calls:
-            call_map.setdefault(caller, set()).add(callee)
-
-        changed = True
-        while changed:
-            changed = False
-            for caller, callees in call_map.items():
-                if caller in tainted:
-                    continue
-                if callees & tainted:
-                    tainted.add(caller)
-                    changed = True
+        sources = {callee for _, callee, _ in calls if is_binary_source(callee)}
+        tainted = taint_closure(calls, sources)
 
         findings: List[Finding] = []
         seq = 0
         for caller, callee, lineno in calls:
-            if callee in _SINKS and caller in tainted:
+            if is_binary_sink(callee) and caller in tainted:
                 # Source node + sink node + taint edge for the map.
                 seq += 1
                 src_id = f"src_{seq}"
@@ -101,7 +126,7 @@ class BinaryIngest:
                 sink_id = f"sink_{seq}"
                 graph.add_node(
                     sink_id, NodeKind.SINK, callee, file=path, line=lineno,
-                    attrs={"category": self._category(callee)},
+                    attrs={"category": binary_category(callee)},
                 )
                 graph.add_edge(src_id, sink_id, EdgeKind.TAINT)
                 findings.append(
@@ -113,7 +138,7 @@ class BinaryIngest:
                             f"calls dangerous `{callee}`."
                         ),
                         severity="high",
-                        category=self._category(callee),
+                        category=binary_category(callee),
                         file=path,
                         line=lineno,
                         source_names=["input"],
@@ -122,9 +147,3 @@ class BinaryIngest:
                 )
         return findings
 
-    def _category(self, sink: str) -> str:
-        if sink in ("system", "execve", "execv", "execvp", "execl", "execlp", "popen"):
-            return "command_execution"
-        if sink in ("strcpy", "strcat", "sprintf", "vsprintf", "gets", "memcpy"):
-            return "memory_corruption"
-        return "dangerous_call"

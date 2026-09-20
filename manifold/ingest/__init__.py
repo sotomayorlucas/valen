@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from .angr_binary import AngrBinaryIngest
 from .binary import BinaryIngest
 from .llm_agent import LLMAgentIngest
 from .python import PythonIngest
@@ -10,6 +11,7 @@ from .web import WebIngest
 __all__ = [
     "PythonIngest",
     "BinaryIngest",
+    "AngrBinaryIngest",
     "WebIngest",
     "LLMAgentIngest",
     "LANGUAGE_TO_INGEST",
@@ -20,6 +22,7 @@ __all__ = [
 LANGUAGE_TO_INGEST = {
     "python": PythonIngest,
     "binary": BinaryIngest,
+    "angr-binary": AngrBinaryIngest,
     "web": WebIngest,
     "llm-agent": LLMAgentIngest,
 }
@@ -48,8 +51,8 @@ def analyze(source: str, path: str = "<stdin>", adapter: str | None = None):
     ingest_cls = LANGUAGE_TO_INGEST.get(adapter)
     if ingest_cls is None:
         raise ValueError(f"unsupported adapter {adapter!r}")
-    if adapter == "python":
-        return ingest_cls().analyze(source, path=path)
+    if adapter == "angr-binary":
+        return ingest_cls().analyze(path, path=path)
     return ingest_cls().analyze(source, path=path)
 
 

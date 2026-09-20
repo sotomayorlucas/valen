@@ -344,7 +344,10 @@ Z3-verified pass and a \emph{calibrated} field whose weights $\alpha_i$ are
 learned by leave-one-out logistic regression over the cheap signals --- on the
 toy corpus the calibrated field recovers the reentrancy cycle (topological
 signal) that the taint pass misses, raising recall while keeping precision at
-$1.0$. MANIFOLD is a defensive /
+$1.0$. A corpus loader accepts a JSON manifest or a ``vulnerable|safe``
+directory, so the harness can be pointed at OWASP Benchmark / SARD exports; and
+the binary adapter has an optional angr backend (``CFGFast`` + interprocedural
+taint) in addition to the zero-dependency objdump path. MANIFOLD is a defensive /
 authorized-testing tool; we release under the assumption of authorized use and
 encourage coordinated disclosure.
 

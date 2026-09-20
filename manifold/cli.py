@@ -14,7 +14,7 @@ from .ingest import analyze, infer_adapter
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="manifold", description="Analyze a target for vulnerabilities.")
     parser.add_argument("target", help="source file / OpenAPI JSON / agent JSON / disassembly to analyze")
-    parser.add_argument("--adapter", help="adapter: python, binary, web, llm-agent (inferred if omitted)")
+    parser.add_argument("--adapter", help="adapter: python, binary, angr-binary, web, llm-agent (inferred if omitted)")
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
     parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3, python only)")
     parser.add_argument("--agent", action="store_true", help="run the autonomous agent (python only)")
@@ -26,8 +26,17 @@ def main(argv: list[str] | None = None) -> int:
         print(f"error: {path} does not exist", file=sys.stderr)
         return 1
 
-    code = path.read_text()
-    adapter = args.adapter or infer_adapter(code, str(path))
+    adapter = args.adapter
+    if adapter == "angr-binary":
+        code = ""
+    else:
+        try:
+            code = path.read_text()
+        except UnicodeDecodeError:
+            print("error: binary file detected; use --adapter angr-binary", file=sys.stderr)
+            return 1
+    if adapter is None:
+        adapter = infer_adapter(code, str(path))
     try:
         result = analyze(code, path=str(path), adapter=adapter)
     except ValueError as exc:

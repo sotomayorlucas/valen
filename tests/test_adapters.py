@@ -1,6 +1,10 @@
-"""Tests for the multi-domain adapters (F7): binary, web, LLM agent."""
+"""Tests for the multi-domain adapters (F7): binary, web, LLM agent, angr."""
 
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from manifold.ingest import analyze, infer_adapter
 from manifold.ingest.binary import BinaryIngest
@@ -50,3 +54,30 @@ def test_dispatch_and_inference():
     spec = (EXAMPLES / "web" / "api.json").read_text()
     result = analyze(spec, path="api.json")
     assert result.graph.meta["language"] == "openapi"
+
+
+def _have_angr():
+    try:
+        import angr  # noqa: F401
+
+        return shutil.which("gcc") is not None
+    except ImportError:
+        return False
+
+
+@pytest.mark.skipif(not _have_angr(), reason="angr or gcc not available")
+def test_angr_binary_detects_command_flow(tmp_path):
+    from manifold.ingest.angr_binary import AngrBinaryIngest
+
+    src = tmp_path / "vuln.c"
+    src.write_text(
+        "#include <stdio.h>\n#include <stdlib.h>\n"
+        "int main(void){char b[64];scanf(\"%63s\",b);system(b);return 0;}\n"
+    )
+    bin_path = tmp_path / "vuln"
+    subprocess.run(["gcc", "-o", str(bin_path), str(src)], check=True)
+
+    result = AngrBinaryIngest().analyze(str(bin_path), path="vuln")
+    sinks = {f.sink_name for f in result.findings}
+    assert "system" in sinks
+

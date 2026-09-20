@@ -361,7 +361,11 @@ taint crudo, el pase verificado con Z3 y un campo \emph{calibrado} cuyos pesos
 $\alpha_i$ se aprenden por regresión logística leave-one-out sobre las señales
 baratas --- en el corpus de juguete el campo calibrado recupera el ciclo de
 reentrancia (señal topológica) que el pase de taint no detecta, elevando el
-recall mientras mantiene la precisión en $1.0$. MANIFOLD es una herramienta de
+recall mientras mantiene la precisión en $1.0$. Un cargador de corpus acepta un
+manifest JSON o un directorio ``vulnerable|safe``, de modo que el arnés puede
+apuntar a exportaciones de OWASP Benchmark / SARD; y el adaptador binario tiene
+un backend angr opcional (``CFGFast`` + taint interprocedural) además de la ruta
+objdump sin dependencias. MANIFOLD es una herramienta de
 defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
 alentamos la divulgación coordinada.
 
