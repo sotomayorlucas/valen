@@ -187,6 +187,60 @@ LLM apunta a cualquier endpoint compatible con OpenAI mediante \textbf{LiteLLM}.
 El LLM no hace detección cruda: la matemática propone regiones, el LLM propone
 hipótesis, la capa formal propone pruebas.
 
+\section{Desafíos de diseño y mitigaciones}
+Una revisión de diseño identificó cinco riesgos estructurales. Para cada uno
+enunciamos la mitigación adoptada en el prototipo y el problema abierto.
+
+\textbf{C1 -- La paradoja del cuello de botella.} La curvatura negativa marca
+embudos, pero el software sano \emph{deliberadamente} concentra el flujo en
+middleware de auth, sanitizadores, despachadores y loggers. Reportarlos como
+leads de escalada de privilegios produce falsos positivos sistemáticos.
+\emph{Mitigación:} el agente discrimina los cuellos de botella defensivos (por
+rol) y los descarta o degrada; la solución de fondo es etiquetar aristas
+\texttt{trust}/\texttt{auth} (ya reservadas en la IR) y tratar un cuello de
+botella como defensivo si y solo si es destino de una arista \texttt{auth}.
+\emph{Abierto:} aprender la etiqueta defensivo/ofensivo a partir de datos.
+
+\textbf{C2 -- La simetrización destruye la causalidad.} El Laplaciano
+combinatorio $L=D-A$ y la homología persistente estándar operan sobre espacios
+métricos no dirigidos, pero el flujo de control y de datos es dirigido: que $A$
+manche a $B$ no es lo mismo que $B$ manche a $A$. Simetrizar puede destruir la
+dirección del taint. \emph{Mitigación:} el prototipo documenta esta
+aproximación y trata la dirección explícitamente donde importa. \emph{Abierto:}
+el Laplaciano dirigido de Chung y los complejos de bandera dirigidos / homología
+de caminos (Grigor'yan--Lin--Muranov--Yau), que preservan la dirección.
+
+\textbf{C3 -- Costo del transporte óptimo.} Ollivier--Ricci exige un PL de
+transporte por arista: $\mathcal{O}(|E|\cdot\text{PL})$, prohibitivo más allá de
+$\sim 10^5$ aristas. \emph{Mitigación:} Forman--Ricci
+$\kappa_F = 4 - \deg(u) - \deg(v)$ es $\mathcal{O}(|E|)$ y es la señal por
+defecto; Ollivier--Ricci es opt-in para grafos pequeños. \emph{Abierto:}
+transporte regularizado por entropía (Sinkhorn) para grafos grandes.
+
+\textbf{C4 -- Operacionalizar L4 (naturalidad).} Se requiere una regla
+constructiva. Sean las aristas \texttt{auth} $E_A$ las que marcan fronteras de
+privilegio. Definamos el funtor de autorización $F$ como la etiqueta de si un
+nodo es alcanzable \emph{detrás} de una arista auth. Entonces un flujo de taint
+$s \to^{*} k$ \emph{viola la naturalidad} si y solo si su camino cruza al menos
+una arista auth --- es decir, datos no confiables entran a una región protegida
+sin que la frontera los neutralice. Esto es una consulta de alcanzabilidad sobre
+el grafo combinado $(\text{dato} \cup \text{taint} \cup \text{auth})$,
+directamente computable y automatizable. La IR reserva los tipos
+\texttt{auth}/\texttt{trust}; un extractor de autorización los poblará en F7.
+
+\textbf{C5 -- Puente manifold-verificador.} Los rasgos geométricos son
+cuantitativos; Z3 necesita precondiciones exactas. Fijamos una \emph{gramática}:
+una hipótesis es la especificación estructurada
+\texttt{(sink, fuente, línea, categoría)}. El manifold aporta la especificación
+(conoce sink y línea), el LLM aporta la interpretación (CWE, descripción,
+confianza) y el verificador consume la especificación --- nunca la prosa del
+LLM. Esto mantiene la consulta SMT precisa y reproducible.
+
+La tesis de fondo se sostiene: los analizadores estáticos fallan porque buscan
+palabras en vez de invariantes en una estructura topológica. El criterio es si
+$V(x)$ poda el espacio de búsqueda para Z3/angr de forma más eficiente que un
+DFS plano sobre el grafo de llamadas.
+
 \section{Estado de implementación}
 \begin{center}
 \begin{tabular}{lll}
@@ -198,7 +252,7 @@ F1 & IR + ingesta SAST Python + taint & hecho \\
 F2 & Núcleos espectral + geométrico (Rust) & hecho \\
 F3 & TDA (homología persistente, Mapper) & hecho \\
 F4 & Verificación formal (retículo de taint, Z3) & hecho \\
-F5 & Agente LLM autónomo (LiteLLM) & pendiente \\
+F5 & Agente LLM autónomo (LiteLLM) & hecho \\
 F6 & Visualización + demo end-to-end & pendiente \\
 F7 & Adaptadores binario / web / LLM & pendiente \\
 \bottomrule
@@ -222,6 +276,9 @@ de uso autorizado y alentamos la divulgación coordinada.
 \item S.~Mac~Lane, \emph{Categories for the Working Mathematician}, 1971.
 \item J.~King, \emph{Symbolic execution and program testing}, 1976.
 \item E.~M.~Clarke et al., \emph{Automatic verification of finite-state concurrent systems}, 1986.
+\item F.~Chung, \emph{Laplacians and the Cheeger inequality for directed graphs}, 2005.
+\item Grigor'yan, Lin, Muranov, Yau, \emph{Homotopy theory for digraphs}, 2012.
+\item M.~Cuturi, \emph{Sinkhorn distances: lightspeed computation of optimal transport}, 2013.
 \end{thebibliography}
 
 \end{document}

@@ -179,6 +179,56 @@ layer proves or refutes); (5) \emph{refine} (findings re-weight and re-embed);
 via \textbf{LiteLLM}. The LLM does not do raw detection: mathematics proposes
 regions, the LLM proposes hypotheses, the formal layer proposes proofs.
 
+\section{Design challenges and mitigations}
+A design review identified five structural risks. For each we state the
+mitigation adopted in the prototype and the open problem.
+
+\textbf{C1 -- The bottleneck paradox.} Negative curvature flags funnels, but
+healthy software \emph{deliberately} concentrates flow through auth middleware,
+sanitizers, dispatchers and loggers. Reporting these as privilege-escalation
+leads yields systematic false positives. \emph{Mitigation:} the agent
+discriminates defensive chokepoints (by role) and drops or down-ranks them; the
+principled fix is to tag \texttt{trust}/\texttt{auth} edges (already reserved in
+the IR) and treat a chokepoint as defensive iff it is the target of an
+\texttt{auth} edge. \emph{Open:} learning the defensive/offensive label from data.
+
+\textbf{C2 -- Symmetrization destroys causality.} The combinatorial Laplacian
+$L=D-A$ and standard persistent homology act on undirected metric spaces, but
+control and data flow are directed: $A$ tainting $B$ is not $B$ tainting $A$.
+Symmetrizing can destroy the direction of taint. \emph{Mitigation:} the
+prototype documents this approximation and treats direction explicitly where it
+matters. \emph{Open:} Chung's directed Laplacian and directed flag complexes /
+path homology (Grigor'yan--Lin--Muranov--Yau), which preserve direction.
+
+\textbf{C3 -- Cost of optimal transport.} Ollivier--Ricci requires a
+transportation LP per edge: $\mathcal{O}(|E|\cdot\text{LP})$, prohibitive beyond
+$\sim 10^5$ edges. \emph{Mitigation:} Forman--Ricci
+$\kappa_F = 4 - \deg(u) - \deg(v)$ is $\mathcal{O}(|E|)$ and is the default
+chokepoint signal; Ollivier--Ricci is opt-in for small graphs. \emph{Open:}
+entropy-regularized (Sinkhorn) transport for large graphs.
+
+\textbf{C4 -- Operationalizing L4 (naturality).} A constructive rule is
+required. Let \texttt{auth} edges $E_A$ mark privilege boundaries. Define the
+authorization functor $F$ to label a node by whether it is reachable \emph{behind}
+an auth edge. Then a taint flow $s \to^{*} k$ \emph{violates naturality} iff its
+path crosses at least one auth edge --- i.e. untrusted data enters a protected
+region without the boundary neutralizing it. This is a reachability query over
+the combined $(\text{data} \cup \text{taint} \cup \text{auth})$ graph, directly
+computable and automatable. The IR reserves \texttt{auth}/\texttt{trust} kinds;
+an authorization extractor populates them in F7.
+
+\textbf{C5 -- Manifold-to-verifier bridge.} Geometric features are
+quantitative; Z3 needs exact preconditions. We fix a \emph{grammar}: a
+hypothesis is the structured spec \texttt{(sink, source, line, category)}. The
+manifold supplies the spec (it knows the sink and line), the LLM supplies the
+interpretation (CWE, description, confidence), and the verifier consumes the
+spec --- never the LLM prose. This keeps the SMT query precise and reproducible.
+
+The underlying thesis stands: static analyzers fail because they match words
+instead of invariants in a topological structure. The criterion is whether
+$V(x)$ prunes the search space for Z3/angr more effectively than a plain DFS
+over the call graph.
+
 \section{Implementation status}
 \begin{center}
 \begin{tabular}{lll}
@@ -190,7 +240,7 @@ F1 & IR + Python SAST ingest + taint & done \\
 F2 & Spectral + geometric kernels (Rust) & done \\
 F3 & TDA (persistent homology, Mapper) & done \\
 F4 & Formal verification (taint lattice, Z3) & done \\
-F5 & Autonomous LLM agent (LiteLLM) & pending \\
+F5 & Autonomous LLM agent (LiteLLM) & done \\
 F6 & Visualization + end-to-end demo & pending \\
 F7 & Binary / web / LLM adapters & pending \\
 \bottomrule
@@ -214,6 +264,9 @@ disclosure.
 \item S.~Mac~Lane, \emph{Categories for the Working Mathematician}, 1971.
 \item J.~King, \emph{Symbolic execution and program testing}, 1976.
 \item E.~M.~Clarke et al., \emph{Automatic verification of finite-state concurrent systems}, 1986.
+\item F.~Chung, \emph{Laplacians and the Cheeger inequality for directed graphs}, 2005.
+\item Grigor'yan, Lin, Muranov, Yau, \emph{Homotopy theory for digraphs}, 2012.
+\item M.~Cuturi, \emph{Sinkhorn distances: lightspeed computation of optimal transport}, 2013.
 \end{thebibliography}
 
 \end{document}

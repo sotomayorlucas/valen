@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("target", help="source file to analyze")
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
     parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
+    parser.add_argument("--agent", action="store_true", help="run the autonomous agent (map->rank->hypothesize->verify)")
     parser.add_argument("--language", help="override language detection")
     args = parser.parse_args(argv)
 
@@ -64,6 +65,19 @@ def main(argv: list[str] | None = None) -> int:
                 print(f"      witness: {v.witness}")
         if not verifications:
             print("  (no flows confirmed)")
+
+    if args.agent and language == "python":
+        from agent.agent import ManifoldAgent
+
+        print("== autonomous agent report ==")
+        report = ManifoldAgent().run(code, path=str(path))
+        for e in report.entries:
+            print(f"  [{e.status:>9}] {e.cwe:>8} {e.title}")
+            print(f"      signal={e.signal} region={e.region} (line {e.line})")
+            if e.evidence:
+                print(f"      evidence: {e.evidence}")
+        if not report.entries:
+            print("  (no findings)")
     return 0
 
 

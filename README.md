@@ -27,7 +27,7 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 - [x] **F2** — Núcleo espectral (Fiedler) + geométrico (Ricci) (Rust)
 - [x] **F3** — Topología (homología persistente H0/H1, Mapper) (Rust)
 - [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3)
-- [ ] **F5** — Agente LLM autónomo (LiteLLM)
+- [x] **F5** — Agente LLM autónomo (LiteLLM, fallback offline)
 - [ ] **F6** — Visualización + demo end-to-end
 - [ ] **F7** — Adaptadores binario / web / LLM
 
@@ -73,3 +73,18 @@ cd core && cargo test && cargo build --release
 # El binario lee el IR (JSON) por stdin y emite señales espectrales/geométricas.
 ```
 El puente Python está en `manifold/analysis/math_core.py` (`run_core`, `fiedler_ranking`).
+
+## Agente autónomo (F5)
+
+```bash
+.venv/bin/python -m manifold.cli examples/python/sqli.py --agent
+```
+
+Funciona **offline** (hipótesis heurísticas deterministas) por defecto. Para usar
+un LLM vía LiteLLM, define las variables de entorno y se activa automáticamente:
+
+```bash
+export MANIFOLD_LLM_MODEL="gpt-4o-mini"      # o claude-3-5-sonnet-*, ollama/llama3, ...
+export MANIFOLD_LLM_API_KEY="..."             # opcional para endpoints locales
+export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLLM)
+```

@@ -277,7 +277,7 @@ identical schema; the Rust side is verified by `cargo test`).
 | F2 | Spectral + geometric kernels (Rust, Fiedler vector, Ricci, hyperbolic embedding) | ✅ implemented, tested |
 | F3 | TDA (persistent homology H0/H1, Mapper) | ✅ implemented, tested |
 | F4 | Formal verification (taint lattice + sanitizers, Z3 symbolic verifier) | ✅ implemented, tested |
-| F5 | Autonomous LLM agent (LiteLLM) | ⬜ |
+| F5 | Autonomous LLM agent (LiteLLM, offline fallback) | ✅ implemented, tested |
 | F6 | Visualization + end-to-end demo | ⬜ |
 | F7 | Binary / web / LLM adapters (multi-domain) | ⬜ |
 
