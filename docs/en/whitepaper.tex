@@ -466,15 +466,13 @@ parameterized-query and \texttt{ProcessBuilder}-list cases --- and cross-categor
 distractor flows: precisely the precision that the topological/spectral signals,
 the Z3 verifier and the calibrated field are designed to recover.
 
-\subsection{Comparison with industrial SAST, and the neuro-symbolic target}
+\subsection{Comparison with industrial SAST}
 The official OWASP Benchmark score is the \emph{Youden index}
 $J = \text{TPR} - \text{FPR}$ (the \emph{Benchmark Accuracy Score}, i.e.\ TPR
 minus FPR). Table~\ref{tab:cmp}
 places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
-\emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; the
-``MANIFOLD adapter'' row is our measured result; the last two rows are the
-Stage-2 \emph{projected target} (\textbf{not yet measured}), under the protocol
-described below.
+\emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; both
+MANIFOLD rows are our \emph{measured} results.
 
 \begin{table}[h]
 \centering
@@ -486,16 +484,16 @@ described below.
 \midrule
 SonarQube (SAST) (a) & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & 3 min \\
 GitHub CodeQL (default) (a) & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & 18 min \\
-\emph{MANIFOLD} adapter (measured) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
-\emph{MANIFOLD} +V(x) (projected) (c) & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & 1.3 min \\
-\emph{MANIFOLD} +V(x)+Z3 (projected) (c) & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & 4 min \\
+\emph{MANIFOLD} adapter (measured, 11 cat.) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
+\emph{MANIFOLD} adapter $+$ Z3 (measured, 7 taint cat.) (b) & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & 4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 cases: 1415 vulnerable / 1325 safe).
-(a)~reported in public evaluations, not re-run here.
-(b)~our measured Java adapter (all eleven categories).
-(c)~\textbf{projected} target under the Stage-2 protocol, not
-measured; Java SMT verification is future work.}
+(a)~reported in public evaluations, not re-run here. (b)~\textbf{measured}. The
+Z3 verifier reproduces the adapter's precision (it adds per-finding
+\emph{witnesses}, not precision): the residual errors are adversarial/definitional
+cases, not spurious symbolic paths. The $V(x)$ prioritization prior is evaluated
+separately in \S11.1 (it does not beat raw taint).}
 \label{tab:cmp}
 \end{table}
 
@@ -511,6 +509,17 @@ extractor into the IR. The measured adapter flags a case vulnerable iff it emits
 any finding; precision is bounded by the benchmark's adversarial ``false'' cases
 (debatable parameterized-query and \texttt{ProcessBuilder}-list patterns) and by
 cross-category distractor flows --- the gap the neuro-symbolic rows target.
+
+\subsection{Closing the Z3 row (Java verification)}
+We implemented a Z3-backed Java symbolic verifier (bounded, branch-merging,
+string semantics; sanitizers as contracts) that confirms or refutes each taint
+flow and emits a concrete \emph{witness}. Measured on the seven taint categories
+(1698 cases) it reproduces the adapter exactly ($P=0.549$, $R=0.834$,
+$\mathrm{F1}=0.662$, $J=+0.057$) while adding per-finding witnesses. The honest
+conclusion: \textbf{the formal layer adds proof, not precision, on this
+benchmark} --- the residual false positives are adversarial/definitional
+(debatable parameterized-query cases), not spurious symbolic paths. Catching them
+requires modelling the benchmark's own semantics, not stronger SMT.
 
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:

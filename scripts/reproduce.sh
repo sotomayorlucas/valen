@@ -40,6 +40,11 @@ if [ -f "$CSV" ] && [ -d "$OWASP_DIR/src/main/java/org/owasp/benchmark/testcode"
     --testcode "$OWASP_DIR/src/main/java/org/owasp/benchmark/testcode" --csv "$CSV" \
     | tee benchmarks/results/owasp.txt
 
+  echo "== 4b. OWASP Benchmark with the Java Z3 verifier =="
+  "$VENV/bin/python" benchmarks/run_owasp.py \
+    --testcode "$OWASP_DIR/src/main/java/org/owasp/benchmark/testcode" --csv "$CSV" --verify \
+    | tee benchmarks/results/owasp_z3.txt
+
   echo "== 5. prioritization oracle (main experiment) =="
   "$VENV/bin/python" benchmarks/run_oracle.py \
     --testcode "$OWASP_DIR/src/main/java/org/owasp/benchmark/testcode" --csv "$CSV" \

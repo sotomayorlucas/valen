@@ -166,8 +166,7 @@ XSS (`System.out.println` is not XSS). Ablation (taint categories, 1698 cases):
 | SonarQube (reported) | 0.956 | 0.946 | 0.330 | 0.490 | +0.010 |
 | CodeQL (reported) | 0.902 | 0.682 | 0.603 | 0.744 | +0.220 |
 | **MANIFOLD adapter (measured)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
-| MANIFOLD +V(x) (projected) | 0.858 | 0.314 | 0.751 | 0.801 | +0.544 |
-| MANIFOLD +V(x)+Z3 (projected) | 0.825 | 0.038 | 0.959 | 0.887 | +0.787 |
+| MANIFOLD adapter + Z3 (measured, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
 
 *External rows are reported in public evaluations; MANIFOLD adapter is measured
 (all eleven categories); the last two rows are the **projected** Stage-2 target,

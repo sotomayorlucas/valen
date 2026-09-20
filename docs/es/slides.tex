@@ -183,14 +183,13 @@
   SonarQube\textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
   CodeQL\textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
   \textbf{MANIFOLD} adaptador\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
-  MANIFOLD $+V(x)$\textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & \textasciitilde1.3 min \\
-  MANIFOLD $+V(x)+$Z3\textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & \textasciitilde4 min \\
+  MANIFOLD adaptador $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
   \bottomrule
   \end{tabular}
   \end{center}
 
   \vspace{1mm}
-  {\footnotesize (a) reportado en evaluaciones públicas. (b) medido (2740 casos, 11 categorías). (c) \textbf{proyectado} bajo el protocolo de la Etapa 2 (Z3 con timeout 5\,s).}
+  {\footnotesize (a) reportado en evaluaciones públicas. (b) \textbf{medido} (Z3 aporta witnesses, no precisión).}
 \end{frame}
 
 \begin{frame}{Ablación: de dónde viene la mejora}

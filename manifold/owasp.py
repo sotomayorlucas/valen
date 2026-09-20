@@ -43,7 +43,7 @@ def load_expected(csv_path: str) -> List[TestCase]:
     return cases
 
 
-def _analyze(java_path: Path, cache: Dict[str, bool]) -> bool:
+def _analyze(java_path: Path, cache: Dict[str, bool], detector=None) -> bool:
     key = java_path.name
     if key not in cache:
         try:
@@ -51,7 +51,10 @@ def _analyze(java_path: Path, cache: Dict[str, bool]) -> bool:
         except (OSError, UnicodeDecodeError):
             cache[key] = False
         else:
-            cache[key] = bool(JavaIngest().analyze(code, path=key).findings)
+            if detector is None:
+                cache[key] = bool(JavaIngest().analyze(code, path=key).findings)
+            else:
+                cache[key] = bool(detector(code))
     return cache[key]
 
 
@@ -59,8 +62,12 @@ def evaluate(
     testcode_dir: str,
     csv_path: str,
     categories: Optional[List[str]] = None,
+    detector=None,
 ) -> Dict[str, Metrics]:
-    """Return per-category metrics plus an ``overall`` entry."""
+    """Return per-category metrics plus an ``overall`` entry.
+
+    ``detector`` is ``code -> bool``; by default the Java adapter's findings.
+    """
     cases = load_expected(csv_path)
     testcode = Path(testcode_dir)
     cache: Dict[str, bool] = {}
@@ -72,7 +79,7 @@ def evaluate(
         if categories is not None and tc.category not in categories:
             continue
         included += 1
-        predicted = _analyze(testcode / f"{tc.name}.java", cache)
+        predicted = _analyze(testcode / f"{tc.name}.java", cache, detector)
         m = per_cat.setdefault(tc.category, Metrics())
         if tc.vulnerable and predicted:
             m.tp += 1

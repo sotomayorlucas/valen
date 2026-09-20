@@ -169,8 +169,7 @@ de taint, 1698 casos):
 | SonarQube (reportado) | 0.956 | 0.946 | 0.330 | 0.490 | +0.010 |
 | CodeQL (reportado) | 0.902 | 0.682 | 0.603 | 0.744 | +0.220 |
 | **MANIFOLD adaptador (medido)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
-| MANIFOLD +V(x) (proyectado) | 0.858 | 0.314 | 0.751 | 0.801 | +0.544 |
-| MANIFOLD +V(x)+Z3 (proyectado) | 0.825 | 0.038 | 0.959 | 0.887 | +0.787 |
+| MANIFOLD adaptador + Z3 (medido, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
 
 *Las filas externas son números reportados en evaluaciones públicas; el adaptador
 MANIFOLD es medido (once categorías); las dos últimas filas son el objetivo

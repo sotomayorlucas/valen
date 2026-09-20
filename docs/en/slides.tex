@@ -183,14 +183,13 @@
   SonarQube\textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
   CodeQL\textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
   \textbf{MANIFOLD} adapter\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
-  MANIFOLD $+V(x)$\textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & \textasciitilde1.3 min \\
-  MANIFOLD $+V(x)+$Z3\textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & \textasciitilde4 min \\
+  MANIFOLD adapter $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
   \bottomrule
   \end{tabular}
   \end{center}
 
   \vspace{1mm}
-  {\footnotesize (a) reported in public evaluations. (b) measured (2740 cases, 11 categories). (c) \textbf{projected} under the Stage-2 protocol (Z3 with a 5\,s timeout).}
+  {\footnotesize (a) reported in public evaluations. (b) \textbf{measured} (Z3 adds witnesses, not precision).}
 \end{frame}
 
 \begin{frame}{Ablation: where the gain comes from}

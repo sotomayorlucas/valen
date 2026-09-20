@@ -168,6 +168,12 @@ Resultados del adaptador Java (corpus completo):
 | categorías de taint (7, 1698 casos) | 0.549 | 0.834 | 0.662 |
 | todas las categorías (11, 2740 casos) | 0.572 | 0.842 | 0.681 |
 
+**Verificación Z3 para Java** (`manifold/analysis/java_verifier.py`): con
+`--verify` el verificador simbólico (branches con merge, strings, sanitizadores
+como contratos, witness concreto) reproduce exactamente la precisión del
+adaptador (P=0.549, R=0.834, J=+0.057) — **aporta prueba, no precisión**: los
+errores residuales son casos adversariales del benchmark, no caminos espurios.
+
 Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
 genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer
