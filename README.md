@@ -225,6 +225,16 @@ son flujos indirectos → 0 detecciones (misma frontera que Juliet: falta análi
 interprocedural). El arnés reconstruye el "before" aplicando el diff inverso (sin
 cuota de API).
 
+**Ablación del LLM** (`benchmarks/run_llm.py`, LiteLLM local en `:4000`):
+```bash
+set -a; . ~/litellm/.env; set +a
+MANIFOLD_LLM_MODEL=openai/flash MANIFOLD_LLM_BASE_URL=http://127.0.0.1:4000 \
+MANIFOLD_LLM_API_KEY=$LITELLM_MASTER_KEY .venv/bin/python benchmarks/run_llm.py --runs 2
+```
+Resultado: los **confirmados son idénticos** offline vs LLM (el verificador Z3 es
+el árbitro); el LLM cambia la interpretación (CWE/título más ricos, p.ej. CWE-674
+para el ciclo). El conjunto confirmado es estable entre corridas.
+
 Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
 genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer

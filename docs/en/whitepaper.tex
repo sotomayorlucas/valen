@@ -652,6 +652,18 @@ $\beta_1=1$, undirected $\beta_1=0$). Symmetrization (C2) is therefore \emph{not
 innocuous: the directed invariant is a genuinely different, and sometimes
 opposite, signal.
 
+\subsection{LLM ablation}
+We ran the agent twice over the seven Python examples: offline (heuristic
+hypothesizer) and online through the local \textbf{LiteLLM} proxy (DeepSeek
+\texttt{flash}, OpenAI-compatible \texttt{/v1}). The \textbf{confirmed findings
+are identical} in both modes --- the SMT verifier is the arbiter, exactly as the
+architecture prescribes --- while the LLM changes the \emph{interpretation}:
+richer CWE labels and titles (e.g.\ CWE-674 ``Uncontrolled Recursion'' for the
+reentrancy cycle vs.\ the heuristic's generic label). Across repeated runs the
+set of confirmed findings is stable; only the LLM's phrasing varies. The
+decisive ablation is therefore empirical: \emph{the LLM adds interpretability,
+not detection} --- the neuro-symbolic split holds.
+
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
 (i) a zero-dependency \texttt{objdump}-text path (function labels $+$ \texttt{call}

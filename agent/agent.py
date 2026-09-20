@@ -79,6 +79,7 @@ class ReportEntry:
     status: str  # "confirmed" | "candidate"
     evidence: str
     line: int = 0
+    source: str = "heuristic"  # "llm" | "heuristic"
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -91,6 +92,7 @@ class ReportEntry:
             "status": self.status,
             "evidence": self.evidence,
             "line": self.line,
+            "source": self.source,
         }
 
 
@@ -420,6 +422,7 @@ class ManifoldAgent:
                             status="confirmed",
                             evidence=evidence,
                             line=h.line,
+                            source=h.source,
                         )
                     )
                 else:
@@ -434,6 +437,7 @@ class ManifoldAgent:
                             status="candidate",
                             evidence="not confirmed by the formal layer",
                             line=h.line,
+                            source=h.source,
                         )
                     )
             elif h.signal == "cycle":
@@ -448,6 +452,7 @@ class ManifoldAgent:
                         status="confirmed",
                         evidence="H1 generator (persistent homology of the call graph)",
                         line=h.line,
+                        source=h.source,
                     )
                 )
             else:
@@ -462,6 +467,7 @@ class ManifoldAgent:
                         status="candidate",
                         evidence="mathematical signal (needs manual or deeper analysis)",
                         line=h.line,
+                        source=h.source,
                     )
                 )
 

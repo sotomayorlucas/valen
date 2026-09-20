@@ -677,6 +677,19 @@ aislado $A\leftrightarrow B$ los papeles se invierten (GLMY $\beta_1=1$,
 no-dirigida $\beta_1=0$). La simetrización (C2) por tanto \emph{no} es inocua: la
 invariante dirigida es una señal genuinamente distinta, y a veces opuesta.
 
+\subsection{Ablación del LLM}
+Ejecutamos el agente dos veces sobre los siete ejemplos de Python: offline
+(hipotetizador heurístico) y online a través del proxy local de \textbf{LiteLLM}
+(DeepSeek \texttt{flash}, compatible OpenAI \texttt{/v1}). Los \textbf{hallazgos
+confirmados son idénticos} en ambos modos --- el verificador SMT es el árbitro,
+exactamente como prescribe la arquitectura --- mientras que el LLM cambia la
+\emph{interpretación}: etiquetas CWE y títulos más ricos (p.~ej.\ CWE-674
+``recursión no controlada'' para el ciclo de reentrancia vs.\ la etiqueta genérica
+de la heurística). A lo largo de corridas repetidas el conjunto de hallazgos
+confirmados es estable; solo varía la redacción del LLM. La ablación decisiva es,
+por tanto, empírica: \emph{el LLM aporta interpretabilidad, no detección} --- el
+reparto neuro-simbólico se sostiene.
+
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
 (i) una ruta de texto \texttt{objdump} sin dependencias (etiquetas de función

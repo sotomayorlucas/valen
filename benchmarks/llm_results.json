@@ -1,0 +1,220 @@
+{
+  "live": true,
+  "results": [
+    {
+      "file": "auth_bypass.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL injection via db.execute (sink db.execute, source ['param:query_param'])",
+          "signal": "taint",
+          "source": "heuristic"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL injection via db.execute (sink db.execute, source ['param:query_param'])",
+          "signal": "taint",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL injection in admin_delete via unparameterized query_param",
+          "signal": "taint",
+          "source": "llm"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL Injection via string concatenation in public_search",
+          "signal": "taint",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 2,
+      "confirmed_offline": 2,
+      "confirmed_online": 2,
+      "stable": false
+    },
+    {
+      "file": "code_execution.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-94",
+          "title": "Code execution via eval (sink eval, source ['param:expr'])",
+          "signal": "taint",
+          "source": "heuristic"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS command injection via os.system (sink os.system, source ['os.environ.get'])",
+          "signal": "taint",
+          "source": "heuristic"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-502",
+          "title": "Insecure deserialization via pickle.loads (sink pickle.loads, source ['param:blob'])",
+          "signal": "taint",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-95",
+          "title": "Arbitrary Code Execution via eval() on Untrusted Input",
+          "signal": "taint",
+          "source": "llm"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS Command Injection via Environment Variable",
+          "signal": "taint",
+          "source": "llm"
+        },
+        {
+          "status": "confirmed",
+          "cwe": "CWE-502",
+          "title": "Insecure Deserialization via pickle.loads on Untrusted Input",
+          "signal": "taint",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 3,
+      "confirmed_offline": 3,
+      "confirmed_online": 3,
+      "stable": true
+    },
+    {
+      "file": "command_injection.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS command injection via subprocess.run (sink subprocess.run, source ['param:host'])",
+          "signal": "taint",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS Command Injection in ping() via unsanitized host parameter",
+          "signal": "taint",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 1,
+      "confirmed_offline": 1,
+      "confirmed_online": 1,
+      "stable": true
+    },
+    {
+      "file": "reentrancy.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-835",
+          "title": "Uncontrolled recursion / reentrancy (cycle in call graph)",
+          "signal": "cycle",
+          "source": "heuristic"
+        },
+        {
+          "status": "candidate",
+          "cwe": "",
+          "title": "Structural anomaly",
+          "signal": "spectral",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-674",
+          "title": "Uncontrolled Recursion in read_balance",
+          "signal": "cycle",
+          "source": "llm"
+        },
+        {
+          "status": "candidate",
+          "cwe": "CWE-362",
+          "title": "Non-atomic balance check and withdrawal allows race-condition overdraft",
+          "signal": "spectral",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 2,
+      "confirmed_offline": 1,
+      "confirmed_online": 1,
+      "stable": false
+    },
+    {
+      "file": "safe.py",
+      "offline": [],
+      "online": [],
+      "llm_generated": 0,
+      "confirmed_offline": 0,
+      "confirmed_online": 0,
+      "stable": true
+    },
+    {
+      "file": "sanitized.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS command injection via subprocess.run (sink subprocess.run, source ['param:host'])",
+          "signal": "taint",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-78",
+          "title": "OS Command Injection in vulnerable_ping via unsanitized host parameter",
+          "signal": "taint",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 1,
+      "confirmed_offline": 1,
+      "confirmed_online": 1,
+      "stable": false
+    },
+    {
+      "file": "sqli.py",
+      "offline": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL injection via cursor.execute (sink cursor.execute, source ['param:query_param'])",
+          "signal": "taint",
+          "source": "heuristic"
+        }
+      ],
+      "online": [
+        {
+          "status": "confirmed",
+          "cwe": "CWE-89",
+          "title": "SQL injection via string concatenation in cursor.execute",
+          "signal": "taint",
+          "source": "llm"
+        }
+      ],
+      "llm_generated": 1,
+      "confirmed_offline": 1,
+      "confirmed_online": 1,
+      "stable": false
+    }
+  ]
+}

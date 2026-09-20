@@ -173,6 +173,7 @@ def _results() -> Dict[str, Any]:
         "owasp": j("owasp_results.json"),
         "ablation": j("ablation_results.json"),
         "cves": j("cve_results.json"),
+        "llm": j("llm_results.json"),
         "scale": _read_scale(),
     }
 

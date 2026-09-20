@@ -119,6 +119,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
   <div id="oracle-table" style="margin-top:12px"></div>
   <h2 style="margin-top:18px">OWASP Benchmark 1.2</h2><div id="owasp-tables"></div>
   <h2 style="margin-top:18px">Real CVE fixes</h2><div id="cve-table"></div>
+  <h2 style="margin-top:18px">LLM ablation (LiteLLM)</h2><div id="llm-table"></div>
   <h2 style="margin-top:18px">Ablation</h2><div id="ablation-table"></div>
   <h2 style="margin-top:18px">Scalability</h2><div class="panel"><svg id="scale" viewBox="0 0 900 320"></svg></div>
 </section>
@@ -328,6 +329,9 @@ function renderExperiments(R){
     const res=f.resolved.length?`<span style="color:var(--green)">resolved</span>`:(f.persisting.length?`<span style="color:var(--amber)">persisting</span>`:"—");
     crows.push([c.cve, f.file, f.vuln_findings, f.patched_findings, res]);});});
   $("#cve-table").innerHTML = crows.length? table(crows,["CVE","file","vuln","patched","result"]) : "<div class='small'>no CVE data (run benchmarks/run_cves.py)</div>";
+  const llm=R.llm||{}; const lrows=[];
+  (llm.results||[]).forEach(r=>lrows.push([r.file, r.confirmed_offline, r.confirmed_online, r.llm_generated, r.stable?"stable":"varies"]));
+  $("#llm-table").innerHTML = lrows.length? `<div class="small">LLM configured: ${llm.live}</div>`+table(lrows,["file","confirmed offline","confirmed online","llm hypotheses","stability"]) : "<div class='small'>no LLM data (run benchmarks/run_llm.py)</div>";
   (function(){const by={};R.scale.forEach(r=>{(by[r.kernel]=by[r.kernel]||[]).push([r.edges,r.ms]);});
     const col={forman:"#3fb950",mapper:"#58a6ff",homology:"#f85149",sinkhorn:"#d29922",ollivier_exact:"#bc8cff",spectral_fiedler:"#79c0ff",directed_laplacian:"#ffa657"};
     const ser=Object.keys(by).map(k=>({name:k,color:col[k]||"#999",pts:by[k].sort((x,y)=>x[0]-y[0])}));
