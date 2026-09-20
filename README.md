@@ -24,8 +24,8 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 
 - [x] **F0** — Whitepaper (es/en) y arquitectura
 - [x] **F1** — IR + ingesta SAST (Python, tree-sitter) + taint intraprocedural
-- [ ] **F2** — Núcleo espectral + geométrico (Rust)
-- [ ] **F3** — Topología (homología persistente, Mapper)
+- [x] **F2** — Núcleo espectral (Fiedler) + geométrico (Ricci) (Rust)
+- [x] **F3** — Topología (homología persistente H0/H1, Mapper) (Rust)
 - [ ] **F4** — Verificación formal (lattice de taint, Z3, angr)
 - [ ] **F5** — Agente LLM autónomo (LiteLLM)
 - [ ] **F6** — Visualización + demo end-to-end
@@ -62,5 +62,14 @@ cd core && cargo test
 
 ## Documentación / Docs
 
-- Whitepaper (español): [`docs/es/whitepaper.md`](docs/es/whitepaper.md)
-- Whitepaper (English): [`docs/en/whitepaper.md`](docs/en/whitepaper.md)
+- Whitepaper (español): [`docs/es/whitepaper.md`](docs/es/whitepaper.md) · [PDF](docs/es/whitepaper.pdf)
+- Whitepaper (English): [`docs/en/whitepaper.md`](docs/en/whitepaper.md) · [PDF](docs/en/whitepaper.pdf)
+- Fuente LaTeX: `docs/es/whitepaper.tex`, `docs/en/whitepaper.tex` (compilar con `tectonic`)
+
+## Núcleo numérico (F2)
+
+```bash
+cd core && cargo test && cargo build --release
+# El binario lee el IR (JSON) por stdin y emite señales espectrales/geométricas.
+```
+El puente Python está en `manifold/analysis/math_core.py` (`run_core`, `fiedler_ranking`).

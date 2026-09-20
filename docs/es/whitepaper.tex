@@ -1,0 +1,227 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\catProg}{\mathbf{Prog}}
+\newcommand{\catAuth}{\mathbf{Auth}}
+
+\title{\bfseries MANIFOLD\\[2mm]\Large Un Motor Matemático para Mapear Vulnerabilidades}
+\author{Proyecto MANIFOLD}
+\date{Whitepaper v0.1 --- borrador de trabajo, no revisado por pares}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent MANIFOLD trata un artefacto de software no como un conjunto de reglas
+a emparejar, sino como un \emph{objeto matemático}: un grafo tipado y ponderado
+enriquecido con estructura \emph{algebraica}, \emph{espectral},
+\emph{topológica} y \emph{geométrica}. Sobre ese objeto se computa un campo
+escalar de \textbf{potencial de vulnerabilidad} $V(x)$, que hace emerger las
+regiones anómalas como \emph{rasgos} geométricos / topológicos / espectrales en
+lugar de coincidencias literales de cadenas. Un \textbf{agente LLM autónomo}
+navega el ``manifold'' resultante, formula hipótesis sobre esas regiones y
+despacha \textbf{verificadores formales} (SMT, ejecución simbólica,
+interpretación abstracta) que confirman o refutan cada hipótesis --- cerrando el
+ciclo entre intuición estadística y prueba matemática. Este documento define la
+representación intermedia, formaliza cada capa matemática, enuncia las leyes de
+mapeo que conectan rasgos matemáticos con clases de vulnerabilidad, y especifica
+la arquitectura del agente y la hoja de ruta.
+\end{abstract}
+
+\section{Motivación}
+Los escáneres tradicionales (SAST/DAST) enumeran patrones sintácticos. Son
+frágiles: pasan por alto vulnerabilidades novedosas y ahogan al analista en
+falsos positivos. Faltan dos capacidades:
+\begin{enumerate}[label=(\arabic*)]
+  \item Una \emph{representación unificada y cuantitativa} de la ``estructura del
+        programa'' sobre la cual proyectar y fusionar muchas señales
+        \emph{independientes}.
+  \item Un \emph{ciclo de razonamiento} que convierta ``región sospechosa'' en
+        ``vulnerabilidad probada'' --- el LLM aporta la intuición, la matemática
+        aporta la prueba.
+\end{enumerate}
+MANIFOLD proporciona ambas.
+
+\section{La idea central}
+\[
+\text{artefacto}\ \xrightarrow{\quad}\ \text{IR (grafo tipado)}
+\ \xrightarrow{\quad}\ \text{capas matemáticas}
+\ \xrightarrow{\quad}\ \text{campo escalar } V(x)
+\]
+Una vulnerabilidad \emph{no} es un patrón; es una \emph{violación de una
+invariante estructural} (una condición de naturalidad rota, un ciclo
+persistente, un cuello de botella de curvatura negativa, un flujo de taint que
+cruza un corte espectral de confianza). Cada capa detecta un \emph{tipo} distinto
+de violación de invariante, y el campo fusionado $V(x)$ ordena las regiones para
+que el agente las inspeccione.
+
+\section{La Representación Intermedia (IR)}
+\begin{quote}
+\textbf{Definición 1 (Grafo de programa).} Un \emph{grafo de programa} es una
+tupla $G = (V, E, \tau_V, \tau_E, \omega)$ donde
+\begin{itemize}[leftmargin=1.5em]
+  \item $V$ es un conjunto finito de \emph{nodos} (módulos, funciones, bloques,
+        sentencias, llamadas, variables, fuentes, sumideros);
+  \item $E \subseteq V \times V$ es un conjunto de \emph{aristas} dirigidas;
+  \item $\tau_V : V \to \N_K$ asigna a cada nodo un \emph{tipo} de
+        $K = \{\text{módulo, función, bloque, sentencia, llamada, asignación,
+        variable, parámetro, fuente, sumidero}\}$;
+  \item $\tau_E : E \to \mathcal{T}$ asigna a cada arista un \emph{tipo}
+        $\mathcal{T} = \{\text{control, dato, llamada, taint, confianza, auth}\}$;
+  \item $\omega : E \to \R_{\ge 0}$ asigna a cada arista un \emph{peso} no
+        negativo (por defecto $1$).
+\end{itemize}
+\end{quote}
+La IR es la única fuente de verdad. Cada adaptador (código fuente, binario, API
+web, agente LLM) debe producir un grafo de programa; cada análisis lo consume.
+El esquema es agnóstico al lenguaje y serializable a JSON (las capas Python y
+Rust comparten el mismo esquema).
+
+\section{Capas matemáticas}
+Para cada capa fijamos un subgrafo por tipo de arista $\tau_E$, y luego
+computamos estructura.
+
+\subsection{Capa espectral (teoría algebraica de grafos)}
+Para un tipo de arista $t$, definimos la \emph{adyacencia} simétrica $A_t$ y el
+\emph{grado} $D_t$, y el \emph{Laplaciano combinatorio}
+\[
+L_t = D_t - A_t .
+\]
+$L_t$ es semidefinido positivo; su espectro
+$0 = \lambda_1 \le \lambda_2 \le \cdots$ codifica la estructura global:
+\begin{itemize}[leftmargin=1.5em]
+  \item $\lambda_2$ es la \emph{conectividad algebraica} (valor de Fiedler). Su
+        autovector $f_2$ --- el \emph{vector de Fiedler} --- induce un corte
+        canónico $S^+ = \{v : f_2(v) \ge 0\}$.
+  \item El \emph{embedding espectral}
+        $\Phi^{(d)}(v) = (f_2(v), f_3(v), \dots, f_{d+1}(v))$ mapea nodos a
+        $\R^d$.
+  \item La desigualdad de Cheeger acota el cociente de cuello de botella $h(G)$
+        por $\tfrac{\lambda_2}{2} \le h(G) \le \sqrt{2\,d_{\max}\lambda_2}$.
+\end{itemize}
+\textbf{Señal 1 (anomalía espectral).} El error de reconstrucción de un nodo
+bajo una reconstrucción de eigenmap de bajo rango, y su distancia al corte de
+Fiedler, se usan como puntajes de anomalía.
+
+\subsection{Capa topológica (homología persistente)}
+Del grafo de programa construimos una \emph{filtración} de complejos
+simpliciales (p.~ej.\ un complejo de Vietoris--Rips o de bandera sobre la
+métrica de caminos más cortos, o una filtración guiada por $\omega$). La
+homología persistente produce, para cada dimensión $k$, un \emph{diagrama de
+persistencia} $\mathrm{Dgm}_k$ de pares nacimiento--muerte. $\beta_0$ cuenta
+componentes, $\beta_1$ cuenta ciclos independientes; los puntos lejos de la
+diagonal tienen alta persistencia. El algoritmo \textbf{Mapper}
+(Singh--M\'emoli--Carlsson) construye un \emph{nervio} navegable a partir de una
+función filtro $f: V \to \R$, produciendo el mapa que da nombre al proyecto.
+
+\subsection{Capa geométrica (curvatura discreta)}
+La \emph{curvatura de Ollivier--Ricci} de una arista $(u,v)$ es
+\[
+\kappa(u,v) = 1 - \frac{W_1(m_u, m_v)}{d(u,v)},
+\]
+con medidas de paseo aleatorio perezoso $m_u, m_v$ y distancia de Wasserstein-1
+$W_1$. La curvatura negativa marca \emph{embudos} por los que pasan muchos
+caminos más cortos. La \emph{curvatura de Forman--Ricci} (sin pesos) es
+$\kappa_F(u,v) = 4 - \deg(u) - \deg(v)$, marcando de forma barata los nodos de
+alto grado.
+
+\subsection{Capa algebraica (retículos y teoría de categorías)}
+\emph{Interpretación abstracta.} El \emph{retículo de taint}
+$\mathbb{T} = \{\bot = \text{limpio} \sqsubseteq \top = \text{manchado}\}$ (un
+retículo producto sobre etiquetas) da una \emph{conexión de Galois}
+$(\alpha, \gamma)$ entre la semántica recolectora concreta y el dominio abstracto
+de taint, garantizando solidez. \emph{Teoría de categorías.} El programa es una
+categoría $\catProg$; los efectos son mónadas, la autorización es un funtor
+$F : \catProg \to \catAuth$. \textbf{Ley de diseño (naturalidad del taint):} una
+vulnerabilidad es un flujo de taint que rompe el cuadrado de naturalidad de $F$.
+
+\subsection{Capa formal (ejecución simbólica y model checking)}
+La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
+simbólico $\sigma$; un solucionador SMT comprueba
+$\mathrm{SAT}(\Phi \wedge \text{malo})$, cuyo modelo es un exploit concreto. La
+alcanzabilidad es la fórmula CTL $\mathbf{EF}\,\mathrm{malo}$; la propagación de
+taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto de
+caminos fuente $\to$ sumidero.
+
+\section{El campo escalar de vulnerabilidad}
+\[
+V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
+\]
+donde $s_i$ son las señales normalizadas de cada capa (anomalía espectral,
+outlier de persistencia, curvatura, altura de retículo, alcanzabilidad formal),
+$\alpha_i$ son pesos (aprendibles) y $\sigma$ una compresión logística. $V$ es un
+ranking, un filtro de Mapper y un campo de costos para la navegación.
+
+\section{Leyes de mapeo}
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+\# & Ley & Clase de vulnerabilidad \\
+\midrule
+L1 & Cuello de botella ($\kappa \ll 0$) & escalada de privilegios, bypass de auth \\
+L2 & Ciclo ($H_1$ persistente) & reentrancia, recursión infinita \\
+L3 & Corte de confianza (corte de Fiedler) & inyección que cruza la frontera de confianza \\
+L4 & Ruptura de naturalidad & violación arbitraria de taint \\
+L5 & Outlier de persistencia & rasgo real vs.\ espurio \\
+L6 & Alcanzabilidad ($\mathrm{SAT}(\Phi \wedge \text{malo})$) & exploit concreto \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{El agente LLM autónomo}
+Un ciclo cerrado: (1) \emph{ingesta} hacia la IR; (2) \emph{embebir y mapear}
+($V(x)$, embedding espectral, persistencia, curvatura, Mapper); (3)
+\emph{hipotetizar} (el LLM propone candidatos desde el manifold); (4)
+\emph{verificar} (la capa formal prueba o refuta); (5) \emph{refinar} (los
+hallazgos re-ponderan y re-embeben); (6) \emph{reportar}. La capa de proveedor
+LLM apunta a cualquier endpoint compatible con OpenAI mediante \textbf{LiteLLM}.
+El LLM no hace detección cruda: la matemática propone regiones, el LLM propone
+hipótesis, la capa formal propone pruebas.
+
+\section{Estado de implementación}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Fase & Entregable & Estado \\
+\midrule
+F0 & Whitepaper, arquitectura & hecho \\
+F1 & IR + ingesta SAST Python + taint & hecho \\
+F2 & Núcleos espectral + geométrico (Rust) & hecho \\
+F3 & TDA (homología persistente, Mapper) & hecho \\
+F4 & Verificación formal (Z3, angr) & pendiente \\
+F5 & Agente LLM autónomo (LiteLLM) & pendiente \\
+F6 & Visualización + demo end-to-end & pendiente \\
+F7 & Adaptadores binario / web / LLM & pendiente \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Validación y uso responsable}
+La validación usa micro-benchmarks de juguete con verdad de referencia conocida,
+luego corpus etiquetados (OWASP Benchmark, SARD) una vez que F4 aterrice,
+midiendo precisión/recall del campo fusionado frente al taint crudo. MANIFOLD es
+una herramienta de defensa / pruebas autorizadas; la liberamos bajo el supuesto
+de uso autorizado y alentamos la divulgación coordinada.
+
+\begin{thebibliography}{9}
+\item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
+\item F.~Chung, \emph{Spectral Graph Theory}, 1997.
+\item Edelsbrunner, Letscher, Zomorodian, \emph{Topological persistence and simplification}, 2002.
+\item Singh, M\'emoli, Carlsson, \emph{Topological Methods for the Analysis of High Dimensional Data Sets}, 2007.
+\item Y.~Ollivier, \emph{Ricci curvature of Markov chains on metric spaces}, 2009.
+\item P.~Cousot \& R.~Cousot, \emph{Abstract interpretation: a unified lattice model}, 1977.
+\item S.~Mac~Lane, \emph{Categories for the Working Mathematician}, 1971.
+\item J.~King, \emph{Symbolic execution and program testing}, 1976.
+\item E.~M.~Clarke et al., \emph{Automatic verification of finite-state concurrent systems}, 1986.
+\end{thebibliography}
+
+\end{document}

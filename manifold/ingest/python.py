@@ -432,21 +432,10 @@ class PythonIngest:
             engine.assign(target, rhs_tags)
             self._var_def[(func_id, target)] = stmt_id
 
-        # Emit SOURCE nodes and DATA edges when a source is assigned.
-        if right is not None and right.type == "call":
-            src_name = _dotted_name(right.child_by_field_name("function"))
-            if engine.is_source(src_name):
-                src_id = self._new_id("src")
-                graph.add_node(
-                    src_id,
-                    NodeKind.SOURCE,
-                    src_name,
-                    file=path,
-                    line=right.start_point[0] + 1,
-                    end_line=right.end_point[0] + 1,
-                    attrs={"description": engine.source_description(src_name)},
-                )
-                graph.add_edge(src_id, stmt_id, EdgeKind.DATA)
+        # Emit call-graph edges and source/sink nodes for any calls in the RHS
+        # (e.g. `x = read_balance()` or `x = eval(user_input)`).
+        if right is not None:
+            self._scan_calls(right, graph, func_id, qualname, path, engine, findings, stmt_id)
 
     def _handle_call(
         self,
@@ -484,6 +473,7 @@ class PythonIngest:
                 end_line=node.end_point[0] + 1,
                 attrs={"description": engine.source_description(name)},
             )
+            graph.add_edge(src_id, stmt_id, EdgeKind.DATA)
 
     def _handle_sink(
         self,

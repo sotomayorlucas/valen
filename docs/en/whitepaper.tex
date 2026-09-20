@@ -1,0 +1,219 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\catProg}{\mathbf{Prog}}
+\newcommand{\catAuth}{\mathbf{Auth}}
+
+\title{\bfseries MANIFOLD\\[2mm]\Large A Mathematical Engine for Mapping Vulnerabilities}
+\author{MANIFOLD Project}
+\date{Whitepaper v0.1 --- working draft, not peer reviewed}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent MANIFOLD treats a software artifact not as a bag of rules to match, but
+as a \emph{mathematical object}: a typed, weighted graph enriched with
+\emph{algebraic}, \emph{spectral}, \emph{topological} and \emph{geometric}
+structure. Over this object we compute a scalar field of \textbf{vulnerability
+potential} $V(x)$, which surfaces anomalous regions as geometric / topological /
+spectral \emph{features} rather than as literal string matches. An
+\textbf{autonomous LLM agent} navigates the resulting ``manifold'', formulates
+hypotheses about those regions, and dispatches \textbf{formal verifiers} (SMT,
+symbolic execution, abstract interpretation) that confirm or refute each
+hypothesis --- closing the loop between statistical intuition and mathematical
+proof. This document defines the intermediate representation, formalizes each
+mathematical layer, states the mapping laws that connect mathematical features
+to vulnerability classes, and specifies the agent architecture and roadmap.
+\end{abstract}
+
+\section{Motivation}
+Traditional scanners (SAST/DAST) enumerate syntactic patterns. They are brittle:
+they miss novel vulnerabilities and drown analysts in false positives. Two
+capabilities are missing:
+\begin{enumerate}[label=(\arabic*)]
+  \item A \emph{unified, quantitative representation} of ``program structure''
+        onto which many \emph{independent} signals can be projected and fused.
+  \item A \emph{reasoning loop} that converts ``suspicious region'' into
+        ``proven vulnerability'' --- the LLM supplies the intuition, mathematics
+        supplies the proof.
+\end{enumerate}
+MANIFOLD provides both.
+
+\section{The core idea}
+\[
+\text{artifact}\ \xrightarrow{\quad}\ \text{IR (typed graph)}
+\ \xrightarrow{\quad}\ \text{mathematical layers}
+\ \xrightarrow{\quad}\ \text{scalar field } V(x)
+\]
+A vulnerability is \emph{not} a pattern; it is a \emph{violation of a structural
+invariant} (a broken naturality condition, a persistent cycle, a negative
+curvature chokepoint, a taint flow across a spectral trust cut). Each layer
+detects a different \emph{kind} of invariant violation, and the fused field
+$V(x)$ ranks regions for the agent to inspect.
+
+\section{The Intermediate Representation (IR)}
+\begin{quote}
+\textbf{Definition 1 (Program graph).} A \emph{program graph} is a tuple
+$G = (V, E, \tau_V, \tau_E, \omega)$ where
+\begin{itemize}[leftmargin=1.5em]
+  \item $V$ is a finite set of \emph{nodes} (modules, functions, blocks,
+        statements, calls, variables, sources, sinks);
+  \item $E \subseteq V \times V$ is a set of directed \emph{edges};
+  \item $\tau_V : V \to \N_K$ assigns each node a \emph{kind} from
+        $K = \{\text{module, function, block, statement, call, assign, variable,
+        parameter, source, sink}\}$;
+  \item $\tau_E : E \to \mathcal{T}$ assigns each edge a \emph{type}
+        $\mathcal{T} = \{\text{control, data, call, taint, trust, auth}\}$;
+  \item $\omega : E \to \R_{\ge 0}$ assigns each edge a non-negative
+        \emph{weight} (default $1$).
+\end{itemize}
+\end{quote}
+The IR is the single source of truth. Every adapter (source code, binary, web
+API, LLM agent) must produce a program graph; every analysis consumes it. The
+schema is language-agnostic and JSON-serializable (the Python and Rust layers
+share the identical schema).
+
+\section{Mathematical layers}
+For each layer we fix a subgraph by edge type $\tau_E$, then compute structure.
+
+\subsection{Spectral layer (algebraic graph theory)}
+For an edge type $t$, define the symmetric \emph{adjacency} $A_t$ and
+\emph{degree} $D_t$, and the \emph{combinatorial Laplacian}
+\[
+L_t = D_t - A_t .
+\]
+$L_t$ is positive semidefinite; its spectrum
+$0 = \lambda_1 \le \lambda_2 \le \cdots$ encodes global structure:
+\begin{itemize}[leftmargin=1.5em]
+  \item $\lambda_2$ is the \emph{algebraic connectivity} (Fiedler value). Its
+        eigenvector $f_2$ --- the \emph{Fiedler vector} --- induces a canonical
+        cut $S^+ = \{v : f_2(v) \ge 0\}$.
+  \item The \emph{spectral embedding}
+        $\Phi^{(d)}(v) = (f_2(v), f_3(v), \dots, f_{d+1}(v))$ maps nodes into
+        $\R^d$.
+  \item The Cheeger inequality bounds the bottleneck ratio $h(G)$ by
+        $\tfrac{\lambda_2}{2} \le h(G) \le \sqrt{2\,d_{\max}\lambda_2}$.
+\end{itemize}
+\textbf{Signal 1 (spectral anomaly).} The reconstruction error of a node under a
+low-rank eigenmap reconstruction, and its distance from the Fiedler cut, are
+used as anomaly scores.
+
+\subsection{Topological layer (persistent homology)}
+From the program graph we build a \emph{filtration} of simplicial complexes
+(e.g.\ a Vietoris--Rips or flag complex over the shortest-path metric, or a
+filtration driven by $\omega$). Persistent homology yields, for each dimension
+$k$, a \emph{persistence diagram} $\mathrm{Dgm}_k$ of birth--death pairs.
+$\beta_0$ counts components, $\beta_1$ counts independent cycles; points far
+from the diagonal have high persistence. The \textbf{Mapper} algorithm
+(Singh--M\'emoli--Carlsson) builds a navigable \emph{nerve} from a filter
+function $f: V \to \R$, producing the map that gives the project its name.
+
+\subsection{Geometric layer (discrete curvature)}
+The \emph{Ollivier--Ricci curvature} of an edge $(u,v)$ is
+\[
+\kappa(u,v) = 1 - \frac{W_1(m_u, m_v)}{d(u,v)},
+\]
+with lazy random-walk measures $m_u, m_v$ and Wasserstein-1 distance $W_1$.
+Negative curvature marks \emph{funnels} through which many shortest paths pass.
+The \emph{Forman--Ricci} curvature (unweighted) is $\kappa_F(u,v) = 4 - \deg(u)
+- \deg(v)$, cheaply flagging high-degree hubs.
+
+\subsection{Algebraic layer (lattices \& category theory)}
+\emph{Abstract interpretation.} The \emph{taint lattice}
+$\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}$ (a
+product lattice over tags) gives a \emph{Galois connection}
+$(\alpha, \gamma)$ between the concrete collecting semantics and the abstract
+taint domain, guaranteeing soundness. \emph{Category theory.} The program is a
+category $\catProg$; effects are monads, authorization is a functor
+$F : \catProg \to \catAuth$. \textbf{Design law (naturality of taint):} a
+vulnerability is a taint flow that breaks the naturality square of $F$.
+
+\subsection{Formal layer (symbolic execution \& model checking)}
+Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
+an SMT solver checks $\mathrm{SAT}(\Phi \wedge \text{bad})$, whose model is a
+concrete exploit. Reachability is the CTL formula $\mathbf{EF}\,\mathrm{bad}$;
+taint propagation is a finite automaton whose accepted language is exactly the
+set of source $\to$ sink paths.
+
+\section{The vulnerability scalar field}
+\[
+V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
+\]
+where $s_i$ are normalized layer signals (spectral anomaly, persistence
+outlier, curvature, lattice height, formal reachability), $\alpha_i$ are
+(learnable) weights, and $\sigma$ a logistic squeeze. $V$ is a ranking, a
+Mapper filter, and a cost field for navigation.
+
+\section{Mapping laws}
+\begin{center}
+\begin{tabular}{cll}
+\toprule
+\# & Law & Vulnerability class \\
+\midrule
+L1 & Chokepoint ($\kappa \ll 0$) & privilege escalation, auth bypass \\
+L2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
+L3 & Trust cut (Fiedler cut) & injection across trust boundary \\
+L4 & Naturality break & arbitrary taint violation \\
+L5 & Persistence outlier & real vs.\ spurious features \\
+L6 & Reachability ($\mathrm{SAT}(\Phi \wedge \text{bad})$) & concrete exploit \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{The autonomous LLM agent}
+A closed loop: (1) \emph{ingest} into the IR; (2) \emph{embed \& map} ($V(x)$,
+spectral embedding, persistence, curvature, Mapper); (3) \emph{hypothesize}
+(the LLM proposes candidates from the manifold); (4) \emph{verify} (the formal
+layer proves or refutes); (5) \emph{refine} (findings re-weight and re-embed);
+(6) \emph{report}. The LLM provider layer targets any OpenAI-compatible endpoint
+via \textbf{LiteLLM}. The LLM does not do raw detection: mathematics proposes
+regions, the LLM proposes hypotheses, the formal layer proposes proofs.
+
+\section{Implementation status}
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Phase & Deliverable & Status \\
+\midrule
+F0 & Whitepaper, architecture & done \\
+F1 & IR + Python SAST ingest + taint & done \\
+F2 & Spectral + geometric kernels (Rust) & done \\
+F3 & TDA (persistent homology, Mapper) & done \\
+F4 & Formal verification (Z3, angr) & pending \\
+F5 & Autonomous LLM agent (LiteLLM) & pending \\
+F6 & Visualization + end-to-end demo & pending \\
+F7 & Binary / web / LLM adapters & pending \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\section{Validation and responsible use}
+Validation uses toy micro-benchmarks with known ground truth, then labeled
+corpora (OWASP Benchmark, SARD) once F4 lands, measuring precision/recall of the
+fused field versus raw taint. MANIFOLD is a defensive / authorized-testing tool;
+we release under the assumption of authorized use and encourage coordinated
+disclosure.
+
+\begin{thebibliography}{9}
+\item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
+\item F.~Chung, \emph{Spectral Graph Theory}, 1997.
+\item Edelsbrunner, Letscher, Zomorodian, \emph{Topological persistence and simplification}, 2002.
+\item Singh, M\'emoli, Carlsson, \emph{Topological Methods for the Analysis of High Dimensional Data Sets}, 2007.
+\item Y.~Ollivier, \emph{Ricci curvature of Markov chains on metric spaces}, 2009.
+\item P.~Cousot \& R.~Cousot, \emph{Abstract interpretation: a unified lattice model}, 1977.
+\item S.~Mac~Lane, \emph{Categories for the Working Mathematician}, 1971.
+\item J.~King, \emph{Symbolic execution and program testing}, 1976.
+\item E.~M.~Clarke et al., \emph{Automatic verification of finite-state concurrent systems}, 1986.
+\end{thebibliography}
+
+\end{document}
