@@ -3,7 +3,7 @@
 
 use manifold_core::{
     directed_laplacian, fiedler, forman_ricci, graph::{EdgeKind, Graph}, homology, mapper,
-    ollivier_ricci, ollivier_ricci_sinkhorn, spectral_embedding,
+    ollivier_ricci, ollivier_ricci_sinkhorn, path_homology, spectral_embedding,
 };
 use serde_json::{json, Value};
 use std::io::{self, Read};
@@ -40,6 +40,7 @@ fn geometry_block(graph: &Graph, kind: EdgeKind) -> Value {
 
 fn topology_block(graph: &Graph, kind: EdgeKind) -> Value {
     let hom = homology(graph, kind);
+    let ph = path_homology(graph, kind);
     let f = fiedler(graph, kind);
     let m = mapper(graph, kind, &f.vector, 8, 0.3);
 
@@ -62,6 +63,13 @@ fn topology_block(graph: &Graph, kind: EdgeKind) -> Value {
         "mapper": {
             "clusters": m.clusters.iter().map(|c| json!({"id": c.id, "nodes": c.nodes})).collect::<Vec<_>>(),
             "nerve": m.nerve,
+        },
+        "directed_path": {
+            "beta0": ph.beta0,
+            "beta1": ph.beta1,
+            "vertices": ph.vertices,
+            "edges": ph.edges,
+            "paths2": ph.paths2,
         },
     })
 }

@@ -97,7 +97,10 @@ cd core && cargo test && cargo build --release
 El puente Python está en `manifold/analysis/math_core.py` (`run_core`, `fiedler_ranking`).
 
 Núcleo incluye además: **Laplaciano dirigido de Chung** (`directed_laplacian`) y
-**Ollivier–Ricci aproximado vía Sinkhorn** (`ollivier_ricci_sinkhorn`).
+**Ollivier–Ricci aproximado vía Sinkhorn** (`ollivier_ricci_sinkhorn`). La capa
+topológica tiene dos invariantes: homología **no dirigida** (`homology`) y
+**homología de caminos dirigida GLMY** (`path_homology`, H0/H1) — sobre
+`reentrancy.py` dan β1=1 y β1=0 respectivamente (la dirección cambia el veredicto).
 
 ## Agente autónomo (F5)
 

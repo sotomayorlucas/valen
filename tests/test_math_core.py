@@ -83,3 +83,17 @@ def test_cycle_ranking_returns_labels(binary_available):
     # The cycle should mention at least one of the mutually recursive functions.
     flat = [label for cycle in cycles for label in cycle]
     assert any("read_balance" in label or "update_balance" in label for label in flat)
+
+
+def test_directed_path_homology_present_and_differs(binary_available):
+    if not binary_available:
+        pytest.skip("manifold-core binary not built")
+    res = _analyze("reentrancy.py")
+    topo = topology(res.graph, kind="call")
+    assert "directed_path" in topo
+    dp = topo["directed_path"]
+    assert dp["beta0"] >= 1 and dp["beta1"] >= 0
+    # Direction matters: the undirected homology sees a cycle (the triangle),
+    # while GLMY path homology fills it via the apex and reports beta1 = 0.
+    assert topo["beta1"] >= 1
+    assert dp["beta1"] == 0

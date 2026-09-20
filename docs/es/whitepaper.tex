@@ -352,8 +352,9 @@ la distribución estacionaria bien definida en cadenas periódicas. Un DAG no
 tiene SCC de tamaño $\ge 2$, así que la señal dirigida queda deliberadamente
 \emph{indefinida} ahí --- lo cual es en sí mismo una respuesta significativa: los
 flujos acíclicos no tienen dirección que preservar y se delegan a las capas de
-retículos / alcanzabilidad. \emph{Abierto:} complejos de bandera dirigidos /
-homología de caminos (Grigor'yan--Lin--Muranov--Yau).
+retículos / alcanzabilidad. \emph{Implementado:} homología de caminos dirigida
+GLMY $H_0,H_1$ (Grigor'yan--Lin--Muranov--Yau), que cambia el veredicto frente a
+la homología simetrizada (\S11).
 
 \textbf{C3 -- Costo del transporte óptimo.} Ollivier--Ricci exige un PL de
 transporte por arista: $\mathcal{O}(|E|\cdot\text{PL})$, prohibitivo más allá de
@@ -659,6 +660,22 @@ ve nada. Esto refleja el resultado de Juliet y localiza la frontera con
 precisión: MANIFOLD ya captura fixes de \texttt{eval}/\texttt{exec}/
 deserialización a nivel aplicación; los flujos mediados por frameworks
 necesitan análisis interprocedural consciente de librerías.
+
+\subsection{Homología de caminos dirigida (GLMY)}
+Implementamos la \emph{homología de caminos} $H_0,H_1$ de
+Grigor'yan--Lin--Muranov--Yau sobre el 1-esqueleto dirigido
+(\texttt{core/src/path\_homology.rs}): $\Omega_2^\partial$ es el conjunto de
+2-caminos admisibles cuyo borde largo es admisible y no degenerado ($u\neq w$), y
+los rangos se calculan por eliminación gaussiana. La dirección cambia el
+veredicto. En \texttt{reentrancy.py}, la homología no-dirigida reporta
+$\beta_1=1$ (el triángulo
+\texttt{withdraw}/\texttt{read\_balance}/\texttt{update\_balance}), mientras que
+GLMY reporta $\beta_1=0$: los 2-caminos transitivos a través del ápice
+\texttt{withdraw} rellenan el 2-ciclo
+\texttt{read\_balance}$\leftrightarrow$\texttt{update\_balance}. En un 2-ciclo
+aislado $A\leftrightarrow B$ los papeles se invierten (GLMY $\beta_1=1$,
+no-dirigida $\beta_1=0$). La simetrización (C2) por tanto \emph{no} es inocua: la
+invariante dirigida es una señal genuinamente distinta, y a veces opuesta.
 
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:

@@ -343,8 +343,9 @@ which keeps the stationary distribution well-posed on periodic chains. A DAG has
 no SCC of size $\ge 2$, so the directed signal is deliberately \emph{undefined}
 there --- which is itself a meaningful answer: acyclic flows carry no direction
 to preserve and are handed to the lattice / reachability layers instead.
-\emph{Open:} directed flag complexes / path homology
-(Grigor'yan--Lin--Muranov--Yau).
+\emph{Implemented:} GLMY directed path homology $H_0,H_1$
+(Grigor'yan--Lin--Muranov--Yau), which changes the verdict versus the
+symmetrized homology (\S11).
 
 \textbf{C3 -- Cost of optimal transport.} Ollivier--Ricci requires a
 transportation LP per edge: $\mathcal{O}(|E|\cdot\text{LP})$, prohibitive beyond
@@ -636,6 +637,20 @@ nothing. This mirrors the Juliet result and locates the frontier precisely:
 MANIFOLD already catches application-level \texttt{eval}/\texttt{exec}/
 deserialization fixes; framework-mediated flows need interprocedural,
 library-aware analysis.
+
+\subsection{Directed path homology (GLMY)}
+We implemented Grigor'yan--Lin--Muranov--Yau \emph{path homology} $H_0,H_1$ over
+the directed 1-skeleton (\texttt{core/src/path\_homology.rs}): $\Omega_2^\partial$
+is the set of allowed 2-paths whose long edge is allowed and non-degenerate
+($u\neq w$), and ranks are computed by Gaussian elimination. Direction changes
+the verdict. On \texttt{reentrancy.py}, undirected homology reports $\beta_1=1$
+(the \texttt{withdraw}/\texttt{read\_balance}/\texttt{update\_balance} triangle),
+while GLMY reports $\beta_1=0$: the transitive 2-paths through the apex
+\texttt{withdraw} fill the \texttt{read\_balance}$\leftrightarrow$\texttt{update\_balance}
+2-cycle. On an isolated 2-cycle $A\leftrightarrow B$ the roles invert (GLMY
+$\beta_1=1$, undirected $\beta_1=0$). Symmetrization (C2) is therefore \emph{not}
+innocuous: the directed invariant is a genuinely different, and sometimes
+opposite, signal.
 
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:

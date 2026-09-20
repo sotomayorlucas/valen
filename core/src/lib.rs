@@ -12,6 +12,7 @@
 pub mod directed;
 pub mod geometry;
 pub mod graph;
+pub mod path_homology;
 pub mod spectral;
 pub mod topology;
 
@@ -19,4 +20,5 @@ pub use graph::{Edge, EdgeKind, Graph, Node, NodeKind};
 pub use spectral::{fiedler, laplacian_csr, spectral_embedding, Fiedler, SpectralEmbedding};
 pub use directed::{directed_laplacian, DirectedSpectral};
 pub use geometry::{forman_ricci, ollivier_ricci, ollivier_ricci_sinkhorn, RicciEdge};
+pub use path_homology::{path_homology, PathHomology};
 pub use topology::{homology, mapper, Bar, Cycle, Homology, MapperResult};
