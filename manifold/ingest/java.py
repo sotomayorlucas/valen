@@ -67,6 +67,63 @@ def _args(node: Optional[Node]) -> List[Node]:
     return list(args.named_children)
 
 
+def enumerate_sinks(code: str) -> List[dict]:
+    """Enumerate *every* sink call in the file (tainted or not).
+
+    This is the candidate set for the prioritization-oracle experiment: the
+    vulnerable sink must be ranked highly among all sinks.
+    """
+    parser = parser_for("java")
+    tree = parser.parse(code.encode())
+    return enumerate_sinks_root(tree.root_node)
+
+
+def enumerate_sinks_root(root: Node) -> List[dict]:
+    out: List[dict] = []
+
+    def walk(node: Node) -> None:
+        if node.type == "method_invocation":
+            name = _name_of(node)
+            if name in _SINKS:
+                out.append({"line": node.start_point[0] + 1, "name": name, "category": _SINKS[name]})
+        elif node.type == "object_creation_expression":
+            type_node = node.child_by_field_name("type")
+            type_name = type_node.text.decode() if type_node else ""
+            if type_name.split(".")[-1] in _PATHTRAVER_TYPES:
+                out.append({"line": node.start_point[0] + 1, "name": type_name, "category": "pathtraver"})
+        for c in node.named_children:
+            walk(c)
+
+    walk(root)
+    return out
+
+
+def methods_of_cached(root: Node) -> List[dict]:
+    """Method declarations under ``root``: ``{name, line, end_line}``."""
+    out: List[dict] = []
+
+    def walk(node: Node) -> None:
+        if node.type == "method_declaration":
+            name = node.child_by_field_name("name")
+            out.append({
+                "name": name.text.decode() if name else "?",
+                "line": node.start_point[0] + 1,
+                "end_line": node.end_point[0] + 1,
+            })
+        for c in node.named_children:
+            walk(c)
+
+    walk(root)
+    return out
+
+
+def methods_of(code: str) -> List[dict]:
+    """Return method declarations as ``{name, line, end_line}``."""
+    parser = parser_for("java")
+    tree = parser.parse(code.encode())
+    return methods_of_cached(tree.root_node)
+
+
 class JavaIngest:
     def analyze(self, code: str, path: str = "<java>") -> AnalysisResult:
         parser = parser_for("java")
@@ -82,7 +139,61 @@ class JavaIngest:
 
         self._walk(root, graph, env, findings, path)
         findings.extend(self._pattern_findings(code, path))
+        self._build_graph(root, graph, findings, path)
         return AnalysisResult(graph=graph, findings=findings)
+
+    def _build_graph(self, root: Node, graph: Graph, findings: List[Finding], path: str) -> None:
+        """Emit the IR: methods, call edges, and source/sink/taint nodes."""
+        methods = methods_of_cached(root)
+        name_to_id: Dict[str, str] = {}
+        for i, m in enumerate(methods, 1):
+            nid = f"fn{i}"
+            name_to_id.setdefault(m["name"], nid)
+            graph.add_node(
+                nid, NodeKind.FUNCTION, m["name"], file=path,
+                line=m["line"], end_line=m["end_line"],
+            )
+
+        def walk_calls(node: Node, current: str) -> None:
+            for c in node.named_children:
+                if c.type == "method_declaration":
+                    nm = c.child_by_field_name("name")
+                    walk_calls(c, nm.text.decode() if nm else current)
+                elif c.type == "method_invocation":
+                    nm = c.child_by_field_name("name")
+                    callee = nm.text.decode() if nm else ""
+                    if current in name_to_id and callee in name_to_id:
+                        graph.add_edge(name_to_id[current], name_to_id[callee], EdgeKind.CALL)
+                    walk_calls(c, current)
+                else:
+                    walk_calls(c, current)
+
+        walk_calls(root, "")
+
+        # One SINK node per candidate (tainted or not), attached to its enclosing
+        # method so structural signals reach it; tainted candidates also get a
+        # SOURCE node and a TAINT edge.
+        tainted_keys = {(f.category, f.line) for f in findings}
+
+        def enclosing(line: int) -> Optional[str]:
+            for m in methods:
+                if m["line"] <= line <= m["end_line"]:
+                    return name_to_id.get(m["name"])
+            return None
+
+        for i, s in enumerate(enumerate_sinks_root(root), 1):
+            snk = f"sink_{i}"
+            graph.add_node(
+                snk, NodeKind.SINK, s["name"], file=path, line=s["line"],
+                attrs={"category": s["category"]},
+            )
+            host = enclosing(s["line"])
+            if host is not None:
+                graph.add_edge(host, snk, EdgeKind.CALL)
+            if (s["category"], s["line"]) in tainted_keys:
+                src = f"src_{i}"
+                graph.add_node(src, NodeKind.SOURCE, "input", file=path, line=s["line"])
+                graph.add_edge(src, snk, EdgeKind.TAINT)
 
     def _emit(self, node: Node, name: str, category: str, findings: List[Finding], path: str) -> None:
         key = (category, name, node.start_point[0])

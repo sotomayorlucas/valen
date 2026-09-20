@@ -6,6 +6,8 @@
 \usepackage{upquote}
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{codegray},xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
@@ -361,6 +363,57 @@ categories --- the reference point that the fused field, calibration and the
 verifier are meant to improve on. MANIFOLD is a defensive /
 authorized-testing tool; we release under the assumption of authorized use and
 encourage coordinated disclosure.
+
+\subsection{The prioritization oracle (main experiment)}
+The bottleneck of SAST is not \emph{detecting} sinks but \emph{deciding which one
+to verify}. For each of the 902 vulnerable taint cases we enumerate
+\emph{every} sink call (the candidate set), rank the candidates, and measure the
+rank at which a ground-truth-vulnerable sink appears. Baselines: DFS (source
+order), raw taint, random (20 seeds, 95\% CI), and the fused field $V(x)$.
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Ranking & MRR & R@1 & mean rank & NDCG@5 \\
+\midrule
+DFS (source order) & 0.848 & 0.755 & 1.517 & 0.882 \\
+raw taint & \textbf{0.894} & \textbf{0.847} & \textbf{1.422} & \textbf{0.916} \\
+$V(x)$ (fused field) & 0.872 & 0.805 & 1.475 & 0.899 \\
+random & $0.688\pm0.056$ & 0.487 & --- & 0.762 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{The honest, decisive finding.} The fused field does \emph{not}
+beat raw taint: it is slightly \emph{worse} ($0.872$ vs.\ $0.894$ MRR). The
+per-signal AUC for predicting the vulnerable sink shows why:
+
+\begin{center}
+\small
+\begin{tabular}{lc}
+\toprule
+Signal & AUC [95\% CI] \\
+\midrule
+taint & 0.895 [0.881, 0.909] \\
+formal (Z3/oracle) & 0.878 [0.865, 0.891] \\
+spectral (Fiedler) & 0.496 [0.469, 0.518] \\
+topological ($H_1$) & 0.500 [0.500, 0.500] \\
+geometric (Forman $\kappa$) & 0.376 [0.360, 0.394] \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The spectral and topological signals are \emph{indistinguishable from chance},
+and the curvature signal is \emph{worse than chance} (negative curvature flags
+high-degree hubs, which are \emph{not} the target sinks). Per the mapping-laws
+program (§4/§6), this is a publishable \emph{negative} result: on OWASP
+Benchmark, \textbf{the geometric and topological priors do not survive beyond
+taint}, which is why MANIFOLD's value lies in the formal layer (verification),
+not in the geometric prior. L1, L2 and L5 are therefore reported as \emph{not
+supported} on this corpus.
+
+\input{figs/oracle}
 
 \subsection{Empirical study on OWASP Benchmark 1.2}
 We ran the Java SAST adapter over the full corpus and profiled the false

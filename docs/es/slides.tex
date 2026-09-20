@@ -29,15 +29,45 @@
   \titlepage
 \end{frame}
 
-\begin{frame}{El problema}
+\begin{frame}{El problema: priorizar, no detectar}
   \begin{itemize}
-    \item Los SAST clásicos enumeran \emph{patrones sintácticos}: frágiles, ruidosos.
-    \item En OWASP Benchmark~1.2, herramientas desplegadas colapsan en el \emph{índice de Youden} $J=\mathrm{TPR}-\mathrm{FPR}$:
-      \begin{itemize}
-        \item SonarQube: $J \approx +0.01$ \quad (alto recall, FPR insostenible)
-        \item CodeQL: $J \approx +0.22$
-      \end{itemize}
-    \item Faltan: (i) una representación \emph{unificada} y cuantitativa, (ii) un ciclo que convierta \emph{sospecha} en \emph{prueba}.
+    \item Los SAST clásicos enumeran \emph{patrones}: el cuello de botella real no
+          es \emph{detectar} sinks, sino \emph{decidir cuál verificar}.
+    \item En OWASP Benchmark~1.2 el índice de Youden $J=\mathrm{TPR}-\mathrm{FPR}$ colapsa:
+          SonarQube $J\approx+0.01$, CodeQL $J\approx+0.22$.
+    \item \textbf{Pregunta:} ¿puede un campo escalar $V(x)$ sobre el grafo de
+          programa priorizar el sink vulnerable?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Experimento principal: oráculo de priorización}
+  \begin{center}
+  \small
+  \begin{tabular}{lcccc}
+  \toprule
+  Ordenamiento (902 casos vulnerables) & MRR & R@1 & NDCG@5 \\
+  \midrule
+  DFS (orden de fuente) & 0.848 & 0.755 & 0.882 \\
+  taint crudo & \textbf{0.894} & \textbf{0.847} & \textbf{0.916} \\
+  $V(x)$ fusionado & 0.872 & 0.805 & 0.899 \\
+  aleatorio & $0.688\pm0.056$ & 0.487 & 0.762 \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{1mm}
+  \textbf{AUC por señal} (¿predice el sink vulnerable?):
+  taint $0.895$ · formal $0.878$ · espectral $0.496$ ·
+  topológica $0.500$ · geométrica $\mathbf{0.376}$.
+\end{frame}
+
+\begin{frame}{El resultado honesto}
+  \begin{itemize}
+    \item $V(x)$ \textbf{no} supera al taint crudo: es ligeramente peor ($0.872$ vs.\ $0.894$).
+    \item Espectral/topológica: \emph{indistinguibles del azar}; curvatura: \emph{peor que el azar}.
+    \item \textbf{Conclusión publicable (negativa):} en OWASP Benchmark los priors
+          geométrico y topológico \emph{no sobreviven más allá del taint}.
+    \item $\Rightarrow$ El valor de MANIFOLD está en la capa \emph{formal}
+          (verificación), no en el prior geométrico. L1/L2/L5: \emph{no soportadas}.
   \end{itemize}
 \end{frame}
 

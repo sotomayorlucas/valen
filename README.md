@@ -118,6 +118,29 @@ gcc -o /tmp/vuln /tmp/vuln.c
 Los adaptadores producen el mismo IR tipado, así que el núcleo espectral /
 topológico / geométrico y el verificador se aplican sin cambios.
 
+## Reproducibilidad (artefacto)
+
+```bash
+./scripts/reproduce.sh                 # build + tests + demo + figuras + PDFs
+./scripts/reproduce.sh --fetch-owasp   # además descarga y corre OWASP Benchmark
+```
+
+- **Docker**: `docker build -t manifold . && docker run --rm manifold`
+- Versiones fijadas en `requirements.txt` y `core/Cargo.lock`; semillas fijas en el
+  oráculo (20 semillas) y en el calibrador; TODAS las figuras/tablas del paper se
+  regeneran con `scripts/make_figures.py` desde `benchmarks/oracle_results.json`.
+
+### Experimento principal: oráculo de priorización
+
+```bash
+.venv/bin/python benchmarks/run_oracle.py --testcode <dir> --csv <csv>
+```
+
+Ranking de sinks candidatos (902 casos vulnerables) y AUC por señal. Resultado
+central: **el taint domina (MRR 0.894, AUC 0.895); las señales espectral (AUC
+0.496), topológica (0.500) y geométrica (0.376) no discriminan** — un resultado
+negativo honesto que el whitepaper reporta (L1/L2/L5 no soportadas en OWASP).
+
 ## Benchmark y calibración
 
 ```bash

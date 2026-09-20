@@ -6,6 +6,8 @@
 \usepackage{upquote}
 \usepackage{xcolor}
 \usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{codegray},xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
@@ -379,6 +381,58 @@ campo fusionado, la calibración y el verificador están destinados a mejorar.
 MANIFOLD es una herramienta de
 defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
 alentamos la divulgación coordinada.
+
+\subsection{El oráculo de priorización (experimento principal)}
+El cuello de botella del SAST no es \emph{detectar} sinks sino \emph{decidir cuál
+verificar}. Para cada uno de los 902 casos vulnerables de taint enumeramos
+\emph{todos} los sinks (el conjunto de candidatos), los ordenamos y medimos la
+posición en que aparece un sink vulnerable según la verdad de referencia.
+Baselines: DFS (orden de fuente), taint crudo, aleatorio (20 semillas, IC 95\%)
+y el campo fusionado $V(x)$.
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Ordenamiento & MRR & R@1 & rango medio & NDCG@5 \\
+\midrule
+DFS (orden de fuente) & 0.848 & 0.755 & 1.517 & 0.882 \\
+taint crudo & \textbf{0.894} & \textbf{0.847} & \textbf{1.422} & \textbf{0.916} \\
+$V(x)$ (campo fusionado) & 0.872 & 0.805 & 1.475 & 0.899 \\
+aleatorio & $0.688\pm0.056$ & 0.487 & --- & 0.762 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent\textbf{El hallazgo honesto y decisivo.} El campo fusionado \emph{no}
+supera al taint crudo: es ligeramente \emph{peor} ($0.872$ vs.\ $0.894$ MRR). El
+AUC por señal para predecir el sink vulnerable muestra por qué:
+
+\begin{center}
+\small
+\begin{tabular}{lc}
+\toprule
+Señal & AUC [IC 95\%] \\
+\midrule
+taint & 0.895 [0.881, 0.909] \\
+formal (Z3/oráculo) & 0.878 [0.865, 0.891] \\
+espectral (Fiedler) & 0.496 [0.469, 0.518] \\
+topológica ($H_1$) & 0.500 [0.500, 0.500] \\
+geométrica (Forman $\kappa$) & 0.376 [0.360, 0.394] \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Las señales espectral y topológica son \emph{indistinguibles del azar}, y la de
+curvatura es \emph{peor que el azar} (la curvatura negativa marca hubs de alto
+grado, que \emph{no} son los sinks objetivo). Según el programa de leyes de
+mapeo (§4/§6), este es un resultado \emph{negativo} publicable: sobre OWASP
+Benchmark, \textbf{los priors geométrico y topológico no sobreviven más allá del
+taint}, por lo que el valor de MANIFOLD está en la capa formal (verificación),
+no en el prior geométrico. L1, L2 y L5 se reportan por tanto como \emph{no
+soportadas} en este corpus.
+
+\input{figs/oracle}
 
 \subsection{Estudio empírico sobre OWASP Benchmark 1.2}
 Ejecutamos el adaptador Java sobre el corpus completo y perfilamos los falsos

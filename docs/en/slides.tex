@@ -29,15 +29,45 @@
   \titlepage
 \end{frame}
 
-\begin{frame}{The problem}
+\begin{frame}{The problem: prioritize, don't detect}
   \begin{itemize}
-    \item Classic SAST enumerates \emph{syntactic patterns}: brittle, noisy.
-    \item On OWASP Benchmark~1.2, deployed tools collapse on the \emph{Youden index} $J=\mathrm{TPR}-\mathrm{FPR}$:
-      \begin{itemize}
-        \item SonarQube: $J \approx +0.01$ \quad (high recall, untenable FPR)
-        \item CodeQL: $J \approx +0.22$
-      \end{itemize}
-    \item Missing: (i) a \emph{unified}, quantitative representation, (ii) a loop turning \emph{suspicion} into \emph{proof}.
+    \item Classic SAST enumerates \emph{patterns}: the real bottleneck is not
+          \emph{detecting} sinks but \emph{deciding which one to verify}.
+    \item On OWASP Benchmark~1.2 the Youden index $J=\mathrm{TPR}-\mathrm{FPR}$ collapses:
+          SonarQube $J\approx+0.01$, CodeQL $J\approx+0.22$.
+    \item \textbf{Question:} can a scalar field $V(x)$ over the program graph
+          prioritize the vulnerable sink?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Main experiment: the prioritization oracle}
+  \begin{center}
+  \small
+  \begin{tabular}{lcccc}
+  \toprule
+  Ranking (902 vulnerable cases) & MRR & R@1 & NDCG@5 \\
+  \midrule
+  DFS (source order) & 0.848 & 0.755 & 0.882 \\
+  raw taint & \textbf{0.894} & \textbf{0.847} & \textbf{0.916} \\
+  fused $V(x)$ & 0.872 & 0.805 & 0.899 \\
+  random & $0.688\pm0.056$ & 0.487 & 0.762 \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{1mm}
+  \textbf{Per-signal AUC} (does it predict the vulnerable sink?):
+  taint $0.895$ · formal $0.878$ · spectral $0.496$ ·
+  topological $0.500$ · geometric $\mathbf{0.376}$.
+\end{frame}
+
+\begin{frame}{The honest result}
+  \begin{itemize}
+    \item $V(x)$ does \textbf{not} beat raw taint: it is slightly worse ($0.872$ vs.\ $0.894$).
+    \item Spectral/topological: \emph{indistinguishable from chance}; curvature: \emph{worse than chance}.
+    \item \textbf{Publishable (negative) finding:} on OWASP Benchmark the geometric
+          and topological priors \emph{do not survive beyond taint}.
+    \item $\Rightarrow$ MANIFOLD's value is in the \emph{formal} layer
+          (verification), not the geometric prior. L1/L2/L5: \emph{not supported}.
   \end{itemize}
 \end{frame}
 
