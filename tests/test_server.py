@@ -41,6 +41,14 @@ def test_examples_and_results():
     assert set(res.keys()) >= {"oracle", "owasp", "ablation", "scale"}
 
 
+def test_analyze_includes_topology():
+    out = _analyze({"code": "def a():\n    b()\ndef b():\n    a()\n", "adapter": "python"})
+    assert "topology" in out
+    topo = out["topology"]
+    assert topo["undirected_beta1"] is not None
+    assert topo["directed_beta1"] is not None
+
+
 def test_compare_resolves_vulnerability():
     out = _compare({
         "vulnerable": "def f(db, q):\n    db.execute('SELECT ' + q)\n",

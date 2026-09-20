@@ -95,7 +95,7 @@ def _is_source(path: str) -> bool:
         and "test_" not in low and "/docs/" not in low
 
 
-def run_case(case: dict) -> dict:
+def run_case(case: dict, keep_code: bool = False) -> dict:
     repo, sha = case["repo"], case["commit"]
     try:
         files = _parse(_diff(repo, sha))
@@ -114,13 +114,17 @@ def run_case(case: dict) -> dict:
             continue
         adapter = "java" if path.endswith(".java") else "python"
         cmp = _compare({"vulnerable": before, "patched": after, "adapter": adapter, "path": path})
-        records.append({
+        rec = {
             "file": path, "adapter": adapter,
             "vuln_findings": len(cmp["vulnerable"]["findings"]),
             "patched_findings": len(cmp["patched"]["findings"]),
             "resolved": cmp["diff"]["resolved"],
             "persisting": cmp["diff"]["persisting"],
-        })
+        }
+        if keep_code:
+            rec["vulnerable"] = before
+            rec["patched"] = after
+        records.append(rec)
         if len(records) >= case.get("max_files", 8):
             break
     return {"cve": case["cve"], "repo": repo, "url": case.get("url", ""), "files": records}
@@ -130,6 +134,8 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--cases", default=str(ROOT / "benchmarks" / "cve_cases.json"))
     ap.add_argument("--limit", type=int, default=0)
+    ap.add_argument("--dump-pairs", action="store_true",
+                    help="also write benchmarks/cve_pairs.json with the before/after code")
     args = ap.parse_args()
 
     cases = json.loads(Path(args.cases).read_text())
@@ -138,7 +144,7 @@ def main() -> int:
 
     results, resolved_total, analyzed = [], 0, 0
     for case in cases:
-        r = run_case(case)
+        r = run_case(case, keep_code=args.dump_pairs)
         results.append(r)
         print(f"== {r['cve']}  {r.get('repo','')}")
         if r.get("error"):
@@ -154,6 +160,25 @@ def main() -> int:
             print("   (no analyzable source files changed)")
 
     print(f"\nsummary: {resolved_total}/{analyzed} analyzed files resolved a finding")
+
+    if args.dump_pairs:
+        pairs = []
+        for r in results:
+            for f in r.get("files", []):
+                if not (f["resolved"] or f["vuln_findings"]):
+                    continue  # only keep loadable pair(s) of interest
+                pairs.append({
+                    "cve": r["cve"], "repo": r.get("repo", ""), "file": f["file"],
+                    "adapter": f["adapter"], "resolved": bool(f["resolved"]),
+                    "vulnerable": f.get("vulnerable", ""), "patched": f.get("patched", ""),
+                })
+        (ROOT / "benchmarks" / "cve_pairs.json").write_text(json.dumps(pairs, indent=2))
+        print(f"pairs   -> benchmarks/cve_pairs.json ({len(pairs)})")
+        for r in results:
+            for f in r.get("files", []):
+                f.pop("vulnerable", None)
+                f.pop("patched", None)
+
     out = ROOT / "benchmarks" / "cve_results.json"
     out.write_text(json.dumps(results, indent=2))
     print(f"results -> {out.relative_to(ROOT)}")

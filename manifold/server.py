@@ -82,6 +82,16 @@ def _analyze(payload: Dict[str, Any]) -> Dict[str, Any]:
         "top": [{"id": k, "label": labels.get(k, ""), "value": round(v, 4)} for k, v in top],
     }
 
+    if math:
+        t = math.get("topology", {}).get("call", {})
+        dp = t.get("directed_path", {})
+        out["topology"] = {
+            "undirected_beta0": t.get("beta0"),
+            "undirected_beta1": t.get("beta1"),
+            "directed_beta0": dp.get("beta0"),
+            "directed_beta1": dp.get("beta1"),
+        }
+
     if payload.get("verify"):
         try:
             if adapter == "python":
@@ -199,6 +209,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json({"error": str(exc)}, 404)
         if u.path == "/api/results":
             return self._json(_results())
+        if u.path == "/api/cves":
+            p = BENCH / "cve_pairs.json"
+            return self._json(json.loads(p.read_text()) if p.exists() else [])
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self) -> None:  # noqa: N802

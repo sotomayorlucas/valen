@@ -84,9 +84,15 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
   <div id="single-pane">
     <textarea id="code" spellcheck="false"></textarea>
   </div>
-  <div id="compare-pane" class="two" style="display:none">
-    <div><textarea id="code-vuln" spellcheck="false"></textarea><div class="small">vulnerable version</div></div>
-    <div><textarea id="code-patched" spellcheck="false"></textarea><div class="small">patched version</div></div>
+  <div id="compare-pane" style="display:none">
+    <div class="row">
+      <select id="cve-pair"><option value="">— load a real CVE fix pair —</option></select>
+      <span class="badge" id="cve-meta"></span>
+    </div>
+    <div class="two">
+      <div><textarea id="code-vuln" spellcheck="false"></textarea><div class="small">vulnerable version</div></div>
+      <div><textarea id="code-patched" spellcheck="false"></textarea><div class="small">patched version</div></div>
+    </div>
   </div>
   <div class="small" style="margin-top:6px">Drag &amp; drop a file onto an editor to load it. Static analysis — your code is never executed.</div>
 
@@ -94,7 +100,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
   <div id="findings" class="small">Run an analysis to see results.</div>
   <div id="diff-block"></div>
   <div class="two" style="margin-top:14px">
-    <div><h2 style="font-size:13px">V(x) ranking (top nodes)</h2><div id="top" class="small"></div></div>
+    <div><h2 style="font-size:13px">V(x) ranking (top nodes)</h2><div id="top" class="small"></div><div id="topology" class="small" style="margin-top:10px"></div></div>
     <div><div id="verify-block"></div><div id="agent-block"></div></div>
   </div>
   <h2 style="margin-top:18px">Manifold</h2>
@@ -149,6 +155,18 @@ async function loadExamples(){
     $("#code").value=d.code; $("#adapter").value=d.adapter; $("#path").value=d.name; };
 }
 loadExamples();
+
+// ---- CVE pairs ----
+async function loadCves(){
+  let pairs=[]; try{ pairs=await (await fetch("/api/cves")).json(); }catch(e){}
+  const sel=$("#cve-pair");
+  pairs.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=`${p.cve} · ${p.file.split("/").pop()}`;sel.appendChild(o);});
+  sel.onchange=()=>{ if(sel.value==="")return; const p=pairs[+sel.value];
+    setMode("compare"); $("#code-vuln").value=p.vulnerable; $("#code-patched").value=p.patched;
+    $("#adapter").value=p.adapter; $("#path").value=p.file;
+    $("#cve-meta").textContent=`${p.cve} · ${p.repo} · ${p.resolved?"resolved by the patch":"—"}`; };
+}
+loadCves();
 
 // ---- mode + drag & drop ----
 let MODE="single";
@@ -213,9 +231,18 @@ function agentHtml(d){
   if(!d.agent) return "";
   return `<h2 style="font-size:13px">Agent report</h2>`+ (d.agent.length? d.agent.map(a=>`<div class="small">[${a.status}] ${a.cwe} ${a.title} — ${a.signal}</div>`).join("") : "<div class='small'>no findings</div>");
 }
+function topologyHtml(d){
+  if(!d.topology) return "";
+  const t=d.topology;
+  return `<div style="margin-top:4px"><b>Topology (call graph)</b><br>
+    undirected β1 = ${t.undirected_beta1}<br>
+    directed (GLMY) β1 = ${t.directed_beta1}
+    <span class="small">(β0=${t.directed_beta0})</span></div>`;
+}
 function render(d){
   $("#findings").innerHTML=findingsHtml(d);
   $("#top").innerHTML=topHtml(d);
+  $("#topology").innerHTML=topologyHtml(d);
   $("#verify-block").innerHTML=verifyHtml(d);
   $("#agent-block").innerHTML=agentHtml(d);
   renderMap(d);
@@ -226,6 +253,7 @@ function renderCompare(d){
     ${rows("resolved","resolved")}${rows("persisting","persisting")}${rows("introduced","introduced")}`;
   $("#findings").innerHTML=`<b>vulnerable</b>`+findingsHtml(d.vulnerable)+`<h2 style="font-size:13px;margin-top:12px">patched</h2>`+findingsHtml(d.patched);
   $("#top").innerHTML=topHtml(d.vulnerable);
+  $("#topology").innerHTML=topologyHtml(d.vulnerable);
   $("#verify-block").innerHTML=verifyHtml(d.vulnerable);
   $("#agent-block").innerHTML="";
   renderMap(d.vulnerable);
