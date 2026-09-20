@@ -65,9 +65,11 @@ entropic approximation); Forman–Ricci $\kappa_F = 4 - \deg(u) - \deg(v)$.
 
 ### 4.4 Algebraic
 The taint lattice $\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}$
-and a Galois connection $(\alpha, \gamma)$; effects are monads and authorization
-is a functor $F$. **Design law:** a vulnerability is a taint flow that breaks the
-naturality square of $F$ (operationalized in §8, C4).
+and a Galois connection $(\alpha, \gamma)$. The program is a category $\mathbf{Prog}$;
+the **authorization functor** $F: \mathbf{Prog} \to \mathbf{Auth}$ maps each point to a
+privilege level. **Proposition (naturality violation):** a taint flow violates
+naturality iff its path crosses an `auth` edge without a sanitizer endomorphism —
+the operational rule L4/§8 (proof in the PDF, §4.6). Mechanization is future work.
 
 ### 4.5 Formal
 Symbolic execution computes a path condition $\Phi$; an SMT solver checks

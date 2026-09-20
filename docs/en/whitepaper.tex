@@ -166,15 +166,21 @@ Negative curvature marks \emph{funnels} through which many shortest paths pass.
 The \emph{Forman--Ricci} curvature (unweighted) is $\kappa_F(u,v) = 4 - \deg(u)
 - \deg(v)$, cheaply flagging high-degree hubs.
 
-\subsection{Algebraic layer (lattices \& category theory)}
-\emph{Abstract interpretation.} The \emph{taint lattice}
-$\mathbb{T} = \{\bot = \text{clean},\ \top = \text{tainted}\}$ (a
-product lattice over tags) gives a \emph{Galois connection}
-$(\alpha, \gamma)$ between the concrete collecting semantics and the abstract
-taint domain, guaranteeing soundness. \emph{Category theory.} The program is a
-category $\catProg$; effects are monads, authorization is a functor
-$F : \catProg \to \catAuth$. \textbf{Design law (naturality of taint):} a
-vulnerability is a taint flow that breaks the naturality square of $F$.
+\subsection{Algebraic layer (lattices \& categories)}
+\emph{Taint lattice.} The abstract domain is the powerset lattice of taint tags
+$\mathbb{T} = (2^{\mathcal{K}}, \subseteq, \cup, \cap)$, with $\bot = \emptyset$
+(clean) and $\top$ (tainted). It forms a Galois connection $(\alpha, \gamma)$
+with the concrete collecting semantics; soundness is proved in \S4.6.
+\emph{Program category.} Let $\catProg$ be the category whose objects are
+program points $v \in V$ (with an abstract state), whose morphisms are directed
+edges, and whose composition is path concatenation. The \emph{authorization
+functor} $F : \catProg \to \catAuth$ maps each point to a privilege level in the
+poset $\catAuth$ (e.g.\ $\text{untrusted} \sqsubseteq \text{user} \sqsubseteq
+\text{admin}$). A \emph{sanitizer} is an endomorphism $s : v \to v$ that is
+$\bot$-preserving (maps any tag to clean). \textbf{Naturality law:} a taint flow
+is a morphism whose image under the taint functor is non-$\bot$; it is a
+\emph{violation} when $F$ fails to commute on an $\texttt{auth}$ edge. This is
+made precise and proved in \S4.6.
 
 \subsection{Formal layer (symbolic execution \& model checking)}
 Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
@@ -182,6 +188,49 @@ an SMT solver checks $\mathrm{SAT}(\phi_{\text{bad}})$, whose model is a
 concrete exploit. Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
 taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
+
+\subsection{Formal core: naturality and soundness}
+\emph{Small-step semantics of the IR.} A state $\sigma$ maps variables to
+concrete values; the transition relation $v \xrightarrow{\sigma} v'$ steps
+through the IR. The concrete taint collecting semantics $\mathcal{C}$ maps each
+point to the set of executions that carry an untrusted value there. The abstract
+analysis of \S4 is the function $A$ computed by the transfer functions; the
+pair $(\alpha, \gamma)$ satisfies $\alpha(\mathcal{C}(v)) \sqsubseteq A(v)$ and
+$\mathcal{C}(v) \subseteq \gamma(A(v))$.
+
+\smallskip
+\noindent\textbf{Proposition 1 (soundness of the taint lattice).} \emph{If
+$A(v) = \bot$ then no execution taints a value at $v$.}
+
+\noindent\emph{Proof.} By induction on the length of the transition sequence
+from an entry point to $v$. Base: entry variables are untainted unless a source
+is executed, in which case $A \ge \bot$. Step: each transfer function is
+monotone and over-approximates its concrete counterpart (assignments propagate
+the join of operand tags, sanitizers map to $\bot$, joins upper-bound branch
+merges). Hence $A$ dominates $\alpha \circ \mathcal{C}$, and $A(v) = \bot$
+forces $\mathcal{C}(v) \subseteq \gamma(\bot) = \{\text{clean}\}$. $\square$
+
+\smallskip
+\noindent\textbf{Proposition 2 (naturality violation characterization).}
+\emph{Let $p = e_1 \circ \dots \circ e_n : s \to k$ be a taint flow, $E_A$ the
+set of \texttt{auth} edges, and $\mathrm{San}(p)$ the sanitizer endomorphisms on
+$p$. Then $F$ fails to commute on $p$ (a naturality violation) if and only if
+$p \cap E_A \neq \emptyset$ and $\mathrm{San}(p) = \emptyset$.}
+
+\noindent\emph{Proof.} $(\Leftarrow)$ Let $e_i \in E_A$. Because $e_i$ guards a
+privilege boundary, $F$ assigns its target a strictly higher level than its
+source; composing with the taint morphism then gives $F(p)\circ \eta_s \neq
+\eta_k \circ T(p)$ for a tag carried across $e_i$, so the square does not
+commute. No sanitizer is present to restore $\bot$, so the failure is
+irreparable. $(\Rightarrow)$ If $p \cap E_A = \emptyset$ every edge is
+level-preserving and the square commutes; if a sanitizer is present it is
+$\bot$-preserving by definition, so the tag is killed and the square commutes.
+$\square$
+
+\noindent Proposition 2 is exactly the operational rule implemented as L4
+(§8/C4): a taint finding inside an auth-gated function is a naturality violation.
+A machine-checked proof (Lean/Coq) is left as future work and is \emph{not}
+claimed here.
 
 \section{The vulnerability scalar field}
 \begin{figure}[h]

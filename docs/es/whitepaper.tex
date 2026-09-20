@@ -172,15 +172,21 @@ caminos más cortos. La \emph{curvatura de Forman--Ricci} (sin pesos) es
 $\kappa_F(u,v) = 4 - \deg(u) - \deg(v)$, marcando de forma barata los nodos de
 alto grado.
 
-\subsection{Capa algebraica (retículos y teoría de categorías)}
-\emph{Interpretación abstracta.} El \emph{retículo de taint}
-$\mathbb{T} = \{\bot = \text{limpio},\ \top = \text{manchado}\}$ (un
-retículo producto sobre etiquetas) da una \emph{conexión de Galois}
-$(\alpha, \gamma)$ entre la semántica recolectora concreta y el dominio abstracto
-de taint, garantizando solidez. \emph{Teoría de categorías.} El programa es una
-categoría $\catProg$; los efectos son mónadas, la autorización es un funtor
-$F : \catProg \to \catAuth$. \textbf{Ley de diseño (naturalidad del taint):} una
-vulnerabilidad es un flujo de taint que rompe el cuadrado de naturalidad de $F$.
+\subsection{Capa algebraica (retículos y categorías)}
+\emph{Retículo de taint.} El dominio abstracto es el retículo de conjuntos de
+etiquetas de taint $\mathbb{T} = (2^{\mathcal{K}}, \subseteq, \cup, \cap)$, con
+$\bot = \emptyset$ (limpio) y $\top$ (manchado). Forma una conexión de Galois
+$(\alpha, \gamma)$ con la semántica recolectora concreta; la solidez se prueba en
+\S4.6. \emph{Categoría de programa.} Sea $\catProg$ la categoría cuyos objetos
+son puntos de programa $v \in V$ (con un estado abstracto), cuyos morfismos son
+aristas dirigidas y cuya composición es la concatenación de caminos. El
+\emph{funtor de autorización} $F : \catProg \to \catAuth$ mapea cada punto a un
+nivel de privilegio en el poset $\catAuth$ (p.~ej.\ $\text{no confiable}
+\sqsubseteq \text{usuario} \sqsubseteq \text{admin}$). Un \emph{sanitizador} es
+un endomorfismo $s : v \to v$ que preserva $\bot$ (mapea toda etiqueta a limpio).
+\textbf{Ley de naturalidad:} un flujo de taint es un morfismo cuya imagen bajo el
+funtor de taint no es $\bot$; es una \emph{violación} cuando $F$ no conmuta en una
+arista \texttt{auth}. Esto se precisa y prueba en \S4.6.
 
 \subsection{Capa formal (ejecución simbólica y model checking)}
 La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
@@ -189,6 +195,51 @@ $\mathrm{SAT}(\phi_{\text{malo}})$, cuyo modelo es un exploit concreto. La
 alcanzabilidad es la fórmula CTL $\mathbf{EF}\,\phi_{\text{malo}}$; la propagación de
 taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto de
 caminos fuente $\to$ sumidero.
+
+\subsection{Núcleo formal: naturalidad y solidez}
+\emph{Semántica small-step de la IR.} Un estado $\sigma$ mapea variables a
+valores concretos; la relación de transición $v \xrightarrow{\sigma} v'$ avanza
+por la IR. La semántica recolectora concreta de taint $\mathcal{C}$ mapea cada
+punto al conjunto de ejecuciones que llevan un valor no confiable allí. El
+análisis abstracto de \S4 es la función $A$ calculada por las funciones de
+transferencia; el par $(\alpha, \gamma)$ satisface
+$\alpha(\mathcal{C}(v)) \sqsubseteq A(v)$ y
+$\mathcal{C}(v) \subseteq \gamma(A(v))$.
+
+\smallskip
+\noindent\textbf{Proposición 1 (solidez del retículo de taint).} \emph{Si
+$A(v) = \bot$ entonces ninguna ejecución mancha un valor en $v$.}
+
+\noindent\emph{Demostración.} Por inducción en la longitud de la secuencia de
+transiciones desde un punto de entrada hasta $v$. Base: las variables de entrada
+están limpias salvo que se ejecute una fuente, en cuyo caso $A \ge \bot$. Paso:
+cada función de transferencia es monótona y sobre-aproxima su contraparte
+concreta (las asignaciones propagan el supremo de las etiquetas de los operandos,
+los sanitizadores mapean a $\bot$, los joins acotan superiormente el merge de
+ramas). Por tanto $A$ domina a $\alpha \circ \mathcal{C}$, y $A(v) = \bot$ fuerza
+$\mathcal{C}(v) \subseteq \gamma(\bot) = \{\text{limpio}\}$. $\square$
+
+\smallskip
+\noindent\textbf{Proposición 2 (caracterización de la violación de
+naturalidad).} \emph{Sea $p = e_1 \circ \dots \circ e_n : s \to k$ un flujo de
+taint, $E_A$ el conjunto de aristas \texttt{auth}, y $\mathrm{San}(p)$ los
+endomorfismos sanitizadores en $p$. Entonces $F$ no conmuta en $p$ (violación de
+naturalidad) si y solo si $p \cap E_A \neq \emptyset$ y
+$\mathrm{San}(p) = \emptyset$.}
+
+\noindent\emph{Demostración.} $(\Leftarrow)$ Sea $e_i \in E_A$. Como $e_i$
+guarda una frontera de privilegio, $F$ asigna a su destino un nivel estrictamente
+mayor que a su origen; componer con el morfismo de taint da
+$F(p)\circ \eta_s \neq \eta_k \circ T(p)$ para una etiqueta que cruza $e_i$, así
+que el cuadrado no conmuta. No hay sanitizador que restaure $\bot$, así que la
+falla es irreparable. $(\Rightarrow)$ Si $p \cap E_A = \emptyset$ toda arista
+preserva el nivel y el cuadrado conmuta; si hay un sanitizador, por definición
+preserva $\bot$, así que la etiqueta se mata y el cuadrado conmuta. $\square$
+
+\noindent La Proposición 2 es exactamente la regla operacional implementada como
+L4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
+violación de naturalidad. Una prueba verificada por máquina (Lean/Coq) queda como
+trabajo futuro y \emph{no} se reclama aquí.
 
 \section{El campo escalar de vulnerabilidad}
 \begin{figure}[h]

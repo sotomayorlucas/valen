@@ -65,9 +65,12 @@ entrópica de Sinkhorn); Forman–Ricci $\kappa_F = 4 - \deg(u) - \deg(v)$.
 
 ### 4.4 Algebraica
 El retículo de taint $\mathbb{T} = \{\bot = \text{limpio} \sqsubseteq \top = \text{manchado}\}$
-y una conexión de Galois $(\alpha, \gamma)$; los efectos son mónadas y la
-autorización un funtor $F$. **Ley de diseño:** una vulnerabilidad es un flujo de
-taint que rompe el cuadrado de naturalidad de $F$ (operacionalizado en §8, C4).
+y una conexión de Galois $(\alpha, \gamma)$. El programa es una categoría
+$\mathbf{Prog}$; el **funtor de autorización** $F: \mathbf{Prog} \to \mathbf{Auth}$ mapea cada
+punto a un nivel de privilegio. **Proposición (violación de naturalidad):** un
+flujo de taint viola naturalidad si y solo si su camino cruza una arista `auth`
+sin un sanitizador endomorfismo — la regla operacional L4/§8 (prueba en el PDF,
+§4.6). La mecanización es trabajo futuro.
 
 ### 4.5 Formal
 La ejecución simbólica calcula una condición de camino $\Phi$; un solver SMT
