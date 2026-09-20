@@ -4,6 +4,10 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage{upquote}
+\usepackage{xcolor}
+\usepackage{listings}
+\definecolor{codegray}{gray}{0.4}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,frame=single,framerule=0.3pt,rulecolor=\color{codegray},xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -241,12 +245,12 @@ L6 & Alcanzabilidad ($\mathrm{SAT}(\Phi \wedge \text{malo})$) & exploit concreto
 
 \section{Un ejemplo resuelto (de extremo a extremo)}
 Considérese este fragmento de diez líneas en Python:
-\begin{verbatim}
+\begin{lstlisting}
 def search(db, query_param):
     sql = "SELECT * FROM users WHERE name = '" + query_param + "'"
     cursor = db.cursor()
     cursor.execute(sql)
-\end{verbatim}
+\end{lstlisting}
 El pipeline produce: (i) una IR con un nodo \texttt{source}
 (\texttt{param:query\_param}), un nodo \texttt{sink} (\texttt{cursor.execute},
 categoría \texttt{sql}) y una arista \texttt{taint} entre ambos; (ii) el campo
@@ -445,13 +449,13 @@ de la Etapa~2 (\textbf{aún no medido}), bajo el protocolo de abajo.
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lcccccc}
 \toprule
-Herramienta / configuración & TPR & FPR & Prec. & F1 & $J$ & Tiempo \\
+\textbf{Herramienta / config.} & \textbf{TPR} & \textbf{FPR} & \textbf{Prec.} & \textbf{F1} & \textbf{J} & \textbf{Tiempo} \\
 \midrule
-SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & $+0.010$ & $\sim$3 min \\
-GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & $+0.220$ & $\sim$18 min \\
-\emph{MANIFOLD} adaptador (medido) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & $+0.168$ & $\sim$45 s \\
-\emph{MANIFOLD} +V(x) (proyectado) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
-\emph{MANIFOLD} +V(x)+Z3 (proyectado) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
+SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
+GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
+\emph{MANIFOLD} adaptador (medido) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & \textasciitilde45 s \\
+\emph{MANIFOLD} $+V(x)$ (proyectado) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & +0.544 & \textasciitilde1.3 min \\
+\emph{MANIFOLD} $+V(x)+$Z3 (proyectado) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & +0.787 & \textasciitilde4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 casos: 1415 vulnerables / 1325 seguros).

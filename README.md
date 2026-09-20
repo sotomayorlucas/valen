@@ -64,7 +64,8 @@ cd core && cargo test
 
 - Whitepaper (español): [`docs/es/whitepaper.md`](docs/es/whitepaper.md) · [PDF](docs/es/whitepaper.pdf)
 - Whitepaper (English): [`docs/en/whitepaper.md`](docs/en/whitepaper.md) · [PDF](docs/en/whitepaper.pdf)
-- Fuente LaTeX: `docs/es/whitepaper.tex`, `docs/en/whitepaper.tex` (compilar con `tectonic`)
+- Slides de conferencia: [es](docs/es/slides.pdf) · [en](docs/en/slides.pdf) (Beamer)
+- Fuente LaTeX: `docs/{es,en}/whitepaper.tex`, `docs/{es,en}/slides.tex` (compilar con `tectonic`)
 
 ## Núcleo numérico (F2)
 
