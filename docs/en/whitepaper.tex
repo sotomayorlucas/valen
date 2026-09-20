@@ -8,6 +8,7 @@
 \usepackage{enumitem}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc}
+\setlength{\emergencystretch}{3em}
 \usepackage[hidelinks]{hyperref}
 
 \newcommand{\R}{\mathbb{R}}
@@ -204,8 +205,12 @@ V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
 where $s_i$ are normalized layer signals (spectral anomaly, persistence
 outlier, curvature, lattice height, formal reachability), $\alpha_i$ are
-(learnable) weights, and $\sigma$ a logistic squeeze. $V$ is a ranking, a
-Mapper filter, and a cost field for navigation.
+weights, and $\sigma$ a logistic squeeze. $V$ is a ranking, a
+Mapper filter, and a cost field for navigation. In the current prototype the
+weights are \emph{uniform} ($\alpha_i = 1/N$ over the available signals) and
+$V$ is reported as the raw fused score; calibrating $\alpha_i$ (balanced
+initialization $\to$ empirical tuning on the micro-benchmarks $\to$ a logistic
+classifier over labeled traces) is future work.
 
 \section{Mapping laws}
 \begin{center}
@@ -222,6 +227,25 @@ L6 & Reachability ($\mathrm{SAT}(\Phi \wedge \text{bad})$) & concrete exploit \\
 \bottomrule
 \end{tabular}
 \end{center}
+
+\section{A worked example (end-to-end)}
+Consider this ten-line Python fragment:
+\begin{verbatim}
+def search(db, query_param):
+    sql = "SELECT * FROM users WHERE name = '" + query_param + "'"
+    cursor = db.cursor()
+    cursor.execute(sql)
+\end{verbatim}
+The pipeline produces: (i) an IR with a \texttt{source} node
+(\texttt{param:query\_param}), a \texttt{sink} node (\texttt{cursor.execute},
+category \texttt{sql}) and a \texttt{taint} edge between them; (ii) the field
+$V(x)$ spikes at the sink (taint + formal signals active); (iii) the Z3 symbolic
+verifier returns \texttt{SAT} with a concrete witness (e.g.\
+\texttt{"x' OR '1'='1"}), proving the sink's argument depends on
+the attacker-controlled symbol. The parameterized variant
+\texttt{execute(query, (param,))} is correctly \emph{not} flagged, and a
+\texttt{@login\_required} gate on the enclosing function upgrades the finding to
+an L4 naturality violation (a taint flow crossing an \texttt{auth} edge).
 
 \section{The autonomous LLM agent}
 A closed loop: (1) \emph{ingest} into the IR; (2) \emph{embed \& map} ($V(x)$,
@@ -249,10 +273,15 @@ the IR) and treat a chokepoint as defensive iff it is the target of an
 $L=D-A$ and standard persistent homology act on undirected metric spaces, but
 control and data flow are directed: $A$ tainting $B$ is not $B$ tainting $A$.
 Symmetrizing can destroy the direction of taint. \emph{Mitigation:} the
-prototype implements Chung's directed Laplacian (largest strongly connected
-component, Perron vector, directed algebraic connectivity), which is undefined
-for a DAG --- itself a meaningful signal. \emph{Open:} directed flag complexes /
-path homology (Grigor'yan--Lin--Muranov--Yau).
+prototype implements Chung's directed Laplacian restricted to the largest
+strongly connected component; the Perron vector $\pi$ is computed by power
+iteration with a small PageRank-style teleportation (damping $\alpha = 0.01$),
+which keeps the stationary distribution well-posed on periodic chains. A DAG has
+no SCC of size $\ge 2$, so the directed signal is deliberately \emph{undefined}
+there --- which is itself a meaningful answer: acyclic flows carry no direction
+to preserve and are handed to the lattice / reachability layers instead.
+\emph{Open:} directed flag complexes / path homology
+(Grigor'yan--Lin--Muranov--Yau).
 
 \textbf{C3 -- Cost of optimal transport.} Ollivier--Ricci requires a
 transportation LP per edge: $\mathcal{O}(|E|\cdot\text{LP})$, prohibitive beyond
@@ -304,11 +333,14 @@ F7 & Binary / web / LLM adapters & done \\
 \end{center}
 
 \section{Validation and responsible use}
-Validation uses toy micro-benchmarks with known ground truth, then labeled
-corpora (OWASP Benchmark, SARD) once F4 lands, measuring precision/recall of the
-fused field versus raw taint. MANIFOLD is a defensive / authorized-testing tool;
-we release under the assumption of authorized use and encourage coordinated
-disclosure.
+Validation is two-stage. Stage 1 (complete) runs the toy micro-benchmarks of
+F1--F7 against known ground truth: every seeded vulnerability is confirmed and
+every sanitizer / parameterized-query / argv-form false positive is excluded.
+Stage 2 (ongoing) measures precision/recall of the fused field versus raw taint
+over labeled corpora (OWASP Benchmark, SARD); this is experimental validation at
+scale, distinct from the completed prototype. MANIFOLD is a defensive /
+authorized-testing tool; we release under the assumption of authorized use and
+encourage coordinated disclosure.
 
 \begin{thebibliography}{9}
 \item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.

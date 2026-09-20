@@ -8,6 +8,7 @@
 \usepackage{enumitem}
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta, positioning, calc}
+\setlength{\emergencystretch}{3em}
 \usepackage[hidelinks]{hyperref}
 
 \newcommand{\R}{\mathbb{R}}
@@ -212,8 +213,13 @@ V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
 donde $s_i$ son las señales normalizadas de cada capa (anomalía espectral,
 outlier de persistencia, curvatura, altura de retículo, alcanzabilidad formal),
-$\alpha_i$ son pesos (aprendibles) y $\sigma$ una compresión logística. $V$ es un
-ranking, un filtro de Mapper y un campo de costos para la navegación.
+$\alpha_i$ son pesos y $\sigma$ una compresión logística. $V$ es un
+ranking, un filtro de Mapper y un campo de costos para la navegación. En el
+prototipo actual los pesos son \emph{uniformes} ($\alpha_i = 1/N$ sobre las
+señales disponibles) y $V$ se reporta como el puntaje fusionado crudo; calibrar
+$\alpha_i$ (inicialización balanceada $\to$ ajuste empírico sobre los
+micro-benchmarks $\to$ un clasificador logístico sobre trazas etiquetadas) es
+trabajo futuro.
 
 \section{Leyes de mapeo}
 \begin{center}
@@ -230,6 +236,26 @@ L6 & Alcanzabilidad ($\mathrm{SAT}(\Phi \wedge \text{malo})$) & exploit concreto
 \bottomrule
 \end{tabular}
 \end{center}
+
+\section{Un ejemplo resuelto (de extremo a extremo)}
+Considérese este fragmento de diez líneas en Python:
+\begin{verbatim}
+def search(db, query_param):
+    sql = "SELECT * FROM users WHERE name = '" + query_param + "'"
+    cursor = db.cursor()
+    cursor.execute(sql)
+\end{verbatim}
+El pipeline produce: (i) una IR con un nodo \texttt{source}
+(\texttt{param:query\_param}), un nodo \texttt{sink} (\texttt{cursor.execute},
+categoría \texttt{sql}) y una arista \texttt{taint} entre ambos; (ii) el campo
+$V(x)$ se dispara en el sink (señales de taint y formal activas); (iii) el
+verificador simbólico Z3 devuelve \texttt{SAT} con un witness concreto (p.~ej.\
+\texttt{"x' OR '1'='1"}), demostrando que el argumento del sink
+depende del símbolo controlado por el atacante. La variante parametrizada
+\texttt{execute(query, (param,))} se excluye correctamente, y un decorador
+\texttt{@login\_required} en la función contenedora eleva el hallazgo a una
+violación de naturalidad L4 (un flujo de taint que cruza una arista
+\texttt{auth}).
 
 \section{El agente LLM autónomo}
 Un ciclo cerrado: (1) \emph{ingesta} hacia la IR; (2) \emph{embebir y mapear}
@@ -260,9 +286,14 @@ combinatorio $L=D-A$ y la homología persistente estándar operan sobre espacios
 métricos no dirigidos, pero el flujo de control y de datos es dirigido: que $A$
 manche a $B$ no es lo mismo que $B$ manche a $A$. Simetrizar puede destruir la
 dirección del taint. \emph{Mitigación:} el prototipo implementa el Laplaciano
-dirigido de Chung (componente fuertemente conexa más grande, vector de Perron,
-conectividad algebraica dirigida), que queda indefinido para un DAG --- en sí
-misma una señal significativa. \emph{Abierto:} complejos de bandera dirigidos /
+dirigido de Chung restringido a la componente fuertemente conexa más grande; el
+vector de Perron $\pi$ se calcula por iteración de potencia con una pequeña
+teletransportación estilo PageRank (amortiguación $\alpha = 0.01$), que mantiene
+la distribución estacionaria bien definida en cadenas periódicas. Un DAG no
+tiene SCC de tamaño $\ge 2$, así que la señal dirigida queda deliberadamente
+\emph{indefinida} ahí --- lo cual es en sí mismo una respuesta significativa: los
+flujos acíclicos no tienen dirección que preservar y se delegan a las capas de
+retículos / alcanzabilidad. \emph{Abierto:} complejos de bandera dirigidos /
 homología de caminos (Grigor'yan--Lin--Muranov--Yau).
 
 \textbf{C3 -- Costo del transporte óptimo.} Ollivier--Ricci exige un PL de
@@ -318,11 +349,15 @@ F7 & Adaptadores binario / web / LLM & hecho \\
 \end{center}
 
 \section{Validación y uso responsable}
-La validación usa micro-benchmarks de juguete con verdad de referencia conocida,
-luego corpus etiquetados (OWASP Benchmark, SARD) una vez que F4 aterrice,
-midiendo precisión/recall del campo fusionado frente al taint crudo. MANIFOLD es
-una herramienta de defensa / pruebas autorizadas; la liberamos bajo el supuesto
-de uso autorizado y alentamos la divulgación coordinada.
+La validación es de dos etapas. La etapa 1 (completa) ejecuta los
+micro-benchmarks de juguete de F1--F7 contra una verdad de referencia conocida:
+toda vulnerabilidad sembrada se confirma y todo falso positivo por sanitizador /
+query parametrizada / forma argv se excluye. La etapa 2 (en curso) mide la
+precisión/recall del campo fusionado frente al taint crudo sobre corpus
+etiquetados (OWASP Benchmark, SARD); esta es la validación experimental a gran
+escala, distinta del prototipo ya completado. MANIFOLD es una herramienta de
+defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
+alentamos la divulgación coordinada.
 
 \begin{thebibliography}{9}
 \item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
