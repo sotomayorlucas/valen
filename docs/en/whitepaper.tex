@@ -2,6 +2,8 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{upquote}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -409,7 +411,8 @@ the Z3 verifier and the calibrated field are designed to recover.
 
 \subsection{Comparison with industrial SAST, and the neuro-symbolic target}
 The official OWASP Benchmark score is the \emph{Youden index}
-$J = \mathrm{TPR} - \mathrm{FPR}$ (\emph{Benchmark Accuracy Score}). Table~\ref{tab:cmp}
+($J = \mathrm{TPR} - \mathrm{FPR}$, i.e.\ TPR minus FPR; the \emph{Benchmark
+Accuracy Score}). Table~\ref{tab:cmp}
 places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
 \emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; the
 ``MANIFOLD adapter'' row is our measured result; the last two rows are the
@@ -427,8 +430,8 @@ Tool / configuration & TPR & FPR & Prec. & F1 & $J$ & Time \\
 SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & $+0.010$ & $\sim$3 min \\
 GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & $+0.220$ & $\sim$18 min \\
 \emph{MANIFOLD} adapter (measured) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & $+0.168$ & $\sim$45 s \\
-\emph{MANIFOLD} $+V(x)$ (projected) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
-\emph{MANIFOLD} $+V(x)+\mathrm{Z3}$ (projected) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
+\emph{MANIFOLD} +V(x) (projected) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
+\emph{MANIFOLD} +V(x)+Z3 (projected) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 cases: 1415 vulnerable / 1325 safe).

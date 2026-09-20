@@ -2,6 +2,8 @@
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{upquote}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
@@ -429,7 +431,8 @@ campo calibrado están diseñados para recuperar.
 
 \subsection{Comparación con SAST industrial y el objetivo neuro-simbólico}
 El puntaje oficial de OWASP Benchmark es el \emph{índice de Youden}
-$J = \mathrm{TPR} - \mathrm{FPR}$ (\emph{Benchmark Accuracy Score}). La
+($J = \mathrm{TPR} - \mathrm{FPR}$, es decir TPR menos FPR; el \emph{Benchmark
+Accuracy Score}). La
 Tabla~\ref{tab:cmp-es} sitúa a MANIFOLD frente a dos herramientas ampliamente
 desplegadas. Las filas de SonarQube y CodeQL son números \emph{reportados} en
 evaluaciones públicas de OWASP~Benchmark~1.2; la fila ``adaptador MANIFOLD'' es
@@ -447,8 +450,8 @@ Herramienta / configuración & TPR & FPR & Prec. & F1 & $J$ & Tiempo \\
 SonarQube (SAST) \textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & $+0.010$ & $\sim$3 min \\
 GitHub CodeQL (default) \textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & $+0.220$ & $\sim$18 min \\
 \emph{MANIFOLD} adaptador (medido) \textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & $+0.168$ & $\sim$45 s \\
-\emph{MANIFOLD} $+V(x)$ (proyectado) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
-\emph{MANIFOLD} $+V(x)+\mathrm{Z3}$ (proyectado) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
+\emph{MANIFOLD} +V(x) (proyectado) \textsuperscript{(c)} & 0.858 & 0.314 & 0.751 & 0.801 & $+0.544$ & $\sim$1.3 min \\
+\emph{MANIFOLD} +V(x)+Z3 (proyectado) \textsuperscript{(c)} & 0.825 & 0.038 & 0.959 & 0.887 & $+0.787$ & $\sim$4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 casos: 1415 vulnerables / 1325 seguros).
