@@ -355,7 +355,13 @@ toda vulnerabilidad sembrada se confirma y todo falso positivo por sanitizador /
 query parametrizada / forma argv se excluye. La etapa 2 (en curso) mide la
 precisión/recall del campo fusionado frente al taint crudo sobre corpus
 etiquetados (OWASP Benchmark, SARD); esta es la validación experimental a gran
-escala, distinta del prototipo ya completado. MANIFOLD es una herramienta de
+escala, distinta del prototipo ya completado. El arnés está implementado: un
+benchmark etiquetado de juguete reporta precisión/recall/F1 para el pase de
+taint crudo, el pase verificado con Z3 y un campo \emph{calibrado} cuyos pesos
+$\alpha_i$ se aprenden por regresión logística leave-one-out sobre las señales
+baratas --- en el corpus de juguete el campo calibrado recupera el ciclo de
+reentrancia (señal topológica) que el pase de taint no detecta, elevando el
+recall mientras mantiene la precisión en $1.0$. MANIFOLD es una herramienta de
 defensa / pruebas autorizadas; la liberamos bajo el supuesto de uso autorizado y
 alentamos la divulgación coordinada.
 

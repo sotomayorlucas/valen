@@ -338,7 +338,13 @@ F1--F7 against known ground truth: every seeded vulnerability is confirmed and
 every sanitizer / parameterized-query / argv-form false positive is excluded.
 Stage 2 (ongoing) measures precision/recall of the fused field versus raw taint
 over labeled corpora (OWASP Benchmark, SARD); this is experimental validation at
-scale, distinct from the completed prototype. MANIFOLD is a defensive /
+scale, distinct from the completed prototype. The harness is implemented: a
+labeled toy benchmark reports precision/recall/F1 for the raw taint pass, the
+Z3-verified pass and a \emph{calibrated} field whose weights $\alpha_i$ are
+learned by leave-one-out logistic regression over the cheap signals --- on the
+toy corpus the calibrated field recovers the reentrancy cycle (topological
+signal) that the taint pass misses, raising recall while keeping precision at
+$1.0$. MANIFOLD is a defensive /
 authorized-testing tool; we release under the assumption of authorized use and
 encourage coordinated disclosure.
 

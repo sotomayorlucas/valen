@@ -111,3 +111,11 @@ export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLL
 ```
 Los adaptadores producen el mismo IR tipado, así que el núcleo espectral /
 topológico / geométrico y el verificador se aplican sin cambios.
+
+## Benchmark y calibración
+
+```bash
+.venv/bin/python benchmarks/run.py
+```
+Evalúa precisión/recall/F1 (taint crudo vs verificado Z3) y **calibra los pesos
+αᵢ** del campo V(x) con regresión logística pura-Python (validación leave-one-out).
