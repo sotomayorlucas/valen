@@ -31,6 +31,7 @@ class NodeKind(str, Enum):
     PARAMETER = "parameter"
     SOURCE = "source"  # an untrusted-data entry point (taint source)
     SINK = "sink"  # a dangerous operation (taint sink)
+    GATE = "gate"  # a privilege boundary (auth/trust gate)
 
 
 class EdgeKind(str, Enum):

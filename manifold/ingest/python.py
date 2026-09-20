@@ -226,25 +226,52 @@ class PythonIngest:
 
     # -- function collection ----------------------------------------------
     def _collect_functions(self, root: Node, graph: Graph, path: str) -> None:
+        def add_function(fn_node: Node, prefix: str, decorators: List[str]) -> None:
+            name = self._function_name(fn_node)
+            qualname = f"{prefix}.{name}" if prefix else name
+            body = self._body_of(fn_node)
+            params = self._parameters(fn_node)
+            fid = self._new_id("fn")
+            auth = [d for d in decorators if d in self.profile.auth_gates]
+            attrs: dict = {"params": params, "qualname": qualname}
+            if auth:
+                attrs["auth"] = auth
+            graph.add_node(
+                fid,
+                NodeKind.FUNCTION,
+                qualname,
+                file=path,
+                line=fn_node.start_point[0] + 1,
+                end_line=fn_node.end_point[0] + 1,
+                attrs=attrs,
+            )
+            self._funcs[fid] = (qualname, body, params)
+            # Privilege boundaries become GATE nodes with an `auth` edge to the
+            # protected function (operationalizing the L4 naturality check).
+            for gate_name in auth:
+                gid = self._new_id("gate")
+                graph.add_node(
+                    gid,
+                    NodeKind.GATE,
+                    gate_name,
+                    file=path,
+                    line=fn_node.start_point[0] + 1,
+                    attrs={"description": self.profile.auth_gates[gate_name]},
+                )
+                graph.add_edge(gid, fid, EdgeKind.AUTH)
+
         def walk(node: Node, prefix: str) -> None:
             for child in node.named_children:
                 t = child.type
                 if t == "function_definition":
-                    name = self._function_name(child)
-                    qualname = f"{prefix}.{name}" if prefix else name
-                    body = self._body_of(child)
-                    params = self._parameters(child)
-                    fid = self._new_id("fn")
-                    graph.add_node(
-                        fid,
-                        NodeKind.FUNCTION,
-                        qualname,
-                        file=path,
-                        line=child.start_point[0] + 1,
-                        end_line=child.end_point[0] + 1,
-                        attrs={"params": params, "qualname": qualname},
-                    )
-                    self._funcs[fid] = (qualname, body, params)
+                    add_function(child, prefix, [])
+                elif t == "decorated_definition":
+                    decorators = self._decorator_names(child)
+                    definition = child.child_by_field_name("definition")
+                    if definition is not None and definition.type == "function_definition":
+                        add_function(definition, prefix, decorators)
+                    else:
+                        walk(child, prefix)
                 elif t == "class_definition":
                     cname = self._class_name(child)
                     body = child.child_by_field_name("body")
@@ -254,6 +281,15 @@ class PythonIngest:
                     walk(child, prefix)
 
         walk(root, "")
+
+    def _decorator_names(self, node: Node) -> List[str]:
+        names: List[str] = []
+        for child in node.named_children:
+            if child.type == "decorator":
+                expr = child.named_children[0] if child.named_children else None
+                if expr is not None:
+                    names.append(_dotted_name(expr))
+        return names
 
     def _function_name(self, node: Node) -> str:
         name = node.child_by_field_name("name")

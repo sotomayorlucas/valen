@@ -2,8 +2,8 @@
 //! geometric results (JSON) on stdout.
 
 use manifold_core::{
-    fiedler, forman_ricci, graph::{EdgeKind, Graph}, homology, mapper, ollivier_ricci,
-    spectral_embedding,
+    directed_laplacian, fiedler, forman_ricci, graph::{EdgeKind, Graph}, homology, mapper,
+    ollivier_ricci, ollivier_ricci_sinkhorn, spectral_embedding,
 };
 use serde_json::{json, Value};
 use std::io::{self, Read};
@@ -11,6 +11,7 @@ use std::io::{self, Read};
 fn spectral_block(graph: &Graph, kind: EdgeKind) -> Value {
     let f = fiedler(graph, kind);
     let emb = spectral_embedding(graph, kind, 8);
+    let d = directed_laplacian(graph, kind);
     json!({
         "lambda2": f.lambda2,
         "fiedler": f.vector,
@@ -18,14 +19,21 @@ fn spectral_block(graph: &Graph, kind: EdgeKind) -> Value {
             "eigenvalues": emb.eigenvalues,
             "eigenvectors": emb.eigenvectors,
         },
+        "directed": {
+            "scc_size": d.scc_size,
+            "lambda2": d.lambda2,
+            "fiedler": d.vector,
+        },
     })
 }
 
 fn geometry_block(graph: &Graph, kind: EdgeKind) -> Value {
     let oricci = ollivier_ricci(graph, kind, 0.5);
+    let sinkhorn = ollivier_ricci_sinkhorn(graph, kind, 0.5, 0.05, 200);
     let fricci = forman_ricci(graph, kind);
     json!({
         "ollivier_ricci": oricci.iter().map(|e| json!({"src": e.src, "dst": e.dst, "kappa": e.kappa})).collect::<Vec<_>>(),
+        "ollivier_ricci_sinkhorn": sinkhorn.iter().map(|e| json!({"src": e.src, "dst": e.dst, "kappa": e.kappa})).collect::<Vec<_>>(),
         "forman_ricci": fricci.iter().map(|e| json!({"src": e.src, "dst": e.dst, "kappa": e.kappa})).collect::<Vec<_>>(),
     })
 }

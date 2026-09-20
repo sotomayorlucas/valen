@@ -25,6 +25,7 @@ class Finding:
     sink_name: str = ""
     variable: str = ""
     path: List[str] = field(default_factory=list)
+    auth_gates: List[str] = field(default_factory=list)  # privilege boundaries crossed (L4)
 
     def to_dict(self) -> Dict[str, object]:
         return {
@@ -39,6 +40,7 @@ class Finding:
             "sink_name": self.sink_name,
             "variable": self.variable,
             "path": self.path,
+            "auth_gates": self.auth_gates,
         }
 
 

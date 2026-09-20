@@ -64,7 +64,7 @@ svg{width:100%;height:100%;background:radial-gradient(circle at 50% 50%,#161b22 
 <script>
 const data = __DATA__;
 const COLORS = {
-  source:"#f85149", sink:"#d29922", function:"#58a6ff",
+  source:"#f85149", sink:"#d29922", function:"#58a6ff", gate:"#bc8cff",
   module:"#30363d", assign:"#a5d6ff", call:"#bc8cff",
   statement:"#8b949e", block:"#8b949e", variable:"#79c0ff", parameter:"#79c0ff"
 };

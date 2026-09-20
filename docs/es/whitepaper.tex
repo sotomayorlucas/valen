@@ -6,6 +6,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
 \usepackage[hidelinks]{hyperref}
 
 \newcommand{\R}{\mathbb{R}}
@@ -52,11 +54,33 @@ falsos positivos. Faltan dos capacidades:
 MANIFOLD proporciona ambas.
 
 \section{La idea central}
-\[
-\text{artefacto}\ \xrightarrow{\quad}\ \text{IR (grafo tipado)}
-\ \xrightarrow{\quad}\ \text{capas matemáticas}
-\ \xrightarrow{\quad}\ \text{campo escalar } V(x)
-\]
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 5mm,
+  box/.style={draw, rounded corners=2pt, minimum height=9mm, minimum width=13mm, align=center, font=\tiny},
+  arr/.style={-{Stealth}, thick}
+]
+\node[box] (art) {artefacto};
+\node[box, right=of art] (ir) {IR\\(grafo tipado)};
+\node[box, right=of ir] (layers) {capas\\mat.};
+\node[box, right=of layers] (v) {$V(x)$\\campo escalar};
+\node[box, right=of v] (agent) {agente\\LLM};
+\node[box, right=of agent] (verif) {verificador\\formal};
+\draw[arr] (art) -- (ir);
+\draw[arr] (ir) -- (layers);
+\draw[arr] (layers) -- (v);
+\draw[arr] (v) -- (agent);
+\draw[arr] (agent) -- (verif);
+\draw[arr, dashed, rounded corners] (verif.south) -- ++(0,-6mm) -| (ir.south)
+  node[pos=0.5, below, font=\scriptsize]{re-embebe};
+\end{tikzpicture}
+\caption{El pipeline: un artefacto se convierte en un grafo tipado, enriquecido
+con estructura matemática en un campo escalar de vulnerabilidad $V(x)$, que un
+agente LLM navega; un verificador formal confirma o refuta cada hipótesis y el
+resultado se re-embebe en el manifold.}
+\end{figure}
+
 Una vulnerabilidad \emph{no} es un patrón; es una \emph{violación de una
 invariante estructural} (una condición de naturalidad rota, un ciclo
 persistente, un cuello de botella de curvatura negativa, un flujo de taint que
@@ -73,10 +97,15 @@ tupla $G = (V, E, \tau_V, \tau_E, \omega)$ donde
         sentencias, llamadas, variables, fuentes, sumideros);
   \item $E \subseteq V \times V$ es un conjunto de \emph{aristas} dirigidas;
   \item $\tau_V : V \to \N_K$ asigna a cada nodo un \emph{tipo} de
-        $K = \{\text{módulo, función, bloque, sentencia, llamada, asignación,
-        variable, parámetro, fuente, sumidero}\}$;
+        $K = \{\text{módulo}, \allowbreak \text{función}, \allowbreak
+        \text{bloque}, \allowbreak \text{sentencia}, \allowbreak \text{llamada},
+        \allowbreak \text{asignación}, \allowbreak \text{variable}, \allowbreak
+        \text{parámetro}, \allowbreak \text{fuente}, \allowbreak \text{sumidero},
+        \allowbreak \text{gate}\}$;
   \item $\tau_E : E \to \mathcal{T}$ asigna a cada arista un \emph{tipo}
-        $\mathcal{T} = \{\text{control, dato, llamada, taint, confianza, auth}\}$;
+        $\mathcal{T} = \{\text{control}, \allowbreak \text{dato}, \allowbreak
+        \text{llamada}, \allowbreak \text{taint}, \allowbreak \text{confianza},
+        \allowbreak \text{auth}\}$;
   \item $\omega : E \to \R_{\ge 0}$ asigna a cada arista un \emph{peso} no
         negativo (por defecto $1$).
 \end{itemize}
@@ -153,6 +182,31 @@ taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto d
 caminos fuente $\to$ sumidero.
 
 \section{El campo escalar de vulnerabilidad}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  n/.style={circle, draw, inner sep=0pt, minimum size=8mm, font=\scriptsize},
+  e/.style={-},
+  hot/.style={circle, draw=red!70, thick, fill=red!15, inner sep=0pt, minimum size=9mm},
+  halo/.style={draw=red!40, thick, rounded corners=3mm}
+]
+\node[n] (a) at (0,0) {fuente};
+\node[n] (b) at (2,0.8) {fn};
+\node[n] (c) at (4,0) {fn};
+\node[n] (d) at (6,0.6) {fn};
+\node[hot] (sink) at (5,-1.2) {sink};
+\node[n] (g) at (3,-1.6) {fn};
+\draw[e] (a) -- (b) -- (c) -- (d);
+\draw[e] (a) -- (g) -- (c);
+\draw[e, red, ultra thick, -{Stealth}] (c) -- (sink);
+\draw[halo] ($(sink)+(-1.1,-0.9)$) rectangle ($(sink)+(1.1,0.9)$);
+\node[font=\tiny, red!80!black] at (5,-2.7) {$V(x)$ alto (hotspot)};
+\end{tikzpicture}
+\caption{El manifold: los nodos son componentes del programa, las aristas son
+relaciones tipadas. Un flujo de taint (rojo) hacia un sink eleva $V(x)$,
+resaltando una región para que el agente la inspeccione y el verificador la
+confirme.}
+\end{figure}
 \[
 V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
@@ -205,17 +259,19 @@ botella como defensivo si y solo si es destino de una arista \texttt{auth}.
 combinatorio $L=D-A$ y la homología persistente estándar operan sobre espacios
 métricos no dirigidos, pero el flujo de control y de datos es dirigido: que $A$
 manche a $B$ no es lo mismo que $B$ manche a $A$. Simetrizar puede destruir la
-dirección del taint. \emph{Mitigación:} el prototipo documenta esta
-aproximación y trata la dirección explícitamente donde importa. \emph{Abierto:}
-el Laplaciano dirigido de Chung y los complejos de bandera dirigidos / homología
-de caminos (Grigor'yan--Lin--Muranov--Yau), que preservan la dirección.
+dirección del taint. \emph{Mitigación:} el prototipo implementa el Laplaciano
+dirigido de Chung (componente fuertemente conexa más grande, vector de Perron,
+conectividad algebraica dirigida), que queda indefinido para un DAG --- en sí
+misma una señal significativa. \emph{Abierto:} complejos de bandera dirigidos /
+homología de caminos (Grigor'yan--Lin--Muranov--Yau).
 
 \textbf{C3 -- Costo del transporte óptimo.} Ollivier--Ricci exige un PL de
 transporte por arista: $\mathcal{O}(|E|\cdot\text{PL})$, prohibitivo más allá de
 $\sim 10^5$ aristas. \emph{Mitigación:} Forman--Ricci
 $\kappa_F = 4 - \deg(u) - \deg(v)$ es $\mathcal{O}(|E|)$ y es la señal por
-defecto; Ollivier--Ricci es opt-in para grafos pequeños. \emph{Abierto:}
-transporte regularizado por entropía (Sinkhorn) para grafos grandes.
+defecto; el transporte regularizado por entropía (Sinkhorn) está implementado
+como la alternativa rápida al PL exacto. \emph{Abierto:} esquemas adaptativos de
+regularización para grafos muy grandes.
 
 \textbf{C4 -- Operacionalizar L4 (naturalidad).} Se requiere una regla
 constructiva. Sean las aristas \texttt{auth} $E_A$ las que marcan fronteras de
@@ -225,8 +281,10 @@ $s \to^{*} k$ \emph{viola la naturalidad} si y solo si su camino cruza al menos
 una arista auth --- es decir, datos no confiables entran a una región protegida
 sin que la frontera los neutralice. Esto es una consulta de alcanzabilidad sobre
 el grafo combinado $(\text{dato} \cup \text{taint} \cup \text{auth})$,
-directamente computable y automatizable. La IR reserva los tipos
-\texttt{auth}/\texttt{trust}; un extractor de autorización los poblará en F7.
+directamente computable y automatizable. \emph{Implementado:} un extractor de
+autorización emite nodos \texttt{gate} y aristas \texttt{auth} desde decoradores
+de frontera de privilegio, y un flujo de taint dentro de una función protegida se
+reporta como violación de naturalidad.
 
 \textbf{C5 -- Puente manifold-verificador.} Los rasgos geométricos son
 cuantitativos; Z3 necesita precondiciones exactas. Fijamos una \emph{gramática}:

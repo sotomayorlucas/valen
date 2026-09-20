@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from manifold.analysis.math_core import run_core
 from manifold.analysis.verifier import Verification, verify
+from manifold.analysis.authorization import annotate_findings
 from manifold.ingest.python import PythonIngest
 from manifold.ingest.sources_sinks import LanguageProfile, PYTHON
 from manifold.ir import Graph, NodeKind
@@ -47,6 +48,7 @@ class Region:
     line: int = 0
     sink_name: str = ""
     category: str = ""
+    auth_gates: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -63,6 +65,7 @@ class Hypothesis:
     line: int = 0
     sink_name: str = ""
     category: str = ""
+    auth_gates: List[str] = field(default_factory=list)
 
 
 @dataclass
@@ -184,6 +187,7 @@ class ManifoldAgent:
         seen: set = set()
 
         # 1. Taint findings (the strongest signal).
+        annotate_findings(graph, result.findings)
         for finding in result.findings:
             name, snippet = self._snippet(graph, code, finding.line)
             key = ("taint", finding.sink_name, finding.line)
@@ -199,6 +203,7 @@ class ManifoldAgent:
                     line=finding.line,
                     sink_name=finding.sink_name,
                     category=finding.category,
+                    auth_gates=finding.auth_gates,
                 )
             )
 
@@ -315,6 +320,7 @@ class ManifoldAgent:
                     line=region.line,
                     sink_name=region.sink_name,
                     category=region.category,
+                    auth_gates=region.auth_gates,
                 )
         return self._heuristic_hypothesis(region)
 
@@ -334,6 +340,7 @@ class ManifoldAgent:
                 line=region.line,
                 sink_name=region.sink_name,
                 category=region.category,
+                auth_gates=region.auth_gates,
             )
         if region.signal == "cycle":
             return Hypothesis(
@@ -399,6 +406,9 @@ class ManifoldAgent:
             if h.signal == "taint":
                 v = verif_by_key.get((h.sink_name, h.line))
                 if v is not None:
+                    evidence = f"Z3 witness: {v.witness}"
+                    if h.auth_gates:
+                        evidence += f"; crosses auth boundary ({', '.join(h.auth_gates)}) — naturality violation (L4)"
                     entries.append(
                         ReportEntry(
                             region=h.region,
@@ -408,7 +418,7 @@ class ManifoldAgent:
                             description=h.description,
                             confidence=1.0,
                             status="confirmed",
-                            evidence=f"Z3 witness: {v.witness}",
+                            evidence=evidence,
                             line=h.line,
                         )
                     )

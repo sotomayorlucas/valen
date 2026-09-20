@@ -20,6 +20,7 @@ pub enum NodeKind {
     Parameter,
     Source,
     Sink,
+    Gate,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]

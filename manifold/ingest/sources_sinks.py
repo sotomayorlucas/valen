@@ -10,7 +10,7 @@ command injection, ``deserialization`` -> insecure deserialization).
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict
 
 
@@ -19,7 +19,8 @@ class LanguageProfile:
     name: str
     sources: Dict[str, str]  # dotted call name -> description
     sinks: Dict[str, str]  # dotted call name -> category
-    sanitizers: Dict[str, str]  # dotted call name -> description (kill taint)
+    sanitizers: Dict[str, str] = field(default_factory=dict)  # kill taint
+    auth_gates: Dict[str, str] = field(default_factory=dict)  # privilege boundaries
 
 
 # Severity ordering per sink category (used to rank findings).
@@ -122,6 +123,23 @@ PYTHON = LanguageProfile(
         # Cryptographic / validation helpers
         "hmac.compare_digest": "constant-time comparison",
         "uuid.UUID": "UUID validation",
+    },
+    auth_gates={
+        # Decorators / functions that mark a privilege boundary.
+        "login_required": "authentication gate",
+        "permission_required": "authorization gate",
+        "require_auth": "authentication gate",
+        "auth_required": "authentication gate",
+        "authenticate": "authentication gate",
+        "check_auth": "authentication gate",
+        "is_authenticated": "authentication check",
+        "has_permission": "authorization check",
+        "require_user": "authentication gate",
+        "require_role": "authorization gate",
+        "verify_token": "token verification",
+        "token_required": "token gate",
+        "admin_required": "authorization gate",
+        "staff_member_required": "authorization gate",
     },
 )
 

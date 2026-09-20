@@ -6,6 +6,8 @@
 \usepackage{amsmath,amssymb}
 \usepackage{booktabs}
 \usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
 \usepackage[hidelinks]{hyperref}
 
 \newcommand{\R}{\mathbb{R}}
@@ -50,11 +52,33 @@ capabilities are missing:
 MANIFOLD provides both.
 
 \section{The core idea}
-\[
-\text{artifact}\ \xrightarrow{\quad}\ \text{IR (typed graph)}
-\ \xrightarrow{\quad}\ \text{mathematical layers}
-\ \xrightarrow{\quad}\ \text{scalar field } V(x)
-\]
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  node distance=4mm and 5mm,
+  box/.style={draw, rounded corners=2pt, minimum height=9mm, minimum width=13mm, align=center, font=\tiny},
+  arr/.style={-{Stealth}, thick}
+]
+\node[box] (art) {artifact};
+\node[box, right=of art] (ir) {IR\\(typed graph)};
+\node[box, right=of ir] (layers) {math\\layers};
+\node[box, right=of layers] (v) {$V(x)$\\scalar field};
+\node[box, right=of v] (agent) {LLM\\agent};
+\node[box, right=of agent] (verif) {formal\\verifier};
+\draw[arr] (art) -- (ir);
+\draw[arr] (ir) -- (layers);
+\draw[arr] (layers) -- (v);
+\draw[arr] (v) -- (agent);
+\draw[arr] (agent) -- (verif);
+\draw[arr, dashed, rounded corners] (verif.south) -- ++(0,-6mm) -| (ir.south)
+  node[pos=0.5, below, font=\scriptsize]{re-embed};
+\end{tikzpicture}
+\caption{The pipeline: an artifact becomes a typed graph, enriched with
+mathematical structure into a vulnerability scalar field $V(x)$, which an LLM
+agent navigates; a formal verifier confirms or refutes each hypothesis and the
+result re-embeds into the manifold.}
+\end{figure}
+
 A vulnerability is \emph{not} a pattern; it is a \emph{violation of a structural
 invariant} (a broken naturality condition, a persistent cycle, a negative
 curvature chokepoint, a taint flow across a spectral trust cut). Each layer
@@ -70,10 +94,15 @@ $G = (V, E, \tau_V, \tau_E, \omega)$ where
         statements, calls, variables, sources, sinks);
   \item $E \subseteq V \times V$ is a set of directed \emph{edges};
   \item $\tau_V : V \to \N_K$ assigns each node a \emph{kind} from
-        $K = \{\text{module, function, block, statement, call, assign, variable,
-        parameter, source, sink}\}$;
+        $K = \{\text{module}, \allowbreak \text{function}, \allowbreak
+        \text{block}, \allowbreak \text{statement}, \allowbreak \text{call},
+        \allowbreak \text{assign}, \allowbreak \text{variable}, \allowbreak
+        \text{parameter}, \allowbreak \text{source}, \allowbreak \text{sink},
+        \allowbreak \text{gate}\}$;
   \item $\tau_E : E \to \mathcal{T}$ assigns each edge a \emph{type}
-        $\mathcal{T} = \{\text{control, data, call, taint, trust, auth}\}$;
+        $\mathcal{T} = \{\text{control}, \allowbreak \text{data}, \allowbreak
+        \text{call}, \allowbreak \text{taint}, \allowbreak \text{trust},
+        \allowbreak \text{auth}\}$;
   \item $\omega : E \to \R_{\ge 0}$ assigns each edge a non-negative
         \emph{weight} (default $1$).
 \end{itemize}
@@ -146,6 +175,30 @@ taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
 
 \section{The vulnerability scalar field}
+\begin{figure}[h]
+\centering
+\begin{tikzpicture}[
+  n/.style={circle, draw, inner sep=0pt, minimum size=8mm, font=\scriptsize},
+  e/.style={-},
+  hot/.style={circle, draw=red!70, thick, fill=red!15, inner sep=0pt, minimum size=9mm},
+  halo/.style={draw=red!40, thick, rounded corners=3mm}
+]
+\node[n] (a) at (0,0) {src};
+\node[n] (b) at (2,0.8) {fn};
+\node[n] (c) at (4,0) {fn};
+\node[n] (d) at (6,0.6) {fn};
+\node[hot] (sink) at (5,-1.2) {sink};
+\node[n] (g) at (3,-1.6) {fn};
+\draw[e] (a) -- (b) -- (c) -- (d);
+\draw[e] (a) -- (g) -- (c);
+\draw[e, red, ultra thick, -{Stealth}] (c) -- (sink);
+\draw[halo] ($(sink)+(-1.1,-0.9)$) rectangle ($(sink)+(1.1,0.9)$);
+\node[font=\tiny, red!80!black] at (5,-2.7) {high $V(x)$ (hotspot)};
+\end{tikzpicture}
+\caption{The manifold: nodes are program components, edges are typed relations.
+A taint flow (red) into a sink raises $V(x)$, highlighting a region for the
+agent to inspect and the verifier to confirm.}
+\end{figure}
 \[
 V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
@@ -196,16 +249,18 @@ the IR) and treat a chokepoint as defensive iff it is the target of an
 $L=D-A$ and standard persistent homology act on undirected metric spaces, but
 control and data flow are directed: $A$ tainting $B$ is not $B$ tainting $A$.
 Symmetrizing can destroy the direction of taint. \emph{Mitigation:} the
-prototype documents this approximation and treats direction explicitly where it
-matters. \emph{Open:} Chung's directed Laplacian and directed flag complexes /
-path homology (Grigor'yan--Lin--Muranov--Yau), which preserve direction.
+prototype implements Chung's directed Laplacian (largest strongly connected
+component, Perron vector, directed algebraic connectivity), which is undefined
+for a DAG --- itself a meaningful signal. \emph{Open:} directed flag complexes /
+path homology (Grigor'yan--Lin--Muranov--Yau).
 
 \textbf{C3 -- Cost of optimal transport.} Ollivier--Ricci requires a
 transportation LP per edge: $\mathcal{O}(|E|\cdot\text{LP})$, prohibitive beyond
 $\sim 10^5$ edges. \emph{Mitigation:} Forman--Ricci
 $\kappa_F = 4 - \deg(u) - \deg(v)$ is $\mathcal{O}(|E|)$ and is the default
-chokepoint signal; Ollivier--Ricci is opt-in for small graphs. \emph{Open:}
-entropy-regularized (Sinkhorn) transport for large graphs.
+chokepoint signal; entropy-regularized (Sinkhorn) transport is implemented as the
+fast alternative to the exact LP. \emph{Open:} adaptive regularization
+schedules for very large graphs.
 
 \textbf{C4 -- Operationalizing L4 (naturality).} A constructive rule is
 required. Let \texttt{auth} edges $E_A$ mark privilege boundaries. Define the
@@ -214,8 +269,9 @@ an auth edge. Then a taint flow $s \to^{*} k$ \emph{violates naturality} iff its
 path crosses at least one auth edge --- i.e. untrusted data enters a protected
 region without the boundary neutralizing it. This is a reachability query over
 the combined $(\text{data} \cup \text{taint} \cup \text{auth})$ graph, directly
-computable and automatable. The IR reserves \texttt{auth}/\texttt{trust} kinds;
-an authorization extractor populates them in F7.
+computable and automatable. \emph{Implemented:} an authorization extractor emits
+\texttt{gate} nodes and \texttt{auth} edges from privilege-gate decorators, and a
+taint finding inside a gated function is reported as a naturality violation.
 
 \textbf{C5 -- Manifold-to-verifier bridge.} Geometric features are
 quantitative; Z3 needs exact preconditions. We fix a \emph{grammar}: a

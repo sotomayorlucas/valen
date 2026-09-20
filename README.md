@@ -26,7 +26,7 @@ an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
 - [x] **F1** — IR + ingesta SAST (Python, tree-sitter) + taint intraprocedural
 - [x] **F2** — Núcleo espectral (Fiedler) + geométrico (Ricci) (Rust)
 - [x] **F3** — Topología (homología persistente H0/H1, Mapper) (Rust)
-- [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3)
+- [x] **F4** — Verificación formal (retículo de taint + sanitizers, verificador simbólico Z3, auth gates/L4)
 - [x] **F5** — Agente LLM autónomo (LiteLLM, fallback offline)
 - [x] **F6** — Visualización (HTML autocontenido) + demo end-to-end
 - [ ] **F7** — Adaptadores binario / web / LLM
@@ -73,6 +73,9 @@ cd core && cargo test && cargo build --release
 # El binario lee el IR (JSON) por stdin y emite señales espectrales/geométricas.
 ```
 El puente Python está en `manifold/analysis/math_core.py` (`run_core`, `fiedler_ranking`).
+
+Núcleo incluye además: **Laplaciano dirigido de Chung** (`directed_laplacian`) y
+**Ollivier–Ricci aproximado vía Sinkhorn** (`ollivier_ricci_sinkhorn`).
 
 ## Agente autónomo (F5)
 

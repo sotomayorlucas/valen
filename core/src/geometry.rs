@@ -11,6 +11,7 @@
 
 use crate::graph::{EdgeKind, Graph};
 use minilp::{ComparisonOp, OptimizationDirection, Problem};
+use nalgebra::DMatrix;
 use std::collections::{HashMap, HashSet, VecDeque};
 
 #[derive(Debug, Clone)]
@@ -84,44 +85,68 @@ fn bfs_distances(adj: &HashMap<usize, Vec<usize>>, start: usize) -> HashMap<usiz
     dist
 }
 
-/// Wasserstein-1 distance between two discrete measures on a common support,
-/// solved as a minimum-cost transportation linear program.
-fn wasserstein1(
-    mu: &HashMap<usize, f64>,
-    nu: &HashMap<usize, f64>,
-    dist: &dyn Fn(usize, usize) -> f64,
-) -> f64 {
-    let xs: Vec<usize> = mu.keys().cloned().collect();
-    let ys: Vec<usize> = nu.keys().cloned().collect();
+/// Wasserstein-1 distance between two discrete measures (aligned vectors),
+/// solved exactly as a minimum-cost transportation linear program.
+fn wasserstein1(mu: &[f64], nu: &[f64], dist: &DMatrix<f64>) -> f64 {
+    let m = mu.len();
+    let n = nu.len();
 
-    // One transport variable per (x, y) pair.
+    // One transport variable per (i, j) pair.
     let mut problem = Problem::new(OptimizationDirection::Minimize);
-    let mut vars: Vec<minilp::Variable> = Vec::with_capacity(xs.len() * ys.len());
-    for &x in &xs {
-        for &y in &ys {
-            vars.push(problem.add_var(dist(x, y), (0.0, f64::INFINITY)));
+    let mut vars: Vec<minilp::Variable> = Vec::with_capacity(m * n);
+    for i in 0..m {
+        for j in 0..n {
+            vars.push(problem.add_var(dist[(i, j)], (0.0, f64::INFINITY)));
         }
     }
 
-    // Row constraints: sum_y pi(x, y) = mu(x).
-    for (i, &x) in xs.iter().enumerate() {
-        let coeffs: Vec<(minilp::Variable, f64)> = (0..ys.len())
-            .map(|j| (vars[i * ys.len() + j], 1.0))
-            .collect();
-        problem.add_constraint(&coeffs, ComparisonOp::Eq, mu[&x]);
+    // Row constraints: sum_j pi(i, j) = mu(i).
+    for i in 0..m {
+        let coeffs: Vec<(minilp::Variable, f64)> = (0..n).map(|j| (vars[i * n + j], 1.0)).collect();
+        problem.add_constraint(&coeffs, ComparisonOp::Eq, mu[i]);
     }
-    // Column constraints: sum_x pi(x, y) = nu(y).
-    for (j, &y) in ys.iter().enumerate() {
-        let coeffs: Vec<(minilp::Variable, f64)> = (0..xs.len())
-            .map(|i| (vars[i * ys.len() + j], 1.0))
-            .collect();
-        problem.add_constraint(&coeffs, ComparisonOp::Eq, nu[&y]);
+    // Column constraints: sum_i pi(i, j) = nu(j).
+    for j in 0..n {
+        let coeffs: Vec<(minilp::Variable, f64)> = (0..m).map(|i| (vars[i * n + j], 1.0)).collect();
+        problem.add_constraint(&coeffs, ComparisonOp::Eq, nu[j]);
     }
 
     match problem.solve() {
         Ok(solution) => solution.objective(),
         Err(_) => f64::INFINITY,
     }
+}
+
+/// Entropy-regularized transport cost via the Sinkhorn (matrix scaling) fixed
+/// point. As `reg -> 0` this converges to the unregularized transport cost,
+/// which for the shortest-path ground metric is `W_1`. This is the fast
+/// approximate alternative to the exact LP for large graphs.
+fn sinkhorn_cost(mu: &[f64], nu: &[f64], dist: &DMatrix<f64>, reg: f64, iters: usize) -> f64 {
+    let m = mu.len();
+    let n = nu.len();
+    if m == 0 || n == 0 {
+        return 0.0;
+    }
+    let k = dist.map(|c| (-c / reg).exp());
+    let mut u = vec![1.0; m];
+    let mut v = vec![1.0; n];
+    for _ in 0..iters {
+        for i in 0..m {
+            let s: f64 = (0..n).map(|j| k[(i, j)] * v[j]).sum();
+            u[i] = if s > 0.0 { mu[i] / s } else { 0.0 };
+        }
+        for j in 0..n {
+            let s: f64 = (0..m).map(|i| k[(i, j)] * u[i]).sum();
+            v[j] = if s > 0.0 { nu[j] / s } else { 0.0 };
+        }
+    }
+    let mut cost = 0.0;
+    for i in 0..m {
+        for j in 0..n {
+            cost += u[i] * k[(i, j)] * v[j] * dist[(i, j)];
+        }
+    }
+    cost
 }
 
 /// Lazy random-walk measure around a node: `(1-alpha)` mass on the node and
@@ -148,31 +173,77 @@ fn lazy_measure(
 
 /// Ollivier–Ricci curvature of every undirected edge over the given kind.
 ///
-/// `kappa(u,v) = 1 - W_1(m_u, m_v) / d(u,v)` with lazy random-walk measures.
+/// `kappa(u,v) = 1 - W_1(m_u, m_v) / d(u,v)` with lazy random-walk measures,
+/// where `W_1` is computed *exactly* via a transportation LP.
 pub fn ollivier_ricci(graph: &Graph, kind: EdgeKind, alpha: f64) -> Vec<RicciEdge> {
-    let adj = adjacency(graph, kind);
-    let edges = undirected_edges(graph, kind);
+    build_transport_instances(graph, kind, alpha)
+        .into_iter()
+        .map(|inst| {
+            let w = wasserstein1(&inst.mu, &inst.nu, &inst.dist);
+            RicciEdge { src: inst.src, dst: inst.dst, kappa: 1.0 - w / inst.d_uv }
+        })
+        .collect()
+}
 
-    edges
+/// Approximate Ollivier–Ricci via entropy-regularized (Sinkhorn) transport.
+///
+/// `reg` is the regularization strength (smaller = closer to the exact `W_1`);
+/// `iters` is the number of matrix-scaling iterations. This is `O(|E| * iters *
+/// k^2)` for local support size `k`, avoiding the per-edge LP.
+pub fn ollivier_ricci_sinkhorn(
+    graph: &Graph,
+    kind: EdgeKind,
+    alpha: f64,
+    reg: f64,
+    iters: usize,
+) -> Vec<RicciEdge> {
+    build_transport_instances(graph, kind, alpha)
+        .into_iter()
+        .map(|inst| {
+            let w = sinkhorn_cost(&inst.mu, &inst.nu, &inst.dist, reg, iters);
+            RicciEdge { src: inst.src, dst: inst.dst, kappa: 1.0 - w / inst.d_uv }
+        })
+        .collect()
+}
+
+/// Per-edge transport data (marginals + ground distances) shared by the exact
+/// and approximate Ollivier–Ricci solvers.
+struct TransportInstance {
+    src: String,
+    dst: String,
+    d_uv: f64,
+    mu: Vec<f64>,
+    nu: Vec<f64>,
+    dist: DMatrix<f64>,
+}
+
+fn build_transport_instances(graph: &Graph, kind: EdgeKind, alpha: f64) -> Vec<TransportInstance> {
+    let adj = adjacency(graph, kind);
+    undirected_edges(graph, kind)
         .into_iter()
         .map(|(a, b, src, dst)| {
-            let mu = lazy_measure(a, &adj, alpha);
-            let nu = lazy_measure(b, &adj, alpha);
-            // Support = union of supports.
-            let support: HashSet<usize> = mu.keys().chain(nu.keys()).cloned().collect();
+            let mu_map = lazy_measure(a, &adj, alpha);
+            let nu_map = lazy_measure(b, &adj, alpha);
+            let support: HashSet<usize> = mu_map.keys().chain(nu_map.keys()).cloned().collect();
 
-            // Pairwise distances among the support.
-            let mut dist: HashMap<(usize, usize), f64> = HashMap::new();
+            let mut dist_map: HashMap<(usize, usize), f64> = HashMap::new();
             for &x in &support {
                 let d = bfs_distances(&adj, x);
                 for &y in &support {
-                    dist.insert((x, y), d.get(&y).copied().unwrap_or(usize::MAX) as f64);
+                    dist_map.insert((x, y), d.get(&y).copied().unwrap_or(usize::MAX) as f64);
                 }
             }
-            let d_uv = dist.get(&(a, b)).copied().unwrap_or(1.0).max(1.0);
-            let w = wasserstein1(&mu, &nu, &|x, y| dist[&(x, y)]);
-            let kappa = 1.0 - w / d_uv;
-            RicciEdge { src, dst, kappa }
+            let d_uv = dist_map.get(&(a, b)).copied().unwrap_or(1.0).max(1.0);
+
+            let mut xs: Vec<usize> = mu_map.keys().cloned().collect();
+            xs.sort_unstable();
+            let mut ys: Vec<usize> = nu_map.keys().cloned().collect();
+            ys.sort_unstable();
+            let mu: Vec<f64> = xs.iter().map(|x| mu_map[x]).collect();
+            let nu: Vec<f64> = ys.iter().map(|y| nu_map[y]).collect();
+            let dist = DMatrix::from_fn(xs.len(), ys.len(), |i, j| dist_map[&(xs[i], ys[j])]);
+
+            TransportInstance { src, dst, d_uv, mu, nu, dist }
         })
         .collect()
 }
@@ -230,6 +301,21 @@ mod tests {
         let ricci = ollivier_ricci(&g, EdgeKind::Call, 0.5);
         let k = edge_kappa(&ricci, "0", "1");
         assert!((k - 0.75).abs() < 1e-6, "got {}", k);
+    }
+
+    #[test]
+    fn sinkhorn_approximates_exact_on_triangle() {
+        let g = make(&["0", "1", "2"], &[("0", "1"), ("1", "2"), ("0", "2")]);
+        let exact = edge_kappa(&ollivier_ricci(&g, EdgeKind::Call, 0.5), "0", "1");
+        let approx = edge_kappa(
+            &ollivier_ricci_sinkhorn(&g, EdgeKind::Call, 0.5, 0.05, 200),
+            "0",
+            "1",
+        );
+        assert!(
+            (exact - approx).abs() < 2e-2,
+            "sinkhorn {approx} too far from exact {exact}"
+        );
     }
 
     #[test]
