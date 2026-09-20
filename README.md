@@ -45,6 +45,27 @@ examples/python/   # programas vulnerables de juguete
 docs/es, docs/en/  # whitepaper en español e inglés
 ```
 
+## Interfaz web (sin CLI)
+
+```bash
+.venv/bin/python -m manifold.server --port 8000
+# abrir http://127.0.0.1:8000
+```
+
+SPA autocontenida (servidor `http.server` de la stdlib, sin dependencias) con 3
+pestañas:
+
+- **Analyze** — pegá código, elegí un ejemplo del repo o fijá un `path`; elegí el
+  adaptador (auto/python/java/binary/angr-binary/web/llm-agent) y corré el
+  análisis. Muestra hallazgos, **ranking de V(x)**, manifold force-directed,
+  verificaciones Z3 (con witness) y el reporte del agente. `POST /api/analyze`.
+- **Experiments** — oráculo de priorización (curva de costo + AUC), OWASP
+  Benchmark, ablación y escalabilidad. `GET /api/results`.
+- **Methodology** — pipeline, capas→señal→evidencia (con su AUC), protocolo de
+  evaluación y leyes de mapeo con estado medido.
+
+La API es estática (tree-sitter + Z3 + el núcleo Rust); **nunca ejecuta tu código**.
+
 ## Uso rápido / Quick start
 
 ```bash

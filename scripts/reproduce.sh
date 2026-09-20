@@ -69,6 +69,9 @@ echo "== 7b. dashboard =="
 "$VENV/bin/python" -m manifold.dashboard --out dashboard.html
 echo "wrote dashboard.html"
 
+echo "== 7c. web UI (serve on http://127.0.0.1:8000) =="
+echo "run:  $VENV/bin/python -m manifold.server --port 8000"
+
 echo "== 8. compile the paper and slides =="
 if command -v tectonic >/dev/null 2>&1; then
   for lang in en es; do
