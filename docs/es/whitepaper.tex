@@ -546,6 +546,19 @@ definición (casos discutibles de query parametrizada), no caminos simbólicos
 espurios. Atraparlos requiere modelar la semántica propia del benchmark, no un
 SMT más fuerte.
 
+\subsection{Transferencia entre corpus (Juliet)}
+Para probar la transferibilidad ejecutamos el adaptador ajustado en OWASP sobre
+la suite \emph{Juliet Java} (espejo find-sec-bugs; cada caso concatenado con sus
+archivos de variante de flujo). Sobre 264 casos de cinco CWEs obtiene
+$P=0.333$, $R=0.562$, $\mathrm{F1}=0.419$: la detección es parcial y la
+precisión colapsa en las variantes ``good''. La razón es estructural, no un
+artefacto de ajuste --- Juliet separa fuente y sumidero entre clases
+\texttt{\_a}/\texttt{\_base}/\texttt{\_bad}, por lo que el análisis correcto
+requiere taint \emph{interprocedural y sensible al contexto}, que el adaptador
+intraprocedural actual no aporta. Es la evidencia más clara del siguiente paso de
+sistemas (taint interprocedural) y una amenaza a la validez externa de los
+números de OWASP.
+
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
 (i) una ruta de texto \texttt{objdump} sin dependencias (etiquetas de función

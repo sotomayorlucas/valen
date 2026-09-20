@@ -174,6 +174,12 @@ como contratos, witness concreto) reproduce exactamente la precisión del
 adaptador (P=0.549, R=0.834, J=+0.057) — **aporta prueba, no precisión**: los
 errores residuales son casos adversariales del benchmark, no caminos espurios.
 
+**Juliet Java** (`benchmarks/run_juliet.py`, `manifold/corpus.py::load_juliet`):
+264 casos de 5 CWEs; el adaptador ajustado en OWASP transfiere mal
+(P=0.333, R=0.562) porque Juliet separa fuente/sumidero entre clases
+(`_a`/`_base`/`_bad`) y exige taint **interprocedural** — evidencia para el
+siguiente paso de sistemas y amenaza a la validez externa.
+
 Mejoras sobre el baseline naive inicial (0.515/0.426/0.466 en taint), todas
 genéricas: **taint con conciencia de ramas** (join de entornos), **taint del
 receptor/estado** (objetos y colecciones) y **restricción de sinks XSS al writer

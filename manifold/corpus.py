@@ -76,3 +76,37 @@ def load_corpus(path: str) -> List[Case]:
     if p.is_dir():
         return load_directory(path)
     return load_manifest(path)
+
+
+def load_juliet(root: str, cwes: Optional[List[str]] = None, limit: Optional[int] = None) -> List[Case]:
+    """Load the Juliet Java test suite (find-sec-bugs/juliet-test-suite layout).
+
+    Each ``*_bad.java`` / ``*_good*.java`` test case is concatenated with its
+    sibling flow-variant files (``_a``, ``_base``, ...) so the source context is
+    present. ``bad`` = vulnerable, ``good*`` = safe.
+    """
+    root_path = Path(root) / "src" / "testcases"
+    if not root_path.is_dir():
+        root_path = Path(root)
+    cases: List[Case] = []
+    for cwe_dir in sorted(root_path.glob("CWE*")):
+        cwe = cwe_dir.name.split("_")[0]
+        if cwes and cwe not in cwes:
+            continue
+        dirs = [cwe_dir] + [d for d in cwe_dir.iterdir() if d.is_dir()]
+        for variant_dir in sorted(dirs):
+            files = {f.name: f for f in variant_dir.glob("*.java")}
+            if not any(k.endswith("_bad.java") or "_good" in k for k in files):
+                continue
+            for fname, fpath in files.items():
+                stem = fname[:-5]  # strip .java
+                is_bad = stem.endswith("_bad")
+                is_good = "_good" in stem
+                if not (is_bad or is_good):
+                    continue
+                prefix = stem[:-4] if is_bad else stem.split("_good", 1)[0]
+                parts = [p.read_text() for k, p in files.items() if k.startswith(prefix)]
+                cases.append(Case(name=fname, code="\n".join(parts), vulnerable=is_bad))
+                if limit and len(cases) >= limit:
+                    return cases
+    return cases

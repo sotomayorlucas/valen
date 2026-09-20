@@ -521,6 +521,19 @@ benchmark} --- the residual false positives are adversarial/definitional
 (debatable parameterized-query cases), not spurious symbolic paths. Catching them
 requires modelling the benchmark's own semantics, not stronger SMT.
 
+\subsection{Cross-corpus transfer (Juliet)}
+To test transferability we ran the OWASP-tuned adapter on the \emph{Juliet Java}
+test suite (find-sec-bugs mirror; each test case concatenated with its
+flow-variant files). On 264 cases across five CWEs it scores
+$P=0.333$, $R=0.562$, $\mathrm{F1}=0.419$: detection is partial and precision
+collapses on the ``good'' variants. The reason is structural, not a tuning
+artifact --- Juliet splits source and sink across \texttt{\_a}/\texttt{\_base}/
+\texttt{\_bad} classes, so correct analysis requires \emph{interprocedural,
+context-sensitive} taint, which the current intraprocedural adapter does not
+provide. This is the clearest evidence for the next systems step
+(interprocedural taint) and a threat to the external validity of the OWASP
+numbers.
+
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
 (i) a zero-dependency \texttt{objdump}-text path (function labels $+$ \texttt{call}
