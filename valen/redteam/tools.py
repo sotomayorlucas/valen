@@ -38,9 +38,12 @@ TOOLS: Dict[str, dict] = {
     "nikto":        {"exe": "nikto", "method": "apt", "pkg": "nikto",
                      "install": ["sudo apt-get install -y nikto"],
                      "description": "web server scanning"},
-    "theHarvester": {"exe": "theHarvester", "method": "pipx", "pkg": "theHarvester",
-                     "install": ["pipx install theHarvester"],
-                     "description": "OSINT email/domain recon"},
+    "theHarvester": {"exe": "theHarvester", "method": "git", "pkg": "github.com/laramies/theHarvester",
+                     "install": [
+                         "git clone --depth 1 https://github.com/laramies/theHarvester.git ~/theHarvester",
+                         "cd ~/theHarvester && python3 -m pip install -r requirements/base.txt",
+                     ],
+                     "description": "OSINT email/domain recon (run: python3 ~/theHarvester/theHarvester.py)"},
     "amass":        {"exe": "amass", "method": "go", "pkg": "github.com/owasp-amass/amass/v4",
                      "install": ["go install -v github.com/owasp-amass/amass/v4/...@master"],
                      "description": "subdomain enumeration"},
@@ -80,27 +83,24 @@ def bootstrap_commands() -> List[str]:
         return []
 
     apt_tools = [n for n in missing if TOOLS[n]["method"] == "apt"]
-    pipx_tools = [n for n in missing if TOOLS[n]["method"] == "pipx"]
     go_tools = [n for n in missing if TOOLS[n]["method"] == "go"]
+    other_tools = [n for n in missing if TOOLS[n]["method"] not in ("apt", "go")]
 
     cmds: List[str] = []
     prereqs: List[str] = []
     if apt_tools:
         cmds.append("sudo apt-get update")
         cmds.append("sudo apt-get install -y " + " ".join(TOOLS[n]["pkg"] for n in apt_tools))
-    if pipx_tools:
-        prereqs.append("pipx")
     if go_tools:
         prereqs.append("golang-go")
 
     if prereqs:
         cmds.append("sudo apt-get install -y " + " ".join(prereqs))
 
-    for n in pipx_tools:
+    for n in other_tools:
         cmds.extend(TOOLS[n]["install"])
     for n in go_tools:
         cmds.extend(TOOLS[n]["install"])
-        # ensure the Go bin dir is on PATH
     if go_tools:
         cmds.append("export PATH=\"$PATH:$(go env GOPATH)/bin\"")
     return cmds
