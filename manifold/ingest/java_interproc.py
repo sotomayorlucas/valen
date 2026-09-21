@@ -124,6 +124,18 @@ class JavaInterproceduralIngest:
         for i, seed in final_runs:
             self._run(methods[i], seed, by_name, return_tainted, findings=findings, path=path)
 
+        # Coverage parity: union with the full intraprocedural adapter so
+        # interprocedural reachability only *adds* findings (XSS-writer
+        # restriction, mutators, patterns), never drops them.
+        from .java import JavaIngest
+
+        seen = {(f.category, f.sink_name, f.line) for f in findings}
+        for f in JavaIngest().analyze(code, path=path).findings:
+            key = (f.category, f.sink_name, f.line)
+            if key not in seen:
+                seen.add(key)
+                findings.append(f)
+
         self._attach_sinks(graph, findings, path)
         return AnalysisResult(graph=graph, findings=findings)
 

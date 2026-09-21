@@ -704,17 +704,18 @@ Añadimos un punto fijo interprocedural insensible al contexto
 sitio de llamada le pasa datos manchados, y una llamada se mancha si su método
 devuelve datos manchados; el punto fijo se itera hasta converger. Sobre Juliet
 eleva el recall $0.562\to0.750$ y el F1 $0.419\to0.490$ (CWE78/CWE90 pasan de
-$0.000$ a $0.750$). \emph{Pero en OWASP es ligeramente peor} (F1 de taint
-$0.662\to0.637$), porque la reimplementación tiene menor paridad de cobertura
-intraprocedural. La lección es precisa: la alcanzabilidad interprocedural es
-\emph{necesaria} para flujos entre clases pero \emph{no suficiente}. Añadimos
-además \emph{sensibilidad al contexto del llamador} con summaries de retorno por
-contexto: poda de forma demostrable una clase sintética de falsos positivos
-inducidos por el retorno (un valor devuelto desde un contexto manchado ya no
-mancha la llamada de un llamador limpio), pero deja OWASP y Juliet
-\emph{sin cambios} (F1 $0.637$ y $0.490$). Las palancas reales no son el
-contexto sino (a) la paridad de cobertura intraprocedural y (b) los summaries de
-frameworks/librerías --- no más geometría.
+$0.000$ a $0.750$). \emph{En OWASP es neutro} (F1 de taint $0.662\to0.656$): el
+pase interprocedural añade recall ($0.834\to0.856$) pero también falsos positivos
+gruesos impulsados por parámetros, de modo que la precisión baja; unimos el pase
+con el adaptador intraprocedural completo para paridad de cobertura. La lección es
+precisa: la alcanzabilidad interprocedural es \emph{necesaria} para flujos entre
+clases pero \emph{no suficiente}. Añadimos además \emph{sensibilidad al contexto
+del llamador} con summaries de retorno por contexto: poda de forma demostrable una
+clase sintética de falsos positivos inducidos por el retorno (un valor devuelto
+desde un contexto manchado ya no mancha la llamada de un llamador limpio), pero
+deja OWASP y Juliet \emph{sin cambios} (F1 $0.656$ y $0.490$). Las palancas reales
+no son el contexto sino (a) los summaries de frameworks/librerías y (b) la
+precisión fina del retorno --- no más geometría.
 
 \subsection{Escalabilidad de cada kernel}
 Cronometramos cada kernel sobre grafos sintéticos (log--log,

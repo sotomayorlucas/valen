@@ -671,16 +671,18 @@ We added a context-insensitive interprocedural fixpoint
 site passes tainted data to it, and a call becomes tainted if its callee returns
 tainted data; the fixpoint is iterated to convergence. On Juliet it raises recall
 $0.562\to0.750$ and F1 $0.419\to0.490$ (CWE78/CWE90 recover from $0.000$ to
-$0.750$). \emph{But on OWASP it is slightly worse} (taint F1 $0.662\to0.637$),
-because the reimplementation has lower intraprocedural-coverage parity. The
-lesson is precise: interprocedural reachability is \emph{necessary} for
-cross-class flows but \emph{not sufficient}. We then added \emph{caller-context
-sensitivity} with per-context return summaries: it provably prunes a synthetic
-class of return-driven false positives (a value returned from a tainted context
-no longer taints a clean caller's call), yet it leaves OWASP and Juliet
-\emph{unchanged} (F1 $0.637$ and $0.490$). The real levers are therefore not
-context but (a) intraprocedural-coverage parity and (b) framework/library
-summaries --- not more geometry.
+$0.750$). \emph{On OWASP it is neutral} (taint F1 $0.662\to0.656$): the
+interprocedural pass adds recall ($0.834\to0.856$) but also coarse
+parameter-driven false positives, so precision drops, and we union the pass with
+the full intraprocedural adapter for coverage parity. The lesson is precise:
+interprocedural reachability is \emph{necessary} for cross-class flows but
+\emph{not sufficient}. We then added \emph{caller-context sensitivity} with
+per-context return summaries: it provably prunes a synthetic class of
+return-driven false positives (a value returned from a tainted context no longer
+taints a clean caller's call), yet it leaves OWASP and Juliet \emph{unchanged}
+(F1 $0.656$ and $0.490$). The real levers are therefore not context but
+(a) framework/library summaries and (b) fine-grained return precision --- not more
+geometry.
 
 \subsection{Scalability of each kernel}
 We timed every kernel on synthetic graphs (log--log, Fig.~\ref{fig:scale}).
