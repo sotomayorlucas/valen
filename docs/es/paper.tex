@@ -180,6 +180,20 @@ un grafo de demostración, el \texttt{assume} app$\to$data se marca como el puen
 más negativo ($\kappa_F=-1$) y el bucket de secretos aparece en la frontera de
 Fiedler; Z3 resuelve entonces la combinatoria de asunción de roles.
 
+\section{Asistencia red-team}
+VALEN no es solo un verificador: un hallazgo más un witness se convierte en un
+\emph{artefacto ejecutable} para equipos ofensivos. La capa red-team convierte
+cada candidato a nivel de objeto en un proof-of-concept ``requests`` ejecutable
+(\texttt{valen.redteam.poc}) que un pentester corre con un token de atacante y el
+id de objeto de una víctima, y un \emph{validador activo}
+(\texttt{valen.redteam.live}) que replayea la petición contra un host accesible y
+confirma el leak en la respuesta --- cerrando el ciclo de ``satisfacible bajo el
+modelo'' a ``impacto demostrado, acá está la evidencia''. Sobre crAPI esto
+produce un PoC por endpoint BOLA/BFLA documentado (9), basado en el mismo spec y
+las mismas etiquetas usadas para la verificación, de modo que un equipo red-team
+recibe un plan de ataque priorizado y respaldado por evidencia, en lugar de una
+lista de alertas.
+
 \section{Limitaciones}
 La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un
 benchmark; el detector estructural sobre-aproxima (casos sanitizados/

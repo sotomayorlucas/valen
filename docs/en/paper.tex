@@ -167,6 +167,19 @@ subnets. On a demo graph the app$\to$data \texttt{assume} is flagged as the
 most-negative bridge ($\kappa_F=-1$) and the secret bucket surfaces on the Fiedler
 boundary; Z3 then resolves the role-assumption combinatorics.
 
+\section{Red-team assistance}
+VALEN is not only a verifier: a finding plus a witness becomes an
+\emph{executable artifact} for offensive teams. The red-team layer turns each
+object-level candidate into a runnable ``requests`` proof-of-concept
+(\texttt{valen.redteam.poc}) that a pentester executes with an attacker token and
+a victim object id, and a \emph{live validator} (\texttt{valen.redteam.live})
+that replays the request against a reachable host and confirms the leak in the
+response --- closing the loop from ``satisfiable under the model'' to
+``demonstrated impact, here is the evidence''. On crAPI this yields one PoC per
+documented BOLA/BFLA endpoint (9), grounded in the same OpenAPI spec and labels
+used for verification, so a red team gets a prioritized, evidence-backed attack
+plan rather than a list of alerts.
+
 \section{Limitations}
 The BOLA/IDOR evaluation is a single real API plus a curated corpus, not a
 benchmark; the structural detector over-approximates (sanitized/parameterized
