@@ -1,0 +1,5 @@
+[
+  {"ip": "10.0.0.5", "ports": [{"port": 80, "proto": "tcp"}, {"port": 443, "proto": "tcp"}]},
+  {"ip": "10.0.0.10", "ports": [{"port": 21, "proto": "tcp"}]},
+  {"ip": "10.0.0.12", "ports": [{"port": 3306, "proto": "tcp"}]}
+]

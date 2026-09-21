@@ -189,6 +189,16 @@ Discovery $\to$ Privilege Escalation $\to$ Collection plan in which every step
 carries a tactic, the concrete PoC, and the SMT confirmation --- so a red team
 gets a prioritized, evidence-backed attack plan rather than a list of alerts.
 
+Finally, VALEN ingests Kali reconnaissance output (\texttt{valen.redteam.recon}):
+nmap \texttt{-oX} and masscan \texttt{-oJ} become an attack-surface graph (hosts
+and open services as nodes, edges host $\to$ service), which the same
+Fiedler/Forman--Ricci kernels turn into network bridges and which a version
+$\to$ CVE hint table turns into hypotheses for the loop. Stealth is a first-class,
+explicit concern (\texttt{valen.redteam.stealth}): conservative timing
+(\texttt{-T0}..\texttt{-T2}), rate limits, randomized host order, inter-probe
+jitter, padding, and passive-only modes --- for authorized engagements, with no
+implicit scanning.
+
 \section{Limitations}
 The BOLA/IDOR evaluation is a single real API plus a curated corpus, not a
 benchmark; the structural detector over-approximates (sanitized/parameterized

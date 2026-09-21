@@ -51,6 +51,9 @@ def _build_examples() -> List[dict]:
     for source in sorted(examples.rglob("*")):
         if not source.is_file() or source.suffix not in (".py", ".json", ".asm"):
             continue
+        # recon fixtures are tool output (nmap/masscan), not runnable cases
+        if "recon" in source.relative_to(examples).parts:
+            continue
         code = source.read_text()
         adapter = infer_adapter(code, source.name)
         result = analyze(code, path=source.name, adapter=adapter)

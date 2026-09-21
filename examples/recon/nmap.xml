@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<nmaprun scanner="nmap" args="nmap -oX - -T2 --max-rate 100 10.0.0.0/29">
+<host><status state="up"/><address addr="10.0.0.1" addrtype="ipv4"/>
+<hostnames><hostname name="gw"/></hostnames>
+<ports><port protocol="tcp" portid="22"><state state="open"/><service name="ssh" product="OpenSSH" version="7.2"/></port></ports>
+</host>
+<host><status state="up"/><address addr="10.0.0.5" addrtype="ipv4"/>
+<hostnames><hostname name="web"/></hostnames>
+<ports>
+<port protocol="tcp" portid="80"><state state="open"/><service name="http" product="Apache httpd" version="2.4.49"/></port>
+<port protocol="tcp" portid="443"><state state="open"/><service name="https" product="Apache httpd" version="2.4.49"/></port>
+</ports>
+</host>
+<host><status state="up"/><address addr="10.0.0.10" addrtype="ipv4"/>
+<hostnames><hostname name="ftp"/></hostnames>
+<ports>
+<port protocol="tcp" portid="21"><state state="open"/><service name="ftp" product="vsftpd" version="2.3.4"/></port>
+</ports>
+</host>
+</nmaprun>

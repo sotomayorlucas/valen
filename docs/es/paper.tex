@@ -203,6 +203,17 @@ Collection, donde cada paso lleva su táctica, el PoC concreto y la confirmació
 SMT --- de modo que un equipo red-team recibe un plan priorizado y respaldado por
 evidencia, en lugar de una lista de alertas.
 
+Por último, VALEN ingiere la salida de reconocimiento de Kali
+(\texttt{valen.redteam.recon}): nmap \texttt{-oX} y masscan \texttt{-oJ} se
+convierten en un grafo de superficie de ataque (hosts y servicios abiertos como
+nodos, aristas host $\to$ servicio), que los mismos kernels de
+Fiedler/Forman--Ricci convierten en puentes de red y que una tabla de versiones
+$\to$ CVE convierte en hipótesis para el ciclo. El sigilo es una preocupación
+explícita y de primera clase (\texttt{valen.redteam.stealth}): timing
+conservador (\texttt{-T0}..\texttt{-T2}), límites de tasa, orden de hosts
+aleatorio, jitter entre sondas, padding y modos solo-pasivos --- para engagements
+autorizados, sin escaneo implícito.
+
 \section{Limitaciones}
 La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un
 benchmark; el detector estructural sobre-aproxima (casos sanitizados/

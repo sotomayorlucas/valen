@@ -1,0 +1,183 @@
+{
+  "profile": "sneaky",
+  "nmap_command": [
+    "nmap",
+    "-oX",
+    "-",
+    "-T2",
+    "--max-rate",
+    "25",
+    "--randomize-hosts",
+    "--data-length",
+    "32",
+    "--host-timeout",
+    "5m",
+    "-p",
+    "1-1000",
+    "<scope>"
+  ],
+  "hosts": [
+    {
+      "ip": "10.0.0.1",
+      "hostname": "gw",
+      "services": [
+        {
+          "port": 22,
+          "proto": "tcp",
+          "service": "ssh",
+          "product": "OpenSSH",
+          "version": "7.2"
+        }
+      ]
+    },
+    {
+      "ip": "10.0.0.5",
+      "hostname": "web",
+      "services": [
+        {
+          "port": 80,
+          "proto": "tcp",
+          "service": "http",
+          "product": "Apache httpd",
+          "version": "2.4.49"
+        },
+        {
+          "port": 443,
+          "proto": "tcp",
+          "service": "https",
+          "product": "Apache httpd",
+          "version": "2.4.49"
+        }
+      ]
+    },
+    {
+      "ip": "10.0.0.10",
+      "hostname": "ftp",
+      "services": [
+        {
+          "port": 21,
+          "proto": "tcp",
+          "service": "ftp",
+          "product": "vsftpd",
+          "version": "2.3.4"
+        }
+      ]
+    },
+    {
+      "ip": "10.0.0.5",
+      "hostname": "",
+      "services": [
+        {
+          "port": 80,
+          "proto": "tcp",
+          "service": "",
+          "product": "",
+          "version": ""
+        },
+        {
+          "port": 443,
+          "proto": "tcp",
+          "service": "",
+          "product": "",
+          "version": ""
+        }
+      ]
+    },
+    {
+      "ip": "10.0.0.10",
+      "hostname": "",
+      "services": [
+        {
+          "port": 21,
+          "proto": "tcp",
+          "service": "",
+          "product": "",
+          "version": ""
+        }
+      ]
+    },
+    {
+      "ip": "10.0.0.12",
+      "hostname": "",
+      "services": [
+        {
+          "port": 3306,
+          "proto": "tcp",
+          "service": "",
+          "product": "",
+          "version": ""
+        }
+      ]
+    }
+  ],
+  "trust_bridges": [
+    {
+      "src": "10.0.0.5",
+      "dst": "10.0.0.5:80",
+      "src_label": "10.0.0.5",
+      "dst_label": "80",
+      "kappa": 1.0
+    },
+    {
+      "src": "10.0.0.5",
+      "dst": "10.0.0.5:443",
+      "src_label": "10.0.0.5",
+      "dst_label": "443",
+      "kappa": 1.0
+    },
+    {
+      "src": "10.0.0.1",
+      "dst": "10.0.0.1:22",
+      "src_label": "gw",
+      "dst_label": "ssh OpenSSH 7.2",
+      "kappa": 2.0
+    },
+    {
+      "src": "10.0.0.10",
+      "dst": "10.0.0.10:21",
+      "src_label": "10.0.0.10",
+      "dst_label": "21",
+      "kappa": 2.0
+    },
+    {
+      "src": "10.0.0.12",
+      "dst": "10.0.0.12:3306",
+      "src_label": "10.0.0.12",
+      "dst_label": "3306",
+      "kappa": 2.0
+    }
+  ],
+  "fiedler_boundary": [
+    "10.0.0.10",
+    "10.0.0.10:21",
+    "10.0.0.1",
+    "10.0.0.1:22",
+    "10.0.0.5"
+  ],
+  "cve_hypotheses": [
+    {
+      "host": "10.0.0.1",
+      "port": 22,
+      "version": "OpenSSH 7.2",
+      "hypothesis": "CVE-2016-6210 (user enumeration)"
+    },
+    {
+      "host": "10.0.0.5",
+      "port": 80,
+      "version": "Apache httpd 2.4.49",
+      "hypothesis": "CVE-2021-41773 (path traversal)"
+    },
+    {
+      "host": "10.0.0.5",
+      "port": 443,
+      "version": "Apache httpd 2.4.49",
+      "hypothesis": "CVE-2021-41773 (path traversal)"
+    },
+    {
+      "host": "10.0.0.10",
+      "port": 21,
+      "version": "vsftpd 2.3.4",
+      "hypothesis": "CVE-2011-2523 (backdoor)"
+    }
+  ]
+}
