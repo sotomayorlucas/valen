@@ -1,0 +1,16 @@
+{
+  "name": "demo-iam",
+  "nodes": [
+    {"id": "public-api", "label": "public-api", "group": "DMZ", "kind": "service"},
+    {"id": "frontend-role", "label": "frontend-role", "group": "app", "kind": "role"},
+    {"id": "db-role", "label": "db-role", "group": "data", "kind": "role"},
+    {"id": "secrets-bucket", "label": "secrets-bucket", "group": "data", "kind": "resource"},
+    {"id": "admin-role", "label": "admin-role", "group": "core", "kind": "role"}
+  ],
+  "edges": [
+    {"src": "public-api", "dst": "frontend-role", "relation": "assume"},
+    {"src": "frontend-role", "dst": "db-role", "relation": "assume"},
+    {"src": "db-role", "dst": "secrets-bucket", "relation": "access"},
+    {"src": "frontend-role", "dst": "admin-role", "relation": "assume"}
+  ]
+}

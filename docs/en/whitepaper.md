@@ -231,10 +231,17 @@ analysis is blind:
 Substrate already in the repo: the **BOLA/IDOR detector**
 (`manifold.analysis.authorization.bola_idor_candidates`, corpus
 `examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precision 0.72 / F1 0.837 with
-**0 taint findings** on vulnerable cases); the **OpenAPI adapter**
-(`manifold.ingest.web`) emitting `auth` edges from security schemes; **GLMY
-directed homology** (`core/src/path_homology.rs`, state cycle
-`examples/state_machine/lock_cycle.json`); and the **LLM-agent adapter**
+**0 taint findings** on vulnerable cases); the **Z3 ownership witness**
+(`manifold.analysis.bola_verifier`) separating object authorization from mere
+authentication; the **OpenAPI adapter**
+(`manifold.ingest.web`) emitting `auth` edges from security schemes and flagging
+sink-without-scheme operations (CWE-862); **GLMY directed homology**
+(`core/src/path_homology.rs`, benchmarked at R 1.0 / P 0.75 vs undirected
+0.5/0.5, `benchmarks/run_state_glmy.py`); the **IAM adapter**
+(`manifold.ingest.iam` + `manifold.analysis.trust`) for privilege bridges via
+Fiedler/Forman-Ricci (`examples/iam/demo.json`); **spec-mining**
+(`benchmarks/run_spec_mining.py`, 0.5 recall / 0 hallucination); and the
+**LLM-agent adapter**
 (`manifold.ingest.llm_agent`) for confused-deputy / indirect prompt injection.
 It abandons the sterile competition with Semgrep/CodeQL on local SQLi/XSS and
 attacks the architectural flaws where syntactic rules are silent.

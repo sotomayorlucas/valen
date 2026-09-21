@@ -37,8 +37,13 @@ are the only signal, because there the data is legitimate and taint is blind.
 > (`examples/python/bola/`, `examples/python/bola_corpus/`,
 > `benchmarks/run_bola.py`) — el taint puntúa **0** en esos casos; sus 7 falsos
 > positivos son el límite de sobre-aproximación documentado. La homología dirigida
-> **GLMY** extrae el generador β₁ concreto de un ciclo de estado que la
-> simetrización borra. La ablación del LLM sobre 38 archivos (29 hallazgos
+> **GLMY** (evaluada en 12 grafos de estado, `benchmarks/run_state_glmy.py`)
+> domina al simetrizado: recall 1.0 / precisión 0.75 vs 0.5/0.5. El **witness de
+> ownership en Z3** (`bola_verifier.py`) separa autorización de objeto de mera
+> autenticación (`login_required` NO bloquea BOLA). Además: detección de
+> **auth-gap OpenAPI** (CWE-862), **puentes de privilegio IAM** vía Fiedler/Forman-Ricci
+> (`examples/iam/demo.json`), y **spec-mining** (0.5 recall, 0 alucinación, n=8).
+> La ablación del LLM sobre 38 archivos (29 hallazgos
 > confirmados) da invariancia de detección/ranking en 37/38 (acuerdo 0.974; la
 > única excepción es una hipótesis no determinista de `compile`), con 28% de
 > cambio en CWE (interpretación) y títulos más concisos.

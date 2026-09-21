@@ -27,10 +27,21 @@ def test_binary_detects_command_flow():
 def test_web_emits_gate_and_sinks():
     spec = (EXAMPLES / "web" / "api.json").read_text()
     result = WebIngest().analyze(spec, path="api.json")
-    assert len(result.findings) == 2  # /users/search and /admin/users
+    # /users/search (taint + missing auth) and /admin/users (taint, gated).
+    assert len(result.findings) == 3
     gates = [n for n in result.graph.nodes if n.kind == NodeKind.GATE]
     assert any(n.label == "apiKey" for n in gates)
     assert len(result.graph.edges(EdgeKind.AUTH)) >= 1
+
+
+def test_web_missing_authorization_cwe862():
+    spec = (EXAMPLES / "web" / "api.json").read_text()
+    result = WebIngest().analyze(spec, path="api.json")
+    missing = [f for f in result.findings if f.kind == "missing_authorization"]
+    assert len(missing) == 1
+    # only the operation with a declared sink but NO security scheme is flagged
+    assert "searchUsers" in missing[0].title
+    assert missing[0].category == "missing_authorization"
 
 
 def test_llm_agent_gates_dangerous_tool():

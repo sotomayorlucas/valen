@@ -238,10 +238,17 @@ donde el análisis estático convencional es ciego:
 Sustrato ya en el repo: el **detector BOLA/IDOR**
 (`manifold.analysis.authorization.bola_idor_candidates`, corpus
 `examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precisión 0.72 / F1 0.837 con
-**0 hallazgos de taint** en los casos vulnerables); el **adaptador OpenAPI**
-(`manifold.ingest.web`) que emite aristas `auth` desde esquemas de seguridad; la
-**homología dirigida GLMY** (`core/src/path_homology.rs`, ciclo de estado
-`examples/state_machine/lock_cycle.json`); y el **adaptador de agentes LLM**
+**0 hallazgos de taint** en los casos vulnerables); el **witness de ownership en
+Z3** (`manifold.analysis.bola_verifier`) que separa autorización de objeto de
+mera autenticación; el **adaptador OpenAPI**
+(`manifold.ingest.web`) que emite aristas `auth` desde esquemas de seguridad y
+marca operaciones con sink y sin esquema (CWE-862); la
+**homología dirigida GLMY** (`core/src/path_homology.rs`, evaluada en R 1.0 /
+P 0.75 vs no dirigida 0.5/0.5, `benchmarks/run_state_glmy.py`); el **adaptador
+IAM** (`manifold.ingest.iam` + `manifold.analysis.trust`) para puentes de
+privilegio vía Fiedler/Forman-Ricci (`examples/iam/demo.json`); la
+**spec-mining** (`benchmarks/run_spec_mining.py`, 0.5 recall / 0 alucinación); y
+el **adaptador de agentes LLM**
 (`manifold.ingest.llm_agent`) para confused-deputy / inyección indirecta de
 prompt. Abandona la competencia estéril con Semgrep/CodeQL en SQLi/XSS locales y
 ataca las fallas arquitectónicas donde las reglas sintácticas callan.

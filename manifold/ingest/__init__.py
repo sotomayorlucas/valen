@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .angr_binary import AngrBinaryIngest
 from .binary import BinaryIngest
+from .iam import IAMIgest
 from .java import JavaIngest
 from .java_interproc import JavaInterproceduralIngest
 from .llm_agent import LLMAgentIngest
@@ -18,6 +19,7 @@ __all__ = [
     "AngrBinaryIngest",
     "WebIngest",
     "LLMAgentIngest",
+    "IAMIgest",
     "LANGUAGE_TO_INGEST",
     "analyze",
 ]
@@ -31,6 +33,7 @@ LANGUAGE_TO_INGEST = {
     "angr-binary": AngrBinaryIngest,
     "web": WebIngest,
     "llm-agent": LLMAgentIngest,
+    "iam": IAMIgest,
 }
 
 _EXT_TO_ADAPTER = {
@@ -74,5 +77,9 @@ def infer_adapter(source: str, path: str) -> str:
             data = json.loads(source)
         except Exception:
             return "web"
-        return "llm-agent" if "tools" in data else "web"
+        if "tools" in data:
+            return "llm-agent"
+        if "nodes" in data and "edges" in data:
+            return "iam"
+        return "web"
     return _EXT_TO_ADAPTER.get(ext, "python")

@@ -54,9 +54,11 @@ to them, and only the privilege-boundary and state-transition \emph{shape} of th
 program gives them away. There the same machinery is the only signal: on a
 curated 39-case BOLA/IDOR corpus the structural \emph{missing-authorization}
 detector reaches recall $1.0$ / precision $0.72$ / F1 $0.837$ while taint scores
-$0$ (its $7$ false positives are the documented over-approximation limit); and
-GLMY directed path homology extracts the
-concrete $\beta_1$ generator of a state cycle that symmetrization erases. The
+$0$ (its $7$ false positives are the documented over-approximation limit; a Z3
+ownership witness separates object-level authorization from mere authentication);
+GLMY directed path homology, benchmarked on 12 state graphs, reaches
+recall $1.0$ / precision $0.75$ versus $0.5$/$0.5$ for the symmetrized homology
+it supersedes. The
 result is a single account --- the same typed graph, privilege algebra, directed
 homology and Z3 verifier --- of \emph{which} program relations make structural
 invariants informative. We contribute this account, a prioritization-oracle
@@ -793,7 +795,12 @@ This larger controlled ablation (38 files,
 \texttt{benchmarks/run\_llm\_ablation.py}) confirms the arbitration boundary at
 scale: \emph{the LLM adds interpretability and reporting, not detection or
 ranking} --- the neuro-symbolic split holds with a small, measured nondeterminism
-leak. A Java/OWASP-side ablation is future work.
+leak. A complementary \emph{spec-mining} probe
+(\texttt{benchmarks/run\_spec\_mining.py}, $n=8$) asks the LLM to state the
+security precondition each snippet must enforce: it mines a plausible invariant
+in every case (hallucination rate $0$) with $0.50$ mean token-recall against
+hand-written ground truth --- the LLM proposes structured specs, but their
+verification remains Z3's job. A Java/OWASP-side ablation is future work.
 
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
@@ -825,24 +832,31 @@ often cast), the sink is an ordinary query, and the bug is that user~A reads
 user~B's data --- there is no ``dirty'' data to track. The modeled object is a
 \emph{multipartite} graph: the API surface (OpenAPI operations), the backend
 endpoints, the permission decorators (\texttt{gate} nodes) and the data models,
-as produced by the OpenAPI adapter (\texttt{manifold.ingest.web}), which already
-emits \texttt{auth} edges from security schemes. The signal is the complement of
-the mechanized \texttt{no\_auth\_bounded} invariant: a directed path from a
-public entry point to a protected resource with \emph{no} strict authorization
-edge where one is required. MANIFOLD implements this as the
-\emph{missing-authorization / BOLA} detector
-(\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), and Z3 then
-proves whether a session assignment (\texttt{session.user\_id} $\neq$
-\texttt{resource.owner\_id}) reaches the resource --- a \emph{mathematical BOLA
-witness}. On a curated corpus of 39 cases (\texttt{examples/python/bola/},
+as produced by the OpenAPI adapter (\texttt{manifold.ingest.web}), which now
+also flags an operation that declares a sensitive sink but \emph{no} security
+scheme (CWE-862 at the API-design level). The signal is the complement of the
+mechanized \texttt{no\_auth\_bounded} invariant: a directed path from a public
+entry point to a protected resource with \emph{no} strict authorization edge
+where one is required. MANIFOLD implements this as the \emph{missing-authorization
+/ BOLA} detector (\texttt{manifold.analysis.authorization.bola\_idor\_candidates}),
+and closes the loop with a \emph{Z3 ownership witness}
+(\texttt{manifold.analysis.bola\_verifier}): it checks
+$\mathrm{SAT}(\,\mathrm{owner}(object\_id)\neq session\_user\_id\,)$ under the
+modeled semantics, so a vulnerable endpoint yields a concrete witness (attacker
+session reads the victim's object) while an ownership-scoped endpoint is UNSAT.
+This makes explicit a nuance the detector alone cannot: an \emph{authentication}
+gate (\texttt{login\_required}) does \emph{not} block BOLA --- the endpoint is
+still SAT unless an object-level \texttt{owner} predicate is present. On a
+curated corpus of 39 cases (\texttt{examples/python/bola/},
 \texttt{examples/python/bola\_corpus/}, evaluated by
 \texttt{benchmarks/run\_bola.py}) taint reports \emph{zero} findings on the
 vulnerable cases while the structural detector reaches \textbf{recall $1.0$} at
-\textbf{precision $0.72$} (F1 $0.837$): a feasibility signal with an honest
-precision limit, because the structural heuristic over-approximates
-(parameterized/sanitized/unused-source cases are the 7 documented false
-positives). It is precisely the regime where taint provably scores $0$ and
-structure is the only signal.
+\textbf{precision $0.72$} (F1 $0.837$, 95\% CI $[0.54,0.89]$). An ablation ladder
+shows each structural requirement earns its keep: all-positive $0.46$, sink-only
+$0.49$, source+sink $0.56$, and the full detector $0.72$, at constant recall
+$1.0$ --- and the 7 false positives are the documented over-approximation limit
+(parameterized/sanitized/unused-source). It is precisely the regime where taint
+provably scores $0$ and structure is the only signal.
 
 \subsection{State machines, concurrency and protocols: directed homology}
 In a servlet there are no state cycles; in smart contracts, lock-acquisition
@@ -854,26 +868,38 @@ interprocedural CFG extended with external calls and global-store mutations).
 The persistent directed $H_1$ generator of GLMY path homology is the exact
 signature of a reentrancy cycle --- and, as \S4.2 showed, symmetrization is
 \emph{not} innocuous: undirected homology can report $\beta_1=1$ where GLMY
-reports $0$ (a triangle filled by an apex) and vice versa. On a synthetic
-lock-acquisition state cycle (\texttt{examples/state\_machine/lock\_cycle.json})
-the directed analysis extracts the concrete generator $[\,s_0\!\to\!s_1,\
-s_1\!\to\!s_2,\ s_2\!\to\!s_0\,]$ with $\beta_1=1$ --- a finding with no taint
-analogue.
+reports $0$ (a triangle filled by an apex) and vice versa. We now \emph{measure}
+this on a 12-graph labeled corpus (\texttt{benchmarks/run\_state\_glmy.py}):
+GLMY reaches \textbf{recall $1.0$ / precision $0.75$}, while the symmetrized
+homology scores recall $0.5$ / precision $0.5$ --- it misses the 2-cycles
+($A\to B\to A$ collapses to a single undirected edge) and emits false cycles on
+filled triangles. The two GLMY false positives are ``diamond'' path-space holes
+(two independent paths converging), not feedback loops, so GLMY is a
+high-recall, necessary-but-not-sufficient directed signal that dominates the
+symmetrized baseline on both axes. On a synthetic lock-acquisition state cycle
+(\texttt{examples/state\_machine/lock\_cycle.json}) the directed analysis
+extracts the concrete generator $[\,s_0\!\to\!s_1,\ s_1\!\to\!s_2,\
+s_2\!\to\!s_0\,]$ with $\beta_1=1$ --- a finding with no taint analogue.
 
 \subsection{Trust topologies, IAM and lateral movement}
 In cloud environments (AWS/Azure/Kubernetes) the worst breaches come from
 privilege-escalation \emph{chains} and lateral movement (a compromised role in a
 frontend service assuming a secondary role with access to a secret bucket). The
 modeled object is the \emph{identity-and-permission graph} (users, IAM roles,
-trust policies, services, network resources). Here the Fiedler cut
+trust policies, services, network resources), ingested by the \texttt{iam}
+adapter (\texttt{manifold.ingest.iam}) and analyzed by
+\texttt{manifold.analysis.trust}. Here the Fiedler cut
 ($\lambda_2, f_2$) optimally partitions the trust domains (e.g.\ DMZ vs.\ core);
 edges that cross the cut without intermediate controls surface as spectral
 anomalies at the trust boundary, and Forman--Ricci curvature --- far from a
 detection error --- \emph{isolates the critical privilege bridges}: a strongly
-negative $\kappa_F$ node is a role or credential that is the sole bridge between
-two disparate trust subnets (the ideal attacker pivot). The agent then hands the
-suggested paths to Z3, which resolves the IAM-policy combinatorics to confirm
-whether the role-assumption chain is viable.
+negative $\kappa_F$ edge is the sole connector between two disparate trust
+subnets (the ideal attacker pivot). On a demo graph
+(\texttt{examples/iam/demo.json}) the analysis flags the app$\to$data
+\texttt{assume} as the most-negative bridge ($\kappa_F=-1$) and surfaces the
+secret bucket on the Fiedler boundary. The agent then hands the suggested paths
+to Z3, which resolves the IAM-policy combinatorics to confirm whether the
+role-assumption chain is viable.
 
 \subsection{Security of autonomous agents and LLMs}
 Modern systems wiring LLMs to external tools (APIs, databases, shell, email)

@@ -28,7 +28,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.analysis.authorization import bola_idor_candidates  # noqa: E402
+from manifold.analysis.authorization import (  # noqa: E402
+    bola_idor_candidates,
+)
 from manifold.ingest.python import PythonIngest  # noqa: E402
 
 SMALL = ROOT / "examples" / "python" / "bola"
@@ -49,29 +51,81 @@ def load_labels(corpus: Path) -> dict:
     return SMALL_LABELS if corpus == SMALL else {}
 
 
-def evaluate(corpus: Path) -> dict:
-    labels = load_labels(corpus)
+def _confusion(preds: list, labels: list) -> dict:
     tp = fp = fn = tn = 0
-    rows = []
-    for name, vulnerable in sorted(labels.items()):
-        path = corpus / name
-        # fresh ingest per file: the adapter keeps per-analysis state
-        result = PythonIngest().analyze(path.read_text(), path=name)
-        cands = bola_idor_candidates(result.graph)
-        predicted = len(cands) > 0
-        tp += predicted and vulnerable
-        fp += predicted and not vulnerable
-        fn += (not predicted) and vulnerable
-        tn += (not predicted) and not vulnerable
-        rows.append({
-            "file": name, "vulnerable": vulnerable, "predicted": predicted,
-            "n_candidates": len(cands), "categories": sorted({c.category for c in cands}),
-        })
+    for p, y in zip(preds, labels):
+        tp += p and y
+        fp += p and not y
+        fn += (not p) and y
+        tn += (not p) and not y
     precision = tp / (tp + fp) if (tp + fp) else 0.0
     recall = tp / (tp + fn) if (tp + fn) else 0.0
     f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
-    return {"precision": precision, "recall": recall, "f1": f1,
-            "tp": tp, "fp": fp, "fn": fn, "tn": tn, "n": len(labels), "rows": rows}
+    return {"tp": tp, "fp": fp, "fn": fn, "tn": tn,
+            "precision": precision, "recall": recall, "f1": f1}
+
+
+def _bootstrap_ci(preds: list, labels: list, iters: int = 2000, seed: int = 0) -> dict:
+    """95% bootstrap CI over files for precision and recall."""
+    import random
+    rnd = random.Random(seed)
+    n = len(preds)
+    precs, recs = [], []
+    for _ in range(iters):
+        idx = [rnd.randrange(n) for _ in range(n)]
+        p = [preds[i] for i in idx]
+        y = [labels[i] for i in idx]
+        c = _confusion(p, y)
+        precs.append(c["precision"])
+        recs.append(c["recall"])
+    precs.sort()
+    recs.sort()
+    lo = int(0.025 * len(precs))
+    hi = int(0.975 * len(precs)) - 1
+    return {"precision_ci": [precs[lo], precs[hi]], "recall_ci": [recs[lo], recs[hi]]}
+
+
+def evaluate(corpus: Path) -> dict:
+    labels = load_labels(corpus)
+    rows = []
+    order = sorted(labels)
+    for name in order:
+        path = corpus / name
+        # fresh ingest per file: the adapter keeps per-analysis state
+        result = PythonIngest().analyze(path.read_text(), path=name)
+        graph = result.graph
+        cands = bola_idor_candidates(graph)
+        predicted = len(cands) > 0
+        # per-function ladder rungs
+        sink_only = len(bola_idor_candidates(graph, require_source=False, require_no_gate=False)) > 0
+        source_sink = len(bola_idor_candidates(graph, require_source=True, require_no_gate=False)) > 0
+        detector = len(bola_idor_candidates(graph, require_source=True, require_no_gate=True)) > 0
+        rows.append({
+            "file": name, "vulnerable": labels[name], "predicted": predicted,
+            "n_candidates": len(cands), "categories": sorted({c.category for c in cands}),
+            "sink_only": sink_only, "source_sink": source_sink, "detector": detector,
+        })
+
+    truth = [r["vulnerable"] for r in rows]
+    det = [r["predicted"] for r in rows]
+    # per-function ablation ladder (same predicate, dropping requirements):
+    # sink-only -> +source -> +no-gate (the full detector)
+    sink_only = [r["sink_only"] for r in rows]
+    source_sink = [r["source_sink"] for r in rows]
+    detector = [r["detector"] for r in rows]
+    all_pos = [True] * len(rows)
+
+    out = _confusion(det, truth)
+    out["rows"] = rows
+    out["n"] = len(labels)
+    out["ci"] = _bootstrap_ci(det, truth)
+    out["baselines"] = {
+        "all_positive": _confusion(all_pos, truth),
+        "sink_only": _confusion(sink_only, truth),
+        "source_sink": _confusion(source_sink, truth),
+        "detector_no_gate": _confusion(detector, truth),
+    }
+    return out
 
 
 def main() -> int:
@@ -87,7 +141,12 @@ def main() -> int:
         print(f"  {r['file']:<26} vuln={int(r['vulnerable'])} pred={int(r['predicted'])} "
               f"cands={r['n_candidates']} {r['categories']}{mark}")
     print(f"\n  TP={res['tp']} FP={res['fp']} FN={res['fn']} TN={res['tn']}")
-    print(f"  precision={res['precision']:.3f} recall={res['recall']:.3f} F1={res['f1']:.3f}")
+    ci = res["ci"]
+    print(f"  precision={res['precision']:.3f} CI95={[round(x,3) for x in ci['precision_ci']]} "
+          f" recall={res['recall']:.3f} CI95={[round(x,3) for x in ci['recall_ci']]} F1={res['f1']:.3f}")
+    print("\n  baseline ladder (precision / recall / F1):")
+    for name, c in res["baselines"].items():
+        print(f"    {name:<18} P={c['precision']:.3f} R={c['recall']:.3f} F1={c['f1']:.3f}")
     fp_files = [r["file"] for r in res["rows"] if r["predicted"] and not r["vulnerable"]]
     if fp_files:
         print(f"  false positives (heuristic limits): {', '.join(fp_files)}")

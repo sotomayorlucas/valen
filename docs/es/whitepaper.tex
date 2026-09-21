@@ -56,9 +56,11 @@ ellos, y solo la \emph{forma} de fronteras de privilegio y transiciones de estad
 los delata. Allí la misma maquinaria es la única señal: en un corpus curado de
 39 casos de BOLA/IDOR, el detector estructural de \emph{autorización ausente}
 alcanza recall $1.0$ / precisión $0.72$ / F1 $0.837$ mientras el taint puntúa $0$
-(sus 7 falsos positivos son el límite de sobre-aproximación documentado); y la
-homología de caminos dirigida GLMY extrae el
-generador concreto $\beta_1$ de un ciclo de estado que la simetrización borra. El
+(sus 7 falsos positivos son el límite de sobre-aproximación documentado; un
+witness de ownership en Z3 separa la autorización a nivel de objeto de la mera
+autenticación); la homología de caminos dirigida GLMY, evaluada sobre 12 grafos
+de estado, alcanza recall $1.0$ / precisión $0.75$ frente al $0.5$/$0.5$ de la
+homología simetrizada que supera. El
 resultado es una única cuenta --- el mismo grafo tipado, álgebra de privilegios,
 homología dirigida y verificador Z3 --- de \emph{qué} relaciones de programa
 hacen informativas a las invariantes estructurales. Contribuimos esta cuenta, un
@@ -836,7 +838,13 @@ controlada y mayor (38 archivos, \texttt{benchmarks/run\_llm\_ablation.py})
 confirma la frontera de arbitraje a escala: \emph{el LLM aporta
 interpretabilidad y reporte, no detección ni ranking} --- el reparto
 neuro-simbólico se sostiene con una pequeña fuga de no determinismo medida. Una
-ablación del lado Java/OWASP queda como trabajo futuro.
+sonda complementaria de \emph{minería de specs}
+(\texttt{benchmarks/run\_spec\_mining.py}, $n=8$) pide al LLM la precondición de
+seguridad que cada snippet debe cumplir: mina una invariante plausible en todos
+los casos (tasa de alucinación $0$) con $0.50$ de recall de tokens frente a la
+verdad de referencia escrita a mano --- el LLM propone specs estructuradas, pero
+su verificación sigue siendo tarea de Z3. Una ablación del lado Java/OWASP queda
+como trabajo futuro.
 
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
@@ -870,24 +878,34 @@ ordinaria y el bug es que el usuario~A lee los datos del usuario~B --- no hay
 dato ``sucio'' que rastrear. El objeto modelado es un grafo \emph{multipartito}:
 la superficie de la API (operaciones OpenAPI), los endpoints del backend, los
 decoradores de permisos (nodos \texttt{gate}) y los modelos de datos, como
-produce el adaptador OpenAPI (\texttt{manifold.ingest.web}), que ya emite aristas
-\texttt{auth} desde los esquemas de seguridad. La señal es el complemento de la
+produce el adaptador OpenAPI (\texttt{manifold.ingest.web}), que ahora además
+marca una operación que declara un sink sensible pero \emph{sin} esquema de
+seguridad (CWE-862 a nivel de diseño de API). La señal es el complemento de la
 invariante mecanizada \texttt{no\_auth\_bounded}: un camino dirigido desde un
 punto de entrada público a un recurso protegido \emph{sin} arista estricta de
 autorización donde se requiere una. MANIFOLD lo implementa como el detector de
 \emph{autorización ausente / BOLA}
-(\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), y Z3 prueba
-entonces si una asignación de sesión (\texttt{session.user\_id} $\neq$
-\texttt{resource.owner\_id}) alcanza el recurso --- un \emph{witness matemático
-de BOLA}. En un corpus curado de 39 casos (\texttt{examples/python/bola/},
+(\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), y cierra el
+ciclo con un \emph{witness de ownership en Z3}
+(\texttt{manifold.analysis.bola\_verifier}): comprueba
+$\mathrm{SAT}(\,\mathrm{owner}(object\_id)\neq session\_user\_id\,)$ bajo la
+semántica modelada, de modo que un endpoint vulnerable produce un witness
+concreto (la sesión del atacante lee el objeto de la víctima) mientras un
+endpoint con \texttt{owner} acotado es UNSAT. Esto hace explícito un matiz que el
+detector solo no puede: una puerta de \emph{autenticación}
+(\texttt{login\_required}) \emph{no} bloquea BOLA --- el endpoint sigue siendo
+SAT salvo que exista un predicado de \texttt{owner} a nivel de objeto. En un
+corpus curado de 39 casos (\texttt{examples/python/bola/},
 \texttt{examples/python/bola\_corpus/}, evaluado por
 \texttt{benchmarks/run\_bola.py}) el taint reporta \emph{cero}
 hallazgos en los casos vulnerables mientras el detector estructural alcanza
-\textbf{recall $1.0$} con \textbf{precisión $0.72$} (F1 $0.837$): una señal de
-factibilidad con un límite de precisión honesto, porque la heurística estructural
-sobre-aproxima (los casos parametrizados/sanitizados/de fuente sin usar son los 7
-falsos positivos documentados). Es precisamente el régimen donde el taint
-demostrablemente puntúa $0$ y la estructura es la única señal.
+\textbf{recall $1.0$} con \textbf{precisión $0.72$} (F1 $0.837$, IC95\%
+$[0.54,0.89]$). Una escalera de ablación muestra que cada requisito estructural
+rinde: all-positive $0.46$, solo-sink $0.49$, fuente+sink $0.56$ y el detector
+completo $0.72$, a recall constante $1.0$ --- y los 7 falsos positivos son el
+límite de sobre-aproximación documentado (parametrizados/sanitizados/fuente sin
+usar). Es precisamente el régimen donde el taint demostrablemente puntúa $0$ y la
+estructura es la única señal.
 
 \subsection{Máquinas de estado, concurrencia y protocolos: homología dirigida}
 En un servlet no hay ciclos de estado; en contratos inteligentes, protocolos de
@@ -900,8 +918,17 @@ y mutaciones de almacenamiento global). El generador persistente dirigido de
 $H_1$ de la homología de caminos GLMY es la firma exacta de un ciclo de
 reentrancia --- y, como mostró \S4.2, la simetrización \emph{no} es inocua: la
 homología no dirigida puede reportar $\beta_1=1$ donde GLMY reporta $0$ (un
-triángulo rellenado por un ápice) y viceversa. Sobre un ciclo de adquisición de
-locks sintético (\texttt{examples/state\_machine/lock\_cycle.json}) el análisis
+triángulo rellenado por un ápice) y viceversa. Ahora lo \emph{medimos} sobre un
+corpus etiquetado de 12 grafos (\texttt{benchmarks/run\_state\_glmy.py}): GLMY
+alcanza \textbf{recall $1.0$ / precisión $0.75$}, mientras la homología
+simetrizada puntúa recall $0.5$ / precisión $0.5$ --- pierde los 2-ciclos
+($A\to B\to A$ colapsa a una sola arista no dirigida) y emite ciclos falsos en
+triángulos rellenos. Los dos falsos positivos de GLMY son ``diamantes'' (huecos
+de path-space: dos caminos independientes convergiendo), no ciclos de
+realimentación, así que GLMY es una señal dirigida de alto recall,
+necesaria-pero-no-suficiente, que domina al baseline simetrizado en ambos ejes.
+Sobre un ciclo de adquisición de locks sintético
+(\texttt{examples/state\_machine/lock\_cycle.json}) el análisis
 dirigido extrae el generador concreto $[\,s_0\!\to\!s_1,\ s_1\!\to\!s_2,\
 s_2\!\to\!s_0\,]$ con $\beta_1=1$ --- un hallazgo sin análogo en taint.
 
@@ -910,14 +937,19 @@ En entornos cloud (AWS/Azure/Kubernetes) las peores brechas vienen de
 \emph{cadenas} de escalada de privilegios y movimiento lateral (un rol
 comprometido en un frontend asumiendo un rol secundario con acceso a un bucket de
 secretos). El objeto modelado es el \emph{grafo de identidades y permisos}
-(usuarios, roles IAM, políticas de confianza, servicios, recursos de red). Aquí
+(usuarios, roles IAM, políticas de confianza, servicios, recursos de red),
+ingerido por el adaptador \texttt{iam} (\texttt{manifold.ingest.iam}) y analizado
+por \texttt{manifold.analysis.trust}. Aquí
 el corte de Fiedler ($\lambda_2, f_2$) particiona óptimamente los dominios de
 confianza (p.~ej.\ DMZ vs.\ núcleo); las aristas que cruzan el corte sin
 controles intermedios emergen como anomalías espectrales en la frontera de
 confianza, y la curvatura de Forman--Ricci --- lejos de ser un error de
-detección --- \emph{aisla los puentes de privilegio críticos}: un nodo con
-$\kappa_F$ fuertemente negativa es un rol o credencial que es el único puente
-entre dos subredes de confianza dispares (el pivote ideal del atacante). El
+detección --- \emph{aisla los puentes de privilegio críticos}: una arista con
+$\kappa_F$ fuertemente negativa es el único puente
+entre dos subredes de confianza dispares (el pivote ideal del atacante). Sobre un
+grafo de demostración (\texttt{examples/iam/demo.json}) el análisis marca el
+\texttt{assume} app$\to$data como el puente más negativo ($\kappa_F=-1$) y saca
+el bucket de secretos a la frontera de Fiedler. El
 agente entrega entonces los caminos sugeridos a Z3, que resuelve la combinatoria
 de políticas IAM para confirmar si la cadena de asunción de roles es viable.
 

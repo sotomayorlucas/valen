@@ -1,0 +1,66 @@
+{
+  "summary": {
+    "live": true,
+    "n": 8,
+    "mean_token_recall": 0.5,
+    "hallucination_rate": 0.0
+  },
+  "rows": [
+    {
+      "name": "owner_check",
+      "answer": "The caller must be authenticated and authorized to access the order identified by the requested `id` (e.g., it belongs to that user/tenant) before this query is executed.",
+      "truth": "the object must belong to the caller (ownership / authorization check)",
+      "score": 0.5,
+      "hallucinated": false
+    },
+    {
+      "name": "balance_check",
+      "answer": "The source account balance must be atomically verified to be at least the non-negative `amount` before any debit, preventing overdrafts or negative balances.",
+      "truth": "the source balance must be sufficient (amount >= 0, no overdraft)",
+      "score": 0.75,
+      "hallucinated": false
+    },
+    {
+      "name": "int_validation",
+      "answer": "The `id` argument must be guaranteed to be a trusted, non-injectable value (e.g., strictly validated integer) before being concatenated into the SQL query.",
+      "truth": "the input must be validated / sanitized before use in SQL",
+      "score": 0.25,
+      "hallucinated": false
+    },
+    {
+      "name": "auth_gate",
+      "answer": "The request must be authenticated and authorized to delete the specified user (e.g., an admin or the user themselves), rather than trusting the client-supplied `uid`.",
+      "truth": "the caller must be authenticated and authorized (admin)",
+      "score": 0.75,
+      "hallucinated": false
+    },
+    {
+      "name": "nonce_check",
+      "answer": "The code must be valid, unexpired, unused, and authorized for the requester, with lookup and grant performed atomically so a code cannot be redeemed more than once.",
+      "truth": "the code must be single-use (unused / not already redeemed)",
+      "score": 0.6,
+      "hallucinated": false
+    },
+    {
+      "name": "sanitize_shell",
+      "answer": "The `host` parameter must be strictly validated against a safe allowlist of hostnames/IPs so that no shell metacharacters or additional commands can be injected.",
+      "truth": "the command argument must be validated / quoted before shell execution",
+      "score": 0.25,
+      "hallucinated": false
+    },
+    {
+      "name": "deser_safe",
+      "answer": "The data in `request.data` must come from a fully trusted, authenticated source and never be attacker-controlled, since `pickle.loads` can execute arbitrary code.",
+      "truth": "the serialized data must be trusted / authenticated before deserialization",
+      "score": 0.5,
+      "hallucinated": false
+    },
+    {
+      "name": "path_bound",
+      "answer": "The resolved file path must remain confined to `/srv` so user input cannot traverse directories, use absolute paths, or follow symlinks outside the intended directory.",
+      "truth": "the path must be confined to a safe directory (no traversal)",
+      "score": 0.4,
+      "hallucinated": false
+    }
+  ]
+}

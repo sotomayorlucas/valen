@@ -96,6 +96,8 @@ def _fn_span(fn) -> tuple:
 def bola_idor_candidates(
     graph: Graph,
     resource_categories: set = RESOURCE_SINK_CATEGORIES,
+    require_source: bool = True,
+    require_no_gate: bool = True,
 ) -> List[Finding]:
     """Heuristic candidates for CWE-639 (BOLA/IDOR) and CWE-862 (missing auth).
 
@@ -107,17 +109,21 @@ def bola_idor_candidates(
     public entry point to a protected resource with no privilege boundary
     (``no_auth_bounded``) where one is required.
 
+    ``require_source`` and ``require_no_gate`` relax the predicate to build the
+    ablation ladder (sink-only, source+sink, and the full detector); they default
+    to the full predicate.
+
     This is a *structural heuristic* intended for a curated evaluation, not a
     production-grade detector: it deliberately ignores dataflow sanitization.
     """
     out: List[Finding] = []
     funcs = [n for n in graph.nodes if n.kind == NodeKind.FUNCTION]
     for fn in funcs:
-        if fn.attrs.get("auth"):
+        if require_no_gate and fn.attrs.get("auth"):
             continue  # gated functions are handled by authorization_violations (crossing)
         lo, hi = _fn_span(fn)
         http_srcs = [n for n in graph.nodes if _is_http_source(n) and lo <= n.line <= hi]
-        if not http_srcs:
+        if require_source and not http_srcs:
             continue
         for sink in (n for n in graph.nodes
                      if n.kind == NodeKind.SINK and lo <= n.line <= hi

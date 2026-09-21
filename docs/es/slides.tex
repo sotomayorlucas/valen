@@ -255,9 +255,10 @@
   \end{tabular}
   \end{center}
   \vspace{1mm}
-  \textbf{Medido (n=39):} detector BOLA recall $1.0$, precisión $0.72$, con
-  \emph{0 hallazgos de taint} en casos vulnerables (7 FP = sobre-aproximación);
-  GLMY extrae el generador $\beta_1$ concreto de un ciclo de estado.
+  \textbf{Medido:} detector BOLA recall $1.0$ / precisión $0.72$ (n=39, IC
+  $[0.54,0.89]$, 0 hallazgos de taint) + witness de ownership en Z3 (gate $\neq$
+  autorización de objeto); GLMY sobre 12 grafos $R{=}1.0/P{=}0.75$ vs no dirigida
+  $0.5/0.5$; puentes IAM vía $\kappa_F$; spec-mining $0.5$ recall, $0$ alucinación.
 \end{frame}
 
 \begin{frame}{Conclusiones y trabajo futuro}

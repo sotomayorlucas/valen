@@ -70,8 +70,34 @@ class WebIngest:
                         )
                         graph.add_edge(gate, endpoint, EdgeKind.AUTH)
 
+                declared_sinks = list(op.get("x-manifold-sinks") or [])
+                has_security = bool((op.get("security") or []))
+
+                # Missing authorization at the API-design level (CWE-862): an
+                # operation that declares a sensitive sink but *no* security
+                # scheme reaches that resource without any privilege boundary.
+                if declared_sinks and not has_security:
+                    findings.append(
+                        Finding(
+                            kind="missing_authorization",
+                            title=f"Operation {op_id} accesses a resource with no security scheme",
+                            description=(
+                                f"`{method.upper()} {url}` declares sink(s) "
+                                f"{declared_sinks} but no `security` requirement, "
+                                f"so an unauthenticated caller can reach the "
+                                f"resource (CWE-862)."
+                            ),
+                            severity="high",
+                            category="missing_authorization",
+                            file=path,
+                            line=0,
+                            source_names=declared_sinks,
+                            sink_name=op_id,
+                        )
+                    )
+
                 # Declared sinks: x-manifold-sinks = ["paramName"].
-                for name in op.get("x-manifold-sinks") or []:
+                for name in declared_sinks:
                     seq += 1
                     sink = f"sink{seq}"
                     category = "sql"  # default

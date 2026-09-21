@@ -1,20 +1,22 @@
 {
   "corpus": "large",
-  "precision": 0.72,
-  "recall": 1.0,
-  "f1": 0.8372093023255813,
   "tp": 18,
   "fp": 7,
   "fn": 0,
   "tn": 14,
-  "n": 39,
+  "precision": 0.72,
+  "recall": 1.0,
+  "f1": 0.8372093023255813,
   "rows": [
     {
       "file": "s_adv_gated_param.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_adv_json_param.py",
@@ -23,7 +25,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_logging.py",
@@ -32,7 +37,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_open_literal.py",
@@ -41,7 +49,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_owner_no_gate.py",
@@ -50,7 +61,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_param_query.py",
@@ -59,7 +73,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_sanitized_cmd.py",
@@ -68,14 +85,20 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_adv_two_src_gated.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_adv_unused_source.py",
@@ -84,91 +107,130 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "s_benign_health.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": false,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_cross_function.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_fixed_owner.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_gated_command.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_gated_delete.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_gated_path.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_gated_perm_export.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_gated_sql.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": false
     },
     {
       "file": "s_param_not_http.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_sink_no_source.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_source_no_sink.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": false,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "s_static_query.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
-      "categories": []
+      "categories": [],
+      "sink_only": true,
+      "source_sink": false,
+      "detector": false
     },
     {
       "file": "v_bfla_export.py",
@@ -177,7 +239,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_command.py",
@@ -186,7 +251,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_command_popen.py",
@@ -195,7 +263,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_cwe862_delete.py",
@@ -204,7 +275,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_cwe862_setrole.py",
@@ -213,7 +287,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_deser.py",
@@ -222,7 +299,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_file_body.py",
@@ -231,7 +311,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_file_write.py",
@@ -240,7 +323,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_idor_cast_missing_owner.py",
@@ -249,7 +335,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_idor_values.py",
@@ -258,7 +347,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_path_rm.py",
@@ -267,7 +359,10 @@
       "n_candidates": 1,
       "categories": [
         "missing_authorization"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_cast_int.py",
@@ -276,7 +371,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_cookies.py",
@@ -285,7 +383,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_form.py",
@@ -294,7 +395,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_json.py",
@@ -303,7 +407,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_no_cast_get.py",
@@ -312,7 +419,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_self_request.py",
@@ -321,7 +431,10 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     },
     {
       "file": "v_sql_subquery_param.py",
@@ -330,7 +443,59 @@
       "n_candidates": 1,
       "categories": [
         "idor"
-      ]
+      ],
+      "sink_only": true,
+      "source_sink": true,
+      "detector": true
     }
-  ]
+  ],
+  "n": 39,
+  "ci": {
+    "precision_ci": [
+      0.5384615384615384,
+      0.8846153846153846
+    ],
+    "recall_ci": [
+      1.0,
+      1.0
+    ]
+  },
+  "baselines": {
+    "all_positive": {
+      "tp": 18,
+      "fp": 21,
+      "fn": 0,
+      "tn": 0,
+      "precision": 0.46153846153846156,
+      "recall": 1.0,
+      "f1": 0.631578947368421
+    },
+    "sink_only": {
+      "tp": 18,
+      "fp": 19,
+      "fn": 0,
+      "tn": 2,
+      "precision": 0.4864864864864865,
+      "recall": 1.0,
+      "f1": 0.6545454545454547
+    },
+    "source_sink": {
+      "tp": 18,
+      "fp": 14,
+      "fn": 0,
+      "tn": 7,
+      "precision": 0.5625,
+      "recall": 1.0,
+      "f1": 0.72
+    },
+    "detector_no_gate": {
+      "tp": 18,
+      "fp": 7,
+      "fn": 0,
+      "tn": 14,
+      "precision": 0.72,
+      "recall": 1.0,
+      "f1": 0.8372093023255813
+    }
+  }
 }

@@ -1,0 +1,138 @@
+{
+  "rows": [
+    {
+      "name": "chain",
+      "has_cycle": false,
+      "undirected_beta1": 0,
+      "glmy_beta1": 0,
+      "undirected_flags": false,
+      "glmy_flags": false
+    },
+    {
+      "name": "cycle2",
+      "has_cycle": true,
+      "undirected_beta1": 0,
+      "glmy_beta1": 1,
+      "undirected_flags": false,
+      "glmy_flags": true
+    },
+    {
+      "name": "cycle3",
+      "has_cycle": true,
+      "undirected_beta1": 1,
+      "glmy_beta1": 1,
+      "undirected_flags": true,
+      "glmy_flags": true
+    },
+    {
+      "name": "cycle3_tail",
+      "has_cycle": true,
+      "undirected_beta1": 1,
+      "glmy_beta1": 1,
+      "undirected_flags": true,
+      "glmy_flags": true
+    },
+    {
+      "name": "cycle4",
+      "has_cycle": true,
+      "undirected_beta1": 1,
+      "glmy_beta1": 1,
+      "undirected_flags": true,
+      "glmy_flags": true
+    },
+    {
+      "name": "dag_wide",
+      "has_cycle": false,
+      "undirected_beta1": 1,
+      "glmy_beta1": 1,
+      "undirected_flags": true,
+      "glmy_flags": true
+    },
+    {
+      "name": "diamond",
+      "has_cycle": false,
+      "undirected_beta1": 1,
+      "glmy_beta1": 1,
+      "undirected_flags": true,
+      "glmy_flags": true
+    },
+    {
+      "name": "double_cycle",
+      "has_cycle": true,
+      "undirected_beta1": 0,
+      "glmy_beta1": 2,
+      "undirected_flags": false,
+      "glmy_flags": true
+    },
+    {
+      "name": "filled_triangle",
+      "has_cycle": false,
+      "undirected_beta1": 1,
+      "glmy_beta1": 0,
+      "undirected_flags": true,
+      "glmy_flags": false
+    },
+    {
+      "name": "mutual_recur",
+      "has_cycle": true,
+      "undirected_beta1": 0,
+      "glmy_beta1": 1,
+      "undirected_flags": false,
+      "glmy_flags": true
+    },
+    {
+      "name": "star",
+      "has_cycle": false,
+      "undirected_beta1": 0,
+      "glmy_beta1": 0,
+      "undirected_flags": false,
+      "glmy_flags": false
+    },
+    {
+      "name": "tree",
+      "has_cycle": false,
+      "undirected_beta1": 0,
+      "glmy_beta1": 0,
+      "undirected_flags": false,
+      "glmy_flags": false
+    }
+  ],
+  "glmy": {
+    "tp": 6,
+    "fp": 2,
+    "fn": 0,
+    "tn": 4,
+    "precision": 0.75,
+    "recall": 1.0,
+    "f1": 0.8571428571428571,
+    "ci": {
+      "precision_ci": [
+        0.4,
+        1.0
+      ],
+      "recall_ci": [
+        1.0,
+        1.0
+      ]
+    }
+  },
+  "undirected": {
+    "tp": 3,
+    "fp": 3,
+    "fn": 3,
+    "tn": 3,
+    "precision": 0.5,
+    "recall": 0.5,
+    "f1": 0.5,
+    "ci": {
+      "precision_ci": [
+        0.0,
+        1.0
+      ],
+      "recall_ci": [
+        0.0,
+        1.0
+      ]
+    }
+  }
+}
