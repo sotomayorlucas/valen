@@ -70,6 +70,9 @@ fn topology_block(graph: &Graph, kind: EdgeKind) -> Value {
             "vertices": ph.vertices,
             "edges": ph.edges,
             "paths2": ph.paths2,
+            "h1_generators": ph.h1_generators.iter().map(|cycle| {
+                cycle.iter().map(|&(a, b)| json!([graph.nodes[a].id, graph.nodes[b].id])).collect::<Vec<_>>()
+            }).collect::<Vec<_>>(),
         },
     })
 }

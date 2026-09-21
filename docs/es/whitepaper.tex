@@ -762,8 +762,11 @@ GLMY reporta $\beta_1=0$: los 2-caminos transitivos a través del ápice
 \texttt{withdraw} rellenan el 2-ciclo
 \texttt{read\_balance}$\leftrightarrow$\texttt{update\_balance}. En un 2-ciclo
 aislado $A\leftrightarrow B$ los papeles se invierten (GLMY $\beta_1=1$,
-no-dirigida $\beta_1=0$). La simetrización (C2) por tanto \emph{no} es inocua: la
-invariante dirigida es una señal genuinamente distinta, y a veces opuesta.
+no-dirigida $\beta_1=0$), y el analizador devuelve el \emph{generador} de $H_1$
+--- el ciclo dirigido como lista de aristas $\{A\to B,\;B\to A\}$ --- de modo que
+la invariante es accionable, no solo un número. La simetrización (C2) por tanto
+\emph{no} es inocua: la invariante dirigida es una señal genuinamente distinta, y
+a veces opuesta.
 
 \subsection{Ablación del LLM}
 Ejecutamos el agente dos veces sobre los siete ejemplos de Python: offline

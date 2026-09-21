@@ -23,42 +23,90 @@ pub struct PathHomology {
     pub vertices: usize,
     pub edges: usize,
     pub paths2: usize,
+    /// H1 generators as edge lists (global node-index pairs).
+    pub h1_generators: Vec<Vec<(usize, usize)>>,
 }
 
-/// Rank of a dense matrix via Gaussian elimination with partial pivoting.
-fn rank(mut m: Vec<Vec<f64>>) -> usize {
+/// Reduced row echelon form; returns (rref, pivot_columns).
+fn rref(mut m: Vec<Vec<f64>>) -> (Vec<Vec<f64>>, Vec<usize>) {
     if m.is_empty() {
-        return 0;
+        return (m, Vec::new());
     }
     let rows = m.len();
     let cols = m[0].len();
+    let mut pivots = Vec::new();
     let mut r = 0usize;
     for c in 0..cols {
-        // find pivot
-        let mut pivot = None;
+        let mut p = None;
         for i in r..rows {
             if m[i][c].abs() > 1e-9 {
-                pivot = Some(i);
+                p = Some(i);
                 break;
             }
         }
-        let Some(p) = pivot else { continue };
-        m.swap(r, p);
+        let Some(pi) = p else { continue };
+        m.swap(r, pi);
         let pv = m[r][c];
+        for k in c..cols {
+            m[r][k] /= pv;
+        }
         for i in 0..rows {
             if i != r && m[i][c].abs() > 1e-12 {
-                let f = m[i][c] / pv;
+                let f = m[i][c];
                 for k in c..cols {
                     m[i][k] -= f * m[r][k];
                 }
             }
         }
+        pivots.push(c);
         r += 1;
         if r == rows {
             break;
         }
     }
-    r
+    (m, pivots)
+}
+
+/// Basis of `{x : A x = 0}` for a `rows x cols` matrix `A`.
+fn nullspace(a: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
+    if a.is_empty() {
+        return Vec::new();
+    }
+    let cols = a[0].len();
+    let (r, pivots) = rref(a);
+    let pivot_set: HashSet<usize> = pivots.iter().cloned().collect();
+    let free: Vec<usize> = (0..cols).filter(|c| !pivot_set.contains(c)).collect();
+    let mut basis = Vec::new();
+    for &f in &free {
+        let mut v = vec![0.0f64; cols];
+        v[f] = 1.0;
+        for (ri, &pc) in pivots.iter().enumerate() {
+            v[pc] = -r[ri][f];
+        }
+        basis.push(v);
+    }
+    basis
+}
+
+/// Reduce `v` by the RREF row basis (and pivots); returns the remainder.
+fn reduce_by(v: &mut [f64], basis: &[Vec<f64>], pivots: &[usize]) {
+    for (ri, &pc) in pivots.iter().enumerate() {
+        if v[pc].abs() > 1e-12 {
+            let f = v[pc];
+            for k in 0..v.len() {
+                v[k] -= f * basis[ri][k];
+            }
+        }
+    }
+}
+
+fn column(m: &[Vec<f64>], c: usize) -> Vec<f64> {
+    m.iter().map(|row| row[c]).collect()
+}
+
+/// Rank of a dense matrix via Gaussian elimination with partial pivoting.
+fn rank(m: Vec<Vec<f64>>) -> usize {
+    rref(m).1.len()
 }
 
 /// Directed, deduplicated 1-paths (edge index) over the chosen edge kind.
@@ -101,7 +149,7 @@ pub fn path_homology(graph: &Graph, kind: EdgeKind) -> PathHomology {
     let n = active.len();
     let m = edges.len();
     if n == 0 {
-        return PathHomology { beta0: 0, beta1: 0, vertices: 0, edges: 0, paths2: 0 };
+        return PathHomology { beta0: 0, beta1: 0, vertices: 0, edges: 0, paths2: 0, h1_generators: Vec::new() };
     }
     let local: HashMap<usize, usize> = active.iter().enumerate().map(|(i, &v)| (v, i)).collect();
     let eidx: HashMap<(usize, usize), usize> =
@@ -113,7 +161,9 @@ pub fn path_homology(graph: &Graph, kind: EdgeKind) -> PathHomology {
         d1[local[&u]][j] = -1.0;
         d1[local[&v]][j] = 1.0;
     }
-    let rank1 = rank(d1);
+    let (d1_rref, d1_pivots) = rref(d1.clone());
+    let rank1 = d1_pivots.len();
+    let _ = d1_rref;
     let beta0 = n - rank1;
     let ker1 = m - rank1; // dim ker ∂1 = undirected cycle rank of the directed multigraph
 
@@ -148,10 +198,36 @@ pub fn path_homology(graph: &Graph, kind: EdgeKind) -> PathHomology {
             d2[i][j] += 1.0;
         }
     }
-    let rank2 = rank(d2);
+    let (_, d2_pivots) = rref(d2.clone());
+    let rank2 = d2_pivots.len();
     let beta1 = ker1.saturating_sub(rank2);
 
-    PathHomology { beta0, beta1, vertices: n, edges: m, paths2: paths2.len() }
+    // H1 generators = a basis of ker ∂1 modulo im ∂2.
+    let ker_basis = nullspace(d1);
+    let im2: Vec<Vec<f64>> = d2_pivots.iter().map(|&c| column(&d2, c)).collect();
+    let (mut span, mut span_pivots) = rref(im2);
+    let mut generators: Vec<Vec<(usize, usize)>> = Vec::new();
+    for v in ker_basis {
+        let mut w = v.clone();
+        reduce_by(&mut w, &span, &span_pivots);
+        let norm = w.iter().map(|x| x * x).sum::<f64>().sqrt();
+        if norm > 1e-9 {
+            let edgeset: Vec<(usize, usize)> = w
+                .iter()
+                .enumerate()
+                .filter(|(_, c)| c.abs() > 1e-9)
+                .map(|(j, _)| (edges[j].0, edges[j].1))
+                .collect();
+            generators.push(edgeset);
+            let mut extended = span.clone();
+            extended.push(w);
+            let (r, p) = rref(extended);
+            span = r;
+            span_pivots = p;
+        }
+    }
+
+    PathHomology { beta0, beta1, vertices: n, edges: m, paths2: paths2.len(), h1_generators: generators }
 }
 
 #[cfg(test)]
@@ -210,8 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn transitive_triangle_is_filled() {
-        // 0->1, 1->2, 0->2: the 2-path (0,1,2) has an allowed long edge (0,2),
+    fn transitive_triangle_is_filled() {        // 0->1, 1->2, 0->2: the 2-path (0,1,2) has an allowed long edge (0,2),
         // so its boundary fills the cycle: H1 = 0.
         let g = make(&["0", "1", "2"], &[("0", "1"), ("1", "2"), ("0", "2")]);
         let h = path_homology(&g, EdgeKind::Call);
@@ -226,5 +301,21 @@ mod tests {
         let h = path_homology(&g, EdgeKind::Call);
         assert_eq!(h.beta0, 1);
         assert_eq!(h.beta1, 1);
+    }
+
+    #[test]
+    fn h1_generator_for_two_cycle() {
+        let g = make(&["A", "B"], &[("A", "B"), ("B", "A")]);
+        let h = path_homology(&g, EdgeKind::Call);
+        assert_eq!(h.h1_generators.len(), 1);
+        assert_eq!(h.h1_generators[0].len(), 2);
+    }
+
+    #[test]
+    fn no_generator_for_filled_triangle() {
+        let g = make(&["0", "1", "2"], &[("0", "1"), ("1", "2"), ("0", "2")]);
+        let h = path_homology(&g, EdgeKind::Call);
+        assert_eq!(h.beta1, 0);
+        assert!(h.h1_generators.is_empty());
     }
 }

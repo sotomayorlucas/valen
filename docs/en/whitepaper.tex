@@ -722,7 +722,10 @@ the verdict. On \texttt{reentrancy.py}, undirected homology reports $\beta_1=1$
 while GLMY reports $\beta_1=0$: the transitive 2-paths through the apex
 \texttt{withdraw} fill the \texttt{read\_balance}$\leftrightarrow$\texttt{update\_balance}
 2-cycle. On an isolated 2-cycle $A\leftrightarrow B$ the roles invert (GLMY
-$\beta_1=1$, undirected $\beta_1=0$). Symmetrization (C2) is therefore \emph{not}
+$\beta_1=1$, undirected $\beta_1=0$), and the analyzer returns the $H_1$
+\emph{generator} itself --- the directed cycle as the edge list
+$\{A\to B,\;B\to A\}$ --- so the invariant is actionable, not just a number.
+Symmetrization (C2) is therefore \emph{not}
 innocuous: the directed invariant is a genuinely different, and sometimes
 opposite, signal.
 
