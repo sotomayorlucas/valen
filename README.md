@@ -1,26 +1,43 @@
 # MANIFOLD
 
-**¿Aportan información las invariantes geométricas/topológicas de los grafos de
-programa por encima del análisis semántico clásico (taint)?** MANIFOLD es el
-instrumento para responderlo de forma **falsable**: convierte un artefacto en un
-grafo tipado (IR), computa un campo *pre-verificación* `V_prior(x)` con señales
-baratas, y deja que un ciclo neuro-simbólico (LLM + Z3) actúe sobre las regiones
-priorizadas.
+**MANIFOLD es un *verificador neuro-simbólico de invariantes estructurales*:** un
+agente autónomo que extrae especificaciones de seguridad (invariantes de
+autorización, ciclos de máquinas de estado, precondiciones de taint) con un LLM y
+las descarga con métodos formales (Z3, homología dirigida GLMY, un núcleo
+mecanizado en Lean 4), emitiendo solo *witnesses verificables por máquina bajo la
+semántica modelada*. Este trabajo plantea una única pregunta integral — *¿dónde
+aportan las invariantes estructurales de los grafos de programa información de
+seguridad, y dónde no?* — y la responde con una frontera de dos caras: en las
+fallas de inyección lineal los priors estructurales no aportan sobre el taint, y
+en las fallas de confianza y lógica (**BOLA/IDOR, autorización ausente, ciclos de
+estado**) son la única señal, porque ahí el dato es legítimo y el taint es ciego.
 
-**Do geometric/topological invariants of program graphs add information over
-classic semantic analysis (taint)?** MANIFOLD is the instrument to answer this
-**falsifiably**: it turns an artifact into a typed graph (IR), computes a
-*pre-verification* field `V_prior(x)` from cheap signals, and lets a
-neuro-symbolic loop (LLM + Z3) act on the prioritized regions.
+**MANIFOLD is a *neuro-symbolic structural-invariant verifier*:** an autonomous
+agent that mines security specifications (authorization invariants, state-machine
+cycles, taint preconditions) from code with an LLM and discharges them with
+formal methods (Z3, GLMY directed homology, a mechanized Lean 4 core), emitting
+only *machine-checkable witnesses under the modeled semantics*. This work asks one
+integral question — *where do structural invariants of program graphs carry
+security information, and where do they not?* — and answers it with a two-sided
+boundary: on linear injection flaws structural priors add nothing over taint, and
+on trust & logic flaws (**BOLA/IDOR, missing authorization, state cycles**) they
+are the only signal, because there the data is legitimate and taint is blind.
 
-> **Resultado principal (honesto):** en OWASP Benchmark 1.2, el taint crudo
-> ordena mejor el sink vulnerable (MRR 0.894, AUC 0.895) y supera al campo
-> fusionado con **$p=5\times10^{-5}$** (estimador add-one sobre 20000
-> permutaciones); las señales espectral (AUC 0.496) y topológica
-> (0.500) están en el azar y la curvatura (0.376) por debajo. El campo
-> estructural solo ayuda en el extremo superior de una cola global (P@10 0.8 vs
-> 0.6, diferencia pequeña en absoluto). Las hipótesis H1/H2/H3/H5 quedan **no
-> soportadas**.
+> **Un estudio integral: ¿dónde aportan las invariantes estructurales información
+> de seguridad, y dónde no?** La respuesta es una frontera con dos caras.
+> **Lado negativo:** en inyecciones lineales (OWASP Benchmark 1.2) el taint crudo
+> ordena mejor el sink vulnerable (MRR 0.894, AUC 0.895, supera al campo fusionado
+> con **$p=5\times10^{-5}$**); espectral (0.496) y topológica (0.500) están en el
+> azar y la curvatura (0.376) por debajo. H1/H2/H3/H5 quedan **no soportadas** —
+> porque un servlet plano y casi acíclico no tiene esa estructura, y el taint ya
+> es casi óptimo allí. **Lado positivo:** en las fallas de confianza y lógica el
+> dato es legítimo y el taint es ciego, así que la estructura es la única señal:
+> el detector estructural de **autorización ausente / BOLA** recupera casos que el
+> taint pasa por alto por completo (**0 hallazgos de taint**) con
+> **precisión/recall 1.0** en un micro-corpus curado (`examples/python/bola/`,
+> `benchmarks/run_bola.py`, n=6); y la homología dirigida **GLMY** extrae el
+> generador β₁ concreto de un ciclo de estado que la simetrización borra. Ver
+> *Structural invariants across domains* en el whitepaper.
 
 ## Idea central / Core idea
 

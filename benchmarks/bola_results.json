@@ -1,0 +1,58 @@
+{
+  "precision": 1.0,
+  "recall": 1.0,
+  "f1": 1.0,
+  "tp": 2,
+  "fp": 0,
+  "fn": 0,
+  "tn": 4,
+  "n": 6,
+  "rows": [
+    {
+      "file": "benign.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "cwe862_fixed.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "cwe862_vuln.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "idor_fixed_gate.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "idor_fixed_ownership.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "idor_vuln.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    }
+  ]
+}

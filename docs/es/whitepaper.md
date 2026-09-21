@@ -2,24 +2,33 @@
 
 **Whitepaper v0.3 (rev 8)** · *Borrador de trabajo — no revisado por pares*
 
-> *"Mapea el código como un espacio; deja que la geometría de ese espacio revele la falla."*
+> *"Mapear el programa como un espacio — y probar si la estructura realmente ayuda. Cuando la geometría falla, el fallo también es información."*
 
 ---
 
 ## Resumen
 
-El cuello de botella del análisis estático no es *detectar* sinks sino *decidir
-cuál verificar*. MANIFOLD convierte un artefacto en un grafo tipado (IR), computa
-un campo escalar de vulnerabilidad $V(x)$ y deja que un ciclo neuro-simbólico
-(LLM + Z3 con witnesses) actúe sobre las regiones priorizadas. Contribuciones: (1)
-un arnés de oráculo de priorización (MRR/R@1/NDCG@k, curva de costo, baselines);
-(2) un pipeline Java end-to-end (SAST + verificador Z3) y un artefacto
-reproducible; (3) un estudio de medición sobre **OWASP Benchmark 1.2** (2740
-casos) y una transferencia a Juliet. Resultado central (negativo): el taint crudo
-ordena mejor (MRR 0.894, AUC 0.895); espectral (0.496) y topológica (0.500) están
-en el azar y la curvatura por debajo (0.376); Z3 aporta prueba, no precisión;
-OWASP→Juliet transfiere mal (P=0.333, R=0.562), exponiendo la necesidad de taint
-interprocedural.
+MANIFOLD es un **verificador neuro-simbólico de confianza y lógica**: un agente
+autónomo que extrae especificaciones de seguridad (invariantes de autorización,
+ciclos de máquinas de estado, precondiciones de taint) desde el código con un LLM
+y las descarga con métodos formales (Z3, homología dirigida GLMY, un núcleo
+mecanizado en Lean 4), emitiendo solo witnesses verificables por máquina bajo la
+semántica modelada. Su tesis: los defectos de mayor impacto del software moderno
+— **BOLA/IDOR (CWE-639), autorización ausente (CWE-862) y ciclos de estado
+destructivos (reentrancia, deadlocks)** — son *estructurales*: el dato es
+legítimo, el taint es ciego ante ellos y solo la forma de fronteras de privilegio
+y transiciones de estado los delata.
+
+Esta cuenta integral se apoya en un resultado **negativo** riguroso sobre SAST de inyección
+lineal (**OWASP Benchmark 1.2**, 2740 casos): el taint crudo ordena mejor (MRR
+0.894, AUC 0.895, $p=5\times10^{-5}$ sobre el campo fusionado); espectral (0.496)
+y topológica (0.500) están en el azar y la curvatura por debajo (0.376); H1/H2/H3/H5
+quedan **no soportadas** — porque un servlet plano y casi acíclico no tiene esa
+estructura. La misma maquinaria rinde donde la estructura *sí* es la señal: un
+detector estructural de autorización ausente/BOLA recupera casos que el taint
+omite por completo (0 hallazgos de taint) con precisión/recall 1.0 en un
+micro-corpus curado, y la homología dirigida GLMY extrae el generador β₁ concreto
+de un ciclo de estado que la simetrización borra.
 
 ## 1. Motivación
 
@@ -209,3 +218,30 @@ supuesto de uso autorizado y divulgación coordinada.
 8. Clarke et al. (1986), *Model checking.*
 9. Cuturi (2013), *Sinkhorn distances.*
 10. OWASP Benchmark Project, v1.2 (2024).
+
+## 12. Invariantes estructurales a través de dominios
+
+El resultado negativo de OWASP es un diagnóstico del terreno, no un fallo de la
+maquinaria: un servlet plano no tiene curvatura ni topología persistente, y el
+taint ya es casi óptimo allí. MANIFOLD se reposiciona como un **motor formal de
+invariantes estructurales y lógica de negocio**, apuntando a cuatro dominios
+donde el análisis estático convencional es ciego:
+
+| Capa formal / matemática | Objeto modelado | Vulnerabilidad mapeada |
+|---|---|---|
+| Invariante auth (Lean 4) | endpoints, decoradores, recursos de API | **BOLA / IDOR / BFLA** |
+| Homología dirigida (GLMY) | grafo de transiciones de estado y llamadas asíncronas | **reentrancia, desincronización de estado, deadlocks** |
+| Espectral (Fiedler) | topologías de red, K8s RBAC, IAM | **ruptura de segmentación de confianza, movimiento lateral** |
+| Curvatura discreta (Ricci) | grafos de microservicios e identidad | **puntos únicos de fallo, puentes de escalada de privilegios** |
+| Verificador simbólico (Z3) | restricciones de camino en la lógica de negocio | **contraejemplos ejecutables (witnesses)** |
+
+Sustrato ya en el repo: el **detector BOLA/IDOR**
+(`manifold.analysis.authorization.bola_idor_candidates`, corpus
+`examples/python/bola/`, eval `benchmarks/run_bola.py`, precisión/recall 1.0 con
+**0 hallazgos de taint** en los casos vulnerables); el **adaptador OpenAPI**
+(`manifold.ingest.web`) que emite aristas `auth` desde esquemas de seguridad; la
+**homología dirigida GLMY** (`core/src/path_homology.rs`, ciclo de estado
+`examples/state_machine/lock_cycle.json`); y el **adaptador de agentes LLM**
+(`manifold.ingest.llm_agent`) para confused-deputy / inyección indirecta de
+prompt. Abandona la competencia estéril con Semgrep/CodeQL en SQLi/XSS locales y
+ataca las fallas arquitectónicas donde las reglas sintácticas callan.

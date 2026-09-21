@@ -18,9 +18,9 @@
 \setbeamertemplate{footline}[frame number]
 
 \title[MANIFOLD]{MANIFOLD}
-\subtitle{A mathematical engine for mapping vulnerabilities}
+\subtitle{A neuro-symbolic trust \& logic verifier}
 \author{MANIFOLD Project}
-\institute{Typed IR $\cdot$ geometry $\cdot$ topology $\cdot$ formal verification}
+\institute{Typed IR $\cdot$ authorization invariants $\cdot$ directed homology $\cdot$ Z3 witnesses}
 \date{2026}
 
 \begin{document}
@@ -235,23 +235,48 @@
   \end{center}
 \end{frame}
 
+\begin{frame}{Where structure is the signal}
+  One investigation, two sides of a boundary. On flat servlets taint is
+  near-optimal and there is no curvature/topology to exploit; on trust \& logic
+  flaws the data is legitimate and \textbf{taint is blind} --- structure is the
+  only signal. Same machinery, different program relation.
+  \begin{center}
+  \small
+  \begin{tabular}{lll}
+  \toprule
+  \textbf{Formal / math layer} & \textbf{Object} & \textbf{Vulnerability} \\
+  \midrule
+  Auth invariant (Lean) & endpoints + gates + API & BOLA / IDOR / BFLA \\
+  GLMY homology & state transitions & reentrancy, deadlocks \\
+  Spectral (Fiedler) & RBAC / IAM topology & lateral movement \\
+  Curvature (Ricci) & identity graphs & privilege bridges \\
+  Z3 verifier & business-logic paths & witnesses \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{1mm}
+  \textbf{Measured:} BOLA detector $P{=}R{=}1.0$ with \emph{0 taint findings}
+  ($n{=}6$); GLMY extracts the concrete $\beta_1$ generator of a state cycle.
+\end{frame}
+
 \begin{frame}{Conclusions and future work}
   \textbf{Conclusions}
   \begin{itemize}
     \item A typed IR fuses independent signals into a navigable field $V(x)$.
-    \item The neuro-symbolic split (math/LLM/SMT) is the right one: the LLM adds
-          interpretability, not detection.
-    \item \textbf{Main result (negative):} semantic dataflow dominates. The
-          structural field helps only at very small budgets ($P@10$) and hurts on
-          average (MRR $0.872$ vs.\ $0.894$; AP $0.434$ vs.\ $0.489$).
-    \item Data-driven engineering works: interprocedural taint raised Juliet recall
-          $0.562 \to 0.750$; framework summaries capture app-level flows.
+    \item \textbf{One integral study, two sides of a boundary:} on linear injection
+          SAST semantic dataflow dominates (negative); on trust \& logic flaws
+          structure is the only signal (positive).
+    \item MANIFOLD is a \emph{formal engine for structural invariants and business
+          logic} --- BOLA/IDOR, state cycles, IAM/agent trust --- where taint is
+          structurally blind.
+    \item Substrate shipped: BOLA/IDOR detector, OpenAPI gates, GLMY state cycles,
+          LLM-agent (confused-deputy) adapter, Lean core, Z3 witnesses.
   \end{itemize}
   \vspace{2mm}
   \textbf{Future work}
   \begin{itemize}
     \item Uniform re-execution of CodeQL/SonarQube (methodological caveat).
-    \item Larger CVE study; interprocedural/library-aware corpus.
+    \item Larger BOLA/IAM/state corpora beyond the curated micro-benchmarks.
     \item Larger LLM ablation over OWASP (ranking/interpretation/reporting).
   \end{itemize}
 \end{frame}

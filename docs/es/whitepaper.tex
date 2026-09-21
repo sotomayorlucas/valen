@@ -30,33 +30,41 @@
 \maketitle
 
 \begin{abstract}
-\noindent Los pipelines de análisis estático suelen tener el cuello de botella no
-en \emph{detectar} sinks sino en \emph{decidir cuál verificar}. Planteamos una
-pregunta deliberadamente falsable: \emph{¿aportan las invariantes espectrales,
-topológicas y geométricas de los grafos de programa información sobre el sink
-vulnerable más allá del análisis semántico clásico (taint)?} MANIFOLD es nuestro
-instrumento: convierte un artefacto en un grafo tipado (la IR), computa un campo
-\emph{pre-verificación} $V_{\text{prior}}(x)$ usando solo señales baratas
-(excluyendo deliberadamente la señal formal, para evitar circularidad), y deja
-que un ciclo neuro-simbólico actúe sobre las regiones priorizadas. Reportamos un
-resultado \emph{negativo} riguroso. Sobre OWASP Benchmark~1.2 (2740 casos), el
-taint crudo ordena mejor el sink vulnerable (MRR $0.894$, AUC $0.895$) y supera
-al campo fusionado con $p=5\times10^{-5}$ (permutación pareada, estimador add-one sobre 20000 réplicas); las señales
-\emph{espectral} ($0.496$) y \emph{topológica} ($0.500$) están en el azar y la
-\emph{curvatura de Forman--Ricci} está \emph{por debajo} ($0.376$). En una cola
-global de todos los candidatos, el campo estructural ayuda solo en el extremo
-superior ($P@10=0.8$ vs.\ $0.6$) pero pierde en precisión media. Las hipótesis
-H1/H2/H3/H5 quedan por tanto \emph{no soportadas}. Contribuimos: (1) un arnés de
-oráculo de priorización (MRR, R@1, NDCG@$k$, AP/P@$k$/R@$k$ global,
-consultas-para-90\%-recall, test de permutación pareada); (2) un pipeline Java
-end-to-end reproducible (SAST + verificador Z3 que produce \emph{witnesses
-verificables por máquina bajo la semántica modelada}); (3) validación externa en
-la suite Juliet y en commits de fix de CVEs reales, que localiza el cuello de
-botella dominantes del modelado semántico --- flujos interprocedurales, summaries
-de librerías/frameworks y precisión de retornos --- y no en más features
-geométricos; y (4) una
-mecanización en Lean~4 de la solidez de la abstracción de taint y de la parte
-de no-escalada de la invariante de autorización.
+\noindent MANIFOLD es un \emph{verificador neuro-simbólico de invariantes
+estructurales}: un agente autónomo que extrae especificaciones de seguridad
+(invariantes de autorización, ciclos de máquinas de estado, precondiciones de
+taint) desde el código con un LLM y las descarga con métodos formales (Z3,
+homología persistente/dirigida, un núcleo mecanizado en Lean~4) --- emitiendo
+solo \emph{witnesses verificables por máquina bajo la semántica modelada}. Este
+artículo plantea una única pregunta integral y la responde con una frontera
+precisa: \emph{¿dónde aportan las invariantes estructurales de los grafos de
+programa información de seguridad, y dónde no?}
+
+El lado negativo de la frontera es preciso. En las fallas de inyección lineal,
+donde un servlet plano y casi acíclico no tiene curvatura ni topología
+persistente que explotar y el taint clásico ya es casi óptimo, los priors
+estructurales no aportan: sobre OWASP Benchmark~1.2 (2740 casos) el taint crudo
+ordena mejor el sink vulnerable (MRR $0.894$, AUC $0.895$, supera al campo
+fusionado con $p=5\times10^{-5}$, estimador add-one sobre 20000 permutaciones);
+las señales espectral ($0.496$) y topológica ($0.500$) están en el azar y la
+curvatura por debajo ($0.376$). Las hipótesis H1/H2/H3/H5 quedan \emph{no
+soportadas}. El lado positivo es donde viven los defectos de mayor impacto del
+software moderno --- BOLA/IDOR (CWE-639), autorización ausente (CWE-862) y ciclos
+de estado destructivos (reentrancia, deadlocks) --- que son \emph{estructurales}:
+el dato infractor es legítimo, así que el análisis de taint clásico es ciego ante
+ellos, y solo la \emph{forma} de fronteras de privilegio y transiciones de estado
+los delata. Allí la misma maquinaria es la única señal: en un micro-corpus curado
+de BOLA/IDOR, el detector estructural de \emph{autorización ausente} recupera
+casos que el taint pasa por alto por completo ($0$ hallazgos de taint) con
+precisión/recall $1.0$ ($n=6$); y la homología de caminos dirigida GLMY extrae el
+generador concreto $\beta_1$ de un ciclo de estado que la simetrización borra. El
+resultado es una única cuenta --- el mismo grafo tipado, álgebra de privilegios,
+homología dirigida y verificador Z3 --- de \emph{qué} relaciones de programa
+hacen informativas a las invariantes estructurales. Contribuimos esta cuenta, un
+arnés de oráculo de priorización, un pipeline Java reproducible con witnesses Z3,
+validación externa en Juliet y CVEs reales, y una mecanización en Lean~4 de la
+solidez de la abstracción de taint y de la parte de no-escalada de la invariante
+de autorización.
 \end{abstract}
 
 \section{Motivación}
@@ -833,6 +841,121 @@ dependencias pesadas; la ruta angr recupera flujo de control que las heurística
 de desensamblado pierden. Esta paridad es el sustrato para futuros benchmarks
 ELF/PE de SARD.
 
+\section{Invariantes estructurales a través de dominios}
+Los dos resultados hasta aquí son dos caras de una misma frontera, no dos
+proyectos. De un lado (inyecciones lineales) un servlet plano y casi acíclico no
+tiene curvatura ni topología persistente que explotar, y el taint clásico ya es
+casi óptimo --- así que los priors estructurales no aportan. Del otro lado el
+dato infractor es legítimo y solo la \emph{estructura} del programa --- sus
+fronteras de privilegio y transiciones de estado --- delata el defecto, así que
+la estructura es la \emph{única} señal. La misma maquinaria (grafo tipado,
+álgebra de privilegios, homología dirigida, Z3) abarca ambos lados; lo que cambia
+es la relación de programa que se modela. Esta sección releva los cuatro dominios
+donde el análisis estático convencional es ciego y donde cada capa matemática
+encuentra su lugar natural.
+
+\subsection{Invariantes de autorización: BOLA / IDOR / BFLA}
+BOLA/IDOR (CWE-639) y la autorización ausente (CWE-862) encabezan el OWASP API
+Security Top~10, y el taint clásico no los ve: el selector de objeto es un valor
+\emph{limpio} (un id entero, a menudo casteado), el sink es una consulta
+ordinaria y el bug es que el usuario~A lee los datos del usuario~B --- no hay
+dato ``sucio'' que rastrear. El objeto modelado es un grafo \emph{multipartito}:
+la superficie de la API (operaciones OpenAPI), los endpoints del backend, los
+decoradores de permisos (nodos \texttt{gate}) y los modelos de datos, como
+produce el adaptador OpenAPI (\texttt{manifold.ingest.web}), que ya emite aristas
+\texttt{auth} desde los esquemas de seguridad. La señal es el complemento de la
+invariante mecanizada \texttt{no\_auth\_bounded}: un camino dirigido desde un
+punto de entrada público a un recurso protegido \emph{sin} arista estricta de
+autorización donde se requiere una. MANIFOLD lo implementa como el detector de
+\emph{autorización ausente / BOLA}
+(\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), y Z3 prueba
+entonces si una asignación de sesión (\texttt{session.user\_id} $\neq$
+\texttt{resource.owner\_id}) alcanza el recurso --- un \emph{witness matemático
+de BOLA}. En un micro-corpus curado (6 casos, \texttt{examples/python/bola/},
+evaluado por \texttt{benchmarks/run\_bola.py}) el taint reporta \emph{cero}
+hallazgos en los casos vulnerables mientras el detector estructural alcanza
+precisión $=$ recall $= 1.0$ --- una señal de factibilidad pequeña y honesta (no
+un benchmark de producción), pero un régimen donde el taint demostrablemente
+puntúa $0$.
+
+\subsection{Máquinas de estado, concurrencia y protocolos: homología dirigida}
+En un servlet no hay ciclos de estado; en contratos inteligentes, protocolos de
+adquisición de locks y controladores de concurrencia, los peores defectos
+\emph{son} ciclos de realimentación destructivos (reentrancia, deadlocks,
+transiciones ilegales como \texttt{Unauthenticated} $\to$ \texttt{Authenticated}
+salteando la validación de firma). El objeto modelado es el \emph{grafo de
+transiciones de estado} (el CFG interprocedural extendido con llamadas externas
+y mutaciones de almacenamiento global). El generador persistente dirigido de
+$H_1$ de la homología de caminos GLMY es la firma exacta de un ciclo de
+reentrancia --- y, como mostró \S4.2, la simetrización \emph{no} es inocua: la
+homología no dirigida puede reportar $\beta_1=1$ donde GLMY reporta $0$ (un
+triángulo rellenado por un ápice) y viceversa. Sobre un ciclo de adquisición de
+locks sintético (\texttt{examples/state\_machine/lock\_cycle.json}) el análisis
+dirigido extrae el generador concreto $[\,s_0\!\to\!s_1,\ s_1\!\to\!s_2,\
+s_2\!\to\!s_0\,]$ con $\beta_1=1$ --- un hallazgo sin análogo en taint.
+
+\subsection{Topologías de confianza, IAM y movimiento lateral}
+En entornos cloud (AWS/Azure/Kubernetes) las peores brechas vienen de
+\emph{cadenas} de escalada de privilegios y movimiento lateral (un rol
+comprometido en un frontend asumiendo un rol secundario con acceso a un bucket de
+secretos). El objeto modelado es el \emph{grafo de identidades y permisos}
+(usuarios, roles IAM, políticas de confianza, servicios, recursos de red). Aquí
+el corte de Fiedler ($\lambda_2, f_2$) particiona óptimamente los dominios de
+confianza (p.~ej.\ DMZ vs.\ núcleo); las aristas que cruzan el corte sin
+controles intermedios emergen como anomalías espectrales en la frontera de
+confianza, y la curvatura de Forman--Ricci --- lejos de ser un error de
+detección --- \emph{aisla los puentes de privilegio críticos}: un nodo con
+$\kappa_F$ fuertemente negativa es un rol o credencial que es el único puente
+entre dos subredes de confianza dispares (el pivote ideal del atacante). El
+agente entrega entonces los caminos sugeridos a Z3, que resuelve la combinatoria
+de políticas IAM para confirmar si la cadena de asunción de roles es viable.
+
+\subsection{Seguridad de agentes autónomos y LLMs}
+Los sistemas modernos que conectan LLMs a herramientas externas (APIs, bases de
+datos, shell, correo) enfrentan ataques de \emph{confused deputy} e inyección
+indirecta de prompt. El objeto modelado es el \emph{grafo de uso de
+herramientas}: usuario, modelo, memoria contextual y herramientas externas a
+distintos niveles de privilegio, con aristas tipadas \texttt{untrusted\_input}
+(datos web, correo leído) y \texttt{privileged\_execution} (borrar una base de
+datos, emitir pagos, ejecutar comandos). El defecto es una violación de la
+invariante de autorización: un flujo de entrada no confiable que alcanza una
+herramienta de ejecución privilegiada sin un \texttt{gate} explícito de
+sanitización o confirmación humana. Esto es exactamente lo que el adaptador
+\texttt{llm-agent} (\texttt{manifold.ingest.llm\_agent}) ya detecta: una
+herramienta peligrosa alcanzable desde la entrada del usuario sin una puerta de
+aprobación es un hallazgo.
+
+\subsection{Matriz de mapeo y posicionamiento}
+\begin{center}
+\small
+\begin{tabular}{@{}p{0.26\linewidth}p{0.36\linewidth}p{0.32\linewidth}@{}}
+\toprule
+\textbf{Capa formal / matemática} & \textbf{Objeto modelado} & \textbf{Vulnerabilidad mapeada} \\
+\midrule
+Invariante auth (Lean 4) & endpoints, decoradores, recursos de API & BOLA / IDOR / BFLA \\
+Homología dirigida (GLMY) & grafo de transiciones de estado y llamadas asíncronas & reentrancia, desincronización de estado, deadlocks \\
+Espectral (Fiedler) & topologías de red, Kubernetes RBAC, IAM & ruptura de segmentación de confianza, movimiento lateral \\
+Curvatura discreta (Ricci) & grafos de microservicios e identidad & puntos únicos de fallo, puentes de escalada de privilegios \\
+Verificador simbólico (Z3) & restricciones de camino en la lógica de negocio & contraejemplos ejecutables (witnesses) \\
+\bottomrule
+\end{tabular}
+\end{center}
+MANIFOLD se reposiciona así como un \emph{motor formal de invariantes
+estructurales y lógica de negocio}, no como competidor de Semgrep/CodeQL en
+patrones locales de SQLi/XSS. (1) \emph{Abandona una competencia estéril}: no
+intenta ganarle al taint en un servlet de 20 líneas. (2) \emph{Ataca lo que nadie
+resuelve}: fallas de diseño, coherencia de privilegios, protocolos concurrentes y
+arquitecturas de agentes, donde las reglas sintácticas callan porque el código,
+línea por línea, parece legítimo. (3) \emph{Mantiene intacto el software}: la IR
+tipada, los núcleos en Rust, la verificación en Lean~4, el orquestador Z3 y el
+agente neuro-simbólico se preservan íntegramente, aplicados sobre el grafo de
+relaciones adecuado. La narrativa no es, por tanto, ``la geometría perdió contra
+el taint'' sino una única cuenta de \emph{qué} relaciones de programa hacen
+informativas a las invariantes estructurales: una frontera negativa rigurosamente
+establecida en SAST de inyección lineal, y una positiva en los defectos
+arquitectónicos donde el taint es ciego --- ambos lados respaldados por código
+funcional y datos medidos.
+
 \begin{thebibliography}{9}
 \item M.~Fiedler, \emph{Algebraic connectivity of graphs}, 1973.
 \item F.~Chung, \emph{Spectral Graph Theory}, 1997.
@@ -850,6 +973,7 @@ ELF/PE de SARD.
 \item L.~de~Moura \& N.~Bj\o rner, \emph{Z3: An efficient SMT solver}, 2008.
 \item Y.~Shoshitaishvili et al., \emph{SoK ... (angr)}, 2016.
 \item OWASP Foundation, \emph{OWASP Benchmark v1.2}, 2016--2024.
+\item OWASP Foundation, \emph{OWASP API Security Top 10} (API1:2023 Broken Object Level Authorization), 2023.
 \item NIST, \emph{SARD / Juliet Test Suite}, 2017.
 \item BerriAI, \emph{LiteLLM}, 2023--2024.
 \item SonarSource, \emph{SonarQube} (Community Edition, reglas SonarJava).

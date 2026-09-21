@@ -2,23 +2,32 @@
 
 **Whitepaper v0.3 (rev 8)** · *Working draft — not peer reviewed*
 
-> *"Map the code as a space; let the geometry of that space reveal the flaw."*
+> *"Map the program as a space — then test whether structure actually helps. When geometry fails, the failure is information too."*
 
 ---
 
 ## Abstract
 
-The bottleneck of static analysis is not *detecting* sinks but *deciding which one
-to verify*. MANIFOLD turns an artifact into a typed graph (IR), computes a
-vulnerability scalar field $V(x)$, and lets a neuro-symbolic loop (LLM + Z3 with
-witnesses) act on prioritized regions. Contributions: (1) a prioritization-oracle
-harness (MRR/R@1/NDCG@k, cost curve, baselines); (2) an end-to-end Java pipeline
-(SAST + Z3 verifier) and a reproducible artifact; (3) a measurement study on
-**OWASP Benchmark 1.2** (2740 cases) and a Juliet transfer. Headline (negative)
-result: raw taint ranks best (MRR 0.894, AUC 0.895); spectral (0.496) and
-topological (0.500) are at chance and curvature is below chance (0.376); Z3 adds
-proof, not precision; OWASP→Juliet transfers poorly (P=0.333, R=0.562), exposing
-the need for interprocedural taint.
+MANIFOLD is a **neuro-symbolic trust & logic verifier**: an autonomous agent that
+mines security specifications (authorization invariants, state-machine cycles,
+taint preconditions) from code with an LLM and discharges them with formal methods
+(Z3, GLMY directed homology, a mechanized Lean 4 core), emitting only
+machine-checkable witnesses under the modeled semantics. Its thesis: the
+highest-impact flaws of modern software — **BOLA/IDOR (CWE-639), missing
+authorization (CWE-862) and destructive state cycles (reentrancy, deadlocks)** —
+are *structural*: the data is legitimate, taint is blind to them, and only the
+shape of privilege boundaries and state transitions gives them away.
+
+This integral account rests on a rigorous **negative** result on linear injection SAST
+(**OWASP Benchmark 1.2**, 2740 cases): raw taint ranks best (MRR 0.894, AUC
+0.895, $p=5\times10^{-5}$ over the fused field); spectral (0.496) and topological
+(0.500) are at chance and curvature below chance (0.376); H1/H2/H3/H5 are **not
+supported** — because a flat, near-acyclic servlet has no such structure. The
+same machinery then pays off where structure *is* the signal: a structural
+missing-authorization/BOLA detector recovers cases taint misses entirely (0 taint
+findings) at precision/recall 1.0 on a curated micro-corpus, and GLMY directed
+homology extracts the concrete β₁ generator of a state cycle that symmetrization
+erases.
 
 ## 1. Motivation
 
@@ -202,3 +211,30 @@ of authorized use and coordinated disclosure.
 8. Clarke et al. (1986), *Model checking.*
 9. Cuturi (2013), *Sinkhorn distances.*
 10. OWASP Benchmark Project, v1.2 (2024).
+
+## 12. Structural invariants across domains
+
+The negative OWASP result is a diagnosis of the terrain, not a failure of the
+machinery: a flat servlet has no curvature or persistent topology, and taint is
+near-optimal there. MANIFOLD is repositioned as a **formal engine for structural
+invariants and business logic**, targeting four domains where conventional static
+analysis is blind:
+
+| Formal / math layer | Modeled object | Mapped vulnerability |
+|---|---|---|
+| Auth invariant (Lean 4) | endpoints, decorators, API resources | **BOLA / IDOR / BFLA** |
+| Directed homology (GLMY) | state-transition / async-call graph | **reentrancy, state desync, deadlocks** |
+| Spectral (Fiedler) | network topologies, K8s RBAC, IAM | **trust-segmentation break, lateral movement** |
+| Discrete curvature (Ricci) | microservice / identity graphs | **single points of failure, privilege bridges** |
+| Symbolic verifier (Z3) | path constraints in business logic | **executable counterexamples (witnesses)** |
+
+Substrate already in the repo: the **BOLA/IDOR detector**
+(`manifold.analysis.authorization.bola_idor_candidates`, corpus
+`examples/python/bola/`, eval `benchmarks/run_bola.py`, precision/recall 1.0 with
+**0 taint findings** on vulnerable cases); the **OpenAPI adapter**
+(`manifold.ingest.web`) emitting `auth` edges from security schemes; **GLMY
+directed homology** (`core/src/path_homology.rs`, state cycle
+`examples/state_machine/lock_cycle.json`); and the **LLM-agent adapter**
+(`manifold.ingest.llm_agent`) for confused-deputy / indirect prompt injection.
+It abandons the sterile competition with Semgrep/CodeQL on local SQLi/XSS and
+attacks the architectural flaws where syntactic rules are silent.

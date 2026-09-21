@@ -1,0 +1,15 @@
+{
+  "meta": {
+    "description": "Resource-lock acquisition cycle (state-space deadlock / reentrancy). Three states each waiting on the next form a directed cycle: GLMY path homology reports a persistent H1 generator, the exact topological signature of a feedback loop that taint/AST cannot express."
+  },
+  "nodes": [
+    {"id": "st_lock_a", "kind": "function", "label": "wait(lockA)"},
+    {"id": "st_lock_b", "kind": "function", "label": "wait(lockB)"},
+    {"id": "st_lock_c", "kind": "function", "label": "wait(lockC)"}
+  ],
+  "edges": [
+    {"src": "st_lock_a", "dst": "st_lock_b", "kind": "call"},
+    {"src": "st_lock_b", "dst": "st_lock_c", "kind": "call"},
+    {"src": "st_lock_c", "dst": "st_lock_a", "kind": "call"}
+  ]
+}

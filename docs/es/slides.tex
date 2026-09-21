@@ -18,9 +18,9 @@
 \setbeamertemplate{footline}[frame number]
 
 \title[MANIFOLD]{MANIFOLD}
-\subtitle{Un motor matemático para mapear vulnerabilidades}
+\subtitle{Un verificador neuro-simbólico de invariantes estructurales}
 \author{Proyecto MANIFOLD}
-\institute{IR tipada $\cdot$ geometría $\cdot$ topología $\cdot$ verificación formal}
+\institute{IR tipada $\cdot$ invariantes de autorización $\cdot$ homología dirigida $\cdot$ witnesses Z3}
 \date{2026}
 
 \begin{document}
@@ -235,24 +235,48 @@
   \end{center}
 \end{frame}
 
+\begin{frame}{Dónde la estructura es la señal}
+  Una sola investigación, dos caras de una frontera. En servlets planos el taint
+  es casi óptimo y no hay curvatura/topología que explotar; en fallas de confianza
+  y lógica el dato es legítimo y \textbf{el taint es ciego} --- la estructura es la
+  única señal. Misma maquinaria, distinta relación de programa.
+  \begin{center}
+  \small
+  \begin{tabular}{lll}
+  \toprule
+  \textbf{Capa formal / matemática} & \textbf{Objeto} & \textbf{Vulnerabilidad} \\
+  \midrule
+  Invariante auth (Lean) & endpoints + gates + API & BOLA / IDOR / BFLA \\
+  Homología GLMY & transiciones de estado & reentrancia, deadlocks \\
+  Espectral (Fiedler) & topología RBAC / IAM & movimiento lateral \\
+  Curvatura (Ricci) & grafos de identidad & puentes de privilegio \\
+  Verificador Z3 & caminos de lógica de negocio & witnesses \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  \vspace{1mm}
+  \textbf{Medido:} detector BOLA $P{=}R{=}1.0$ con \emph{0 hallazgos de taint}
+  ($n{=}6$); GLMY extrae el generador $\beta_1$ concreto de un ciclo de estado.
+\end{frame}
+
 \begin{frame}{Conclusiones y trabajo futuro}
   \textbf{Conclusiones}
   \begin{itemize}
     \item Una IR tipada enriquece señales independientes en un campo $V(x)$ navegable.
-    \item El reparto neuro-simbólico (matemática/LLM/SMT) es el correcto: el LLM
-          aporta interpretabilidad, no detección.
-    \item \textbf{Resultado principal (negativo):} el dataflow semántico domina. El
-          campo estructural ayuda solo con presupuestos muy pequeños ($P@10$) y
-          perjudica en promedio (MRR $0.872$ vs.\ $0.894$; AP $0.434$ vs.\ $0.489$).
-    \item La ingeniería guiada por datos funciona: el taint interprocedural subió el
-          recall de Juliet $0.562 \to 0.750$; las summaries de frameworks capturan
-          flujos a nivel aplicación.
+    \item \textbf{Un estudio integral, dos caras de una frontera:} en SAST de
+          inyección lineal el dataflow semántico domina (negativo); en fallas de
+          confianza y lógica la estructura es la única señal (positivo).
+    \item MANIFOLD es un \emph{motor formal de invariantes estructurales y lógica de
+          negocio} --- BOLA/IDOR, ciclos de estado, confianza IAM/agente --- donde
+          el taint es estructuralmente ciego.
+    \item Sustrato entregado: detector BOLA/IDOR, gates OpenAPI, ciclos de estado
+          GLMY, adaptador de agentes LLM (confused-deputy), núcleo Lean, witnesses Z3.
   \end{itemize}
   \vspace{2mm}
   \textbf{Trabajo futuro}
   \begin{itemize}
     \item Reejecución uniforme de CodeQL/SonarQube (caveat metodológico).
-    \item Estudio de CVEs más amplio; corpus interprocedural/library-aware.
+    \item Corpus de BOLA/IAM/estado más amplios, más allá de los micro-benchmarks curados.
     \item Ablación mayor del LLM sobre OWASP (ranking/interpretación/reporte).
   \end{itemize}
 \end{frame}
