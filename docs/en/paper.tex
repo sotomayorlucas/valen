@@ -1,0 +1,185 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{upquote}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\definecolor{codegray}{gray}{0.4}
+\definecolor{manifold}{RGB}{30,90,170}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+\setlength{\emergencystretch}{3em}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+
+\title{\bfseries Beyond Taint: Structural Invariants and Machine-Checkable
+Witnesses\\ for Authorization, State-Cycle, and Trust-Topology Flaws}
+\author{MANIFOLD Project}
+\date{Research contributions --- methods, measured results, and limitations}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We present MANIFOLD, a system for verifying \emph{structural} security
+invariants --- authorization, state-transition, and trust-topology properties ---
+where classic taint analysis is provably blind because the offending data is
+legitimate. We make five measured contributions. (1) A rigorous \emph{boundary
+result}: on OWASP Benchmark~1.2 (2740 cases), spectral, topological and geometric
+invariants carry no information beyond taint for injection prioritization (taint
+MRR $0.894$, AUC $0.895$; paired permutation $p=5\times10^{-5}$), settling the
+question of whether graph-geometry priors help linear injection SAST. (2) A
+privilege-level authorization invariant mechanized in Lean~4, plus a structural
+detector and a Z3 ownership witness for object-level authorization (BOLA/IDOR/BFLA)
+that separates object authorization from mere authentication and recovers every
+documented BOLA/BFLA endpoint of OWASP crAPI (recall $1.0$, precision $0.90$).
+(3) Evidence that GLMY directed path homology is strictly better than symmetrized
+homology for destructive-cycle detection (recall $1.0$ / precision $0.75$ vs.\
+$0.5$ / $0.5$). (4) A measured neuro-symbolic arbitration boundary: the LLM
+changes interpretation ($28\%$ CWE), not detection or ranking (agreement
+$0.974$). (5) A trust-topology analysis (Fiedler cut + Forman--Ricci) that
+isolates privilege bridges in identity/permission graphs.
+\end{abstract}
+
+\section{Introduction and contributions}
+The highest-impact flaws of modern software are \emph{structural}: a BOLA/IDOR
+reads another user's record with a clean integer id; a reentrancy is a
+destructive cycle in the state graph; a cloud breach is a bridge in the trust
+topology; a confused-deputy in an agent is an untrusted input reaching a
+privileged tool with no gate. In each, the code looks legitimate line by line, so
+taint analysis --- which tracks ``dirty'' data --- is blind, and pattern matchers
+have nothing to say. Our contributions are:
+
+\begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=3em]
+\item \textbf{A measured boundary on geometric priors for injection SAST.}
+We answer, with statistical rigor, whether spectral/topological/geometric
+invariants of program graphs add information over taint for linear injection
+flaws: they do not. This is a publishable negative result that redirects effort
+away from geometry-on-servlets and toward the domains where structure is the
+signal.
+
+\item \textbf{An authorization invariant, mechanized and made operational.} A
+privilege-level function $F:V\to\N$ with auth edges $E_A=\{(u,v):F(u)<F(v)\}$
+and the theorem \texttt{no\_auth\_bounded} --- a path with no auth edge cannot
+escalate privilege --- mechanized in Lean~4. Operationally: a structural detector
+for ungated user-controlled resource access, and a Z3 witness proving
+$\mathrm{SAT}(\mathrm{owner}(id)\neq session)$, which separates object-level
+authorization from mere authentication.
+
+\item \textbf{Directed path homology as the right cycle signal.} GLMY directed
+homology recovers the concrete $\beta_1$ generator of a destructive cycle and,
+measured on 12 state graphs, dominates symmetrized homology --- which both misses
+2-cycles and emits false cycles on filled triangles.
+
+\item \textbf{A measured neuro-symbolic arbitration boundary.} The LLM proposes,
+formal methods dispose: detection and ranking are LLM-independent (agreement
+$0.974$), while the LLM changes interpretation (CWE, titles) on $28\%$ of
+findings.
+
+\item \textbf{Trust-topology analysis.} The Fiedler cut and Forman--Ricci
+curvature, applied to identity/permission graphs, isolate privilege bridges and
+trust-segmentation breaks for lateral-movement and IAM analysis.
+\end{enumerate}
+
+\section{System}
+A single typed graph IR is the substrate: six adapters (Python, Java with
+interprocedural/context-sensitive taint, binary via \texttt{objdump}/\texttt{angr},
+OpenAPI, IAM, LLM-agent) emit the same deterministic, JSON-serializable graph,
+shared verbatim between the Python and Rust layers. Five signals are fused over
+it: algebraic (taint lattice + privilege levels), spectral (Fiedler), topological
+(persistent and GLMY directed homology), geometric (Forman--Ricci / Ollivier--Ricci),
+and formal (Z3 + Lean~4). A neuro-symbolic loop mines structured specs and
+discharges them, emitting only machine-checkable witnesses.
+
+\section{Contribution 1: the boundary on geometric priors}
+\textbf{Setup.} OWASP Benchmark~1.2 provides 2740 test cases whose ground truth is
+known; we ask whether each signal ranks the vulnerable sink above the others.
+\textbf{Method.} A prioritization oracle computes MRR, R@1, NDCG@$k$, a global
+pool over \emph{all} candidates (safe and vulnerable), cost curves, a paired
+permutation test, and bootstrap confidence intervals.
+\textbf{Result.} Raw taint dominates: MRR $0.894$ vs.\ the fused field's $0.872$
+($p=5\times10^{-5}$, add-one over 20000 permutations, 95\% CI $[+0.0157,+0.0294]$);
+spectral ($0.496$) and topological ($0.500$) AUC are at chance, curvature is below
+chance ($0.376$). \textbf{Interpretation.} A flat, near-acyclic servlet has no
+curvature or persistent topology to exploit, and taint is near-optimal there; the
+result is a falsifiable, reproducible answer, not a limitation of the machinery.
+
+\section{Contribution 2: authorization, mechanized and operational}
+\textbf{Invariant.} Let $F:V\to\N$ assign a privilege level; an edge $e=(u,v)$ is
+an \emph{auth edge} iff $F(u)<F(v)$. Then (i) a path with no auth edge satisfies
+$F(k)\le F(s)$ --- no privilege escalation --- and (ii) a taint flow crossing an
+auth edge without a sanitizer is an attacker-controlled privilege-boundary
+crossing. (i) is mechanized in Lean~4 (\texttt{no\_auth\_bounded}); the boolean
+taint abstraction's soundness is mechanized as \texttt{prop1\_soundness}.
+\textbf{Detector.} The missing-authorization/BOLA detector flags a function with
+an HTTP source and a resource sink but no auth gate. On a curated 39-case corpus
+it reaches recall $1.0$ / precision $0.72$ (F1 $0.837$) where taint scores $0$; a
+baseline ladder shows each requirement earns its keep ($0.46\to0.72$).
+\textbf{Witness.} The Z3 verifier checks
+$\mathrm{SAT}(\mathrm{owner}(object\_id)\neq session\_user\_id)$: a vulnerable
+endpoint yields the attacker's session and the victim's object; an
+ownership-scoped endpoint is UNSAT. It makes precise that \texttt{login\_required}
+(authentication) does \emph{not} block BOLA --- only an \texttt{owner} predicate
+does. \textbf{Real data.} On OWASP crAPI (44 operations, 9 documented BOLA/BFLA
+endpoints), an API-level object-reference signal recovers all 9 (recall $1.0$,
+precision $0.90$) while the missing-auth check scores $0$, because every BOLA
+endpoint \emph{is} authenticated.
+
+\section{Contribution 3: directed path homology}
+Symmetrizing a directed graph is lossy in both directions: a 2-cycle
+$A\to B\to A$ collapses to a single undirected edge (a \emph{missed} reentrancy),
+and a filled triangle becomes a false undirected cycle. GLMY directed path
+homology resolves both: on a 12-graph labeled corpus it reaches recall $1.0$ /
+precision $0.75$ versus $0.5$ / $0.5$ for the symmetrized baseline, and it
+returns the concrete $\beta_1$ generator (the cycle's edges) as evidence. Its two
+false positives are ``diamond'' path-space holes (converging control), not
+feedback loops --- GLMY $H_1$ is a superset of destructive cycles and thus a
+high-recall, necessary-but-not-sufficient signal.
+
+\section{Contribution 4: the neuro-symbolic arbitration boundary}
+On a 38-file corpus (29 confirmed findings), the offline heuristic and the
+LiteLLM-backed agent agree on detection and ranking on $37/38$ files (agreement
+$0.974$; the single exception is a nondeterministic \texttt{compile} hypothesis),
+while the LLM changes the CWE on $28\%$ of findings and produces more concise
+titles. A spec-mining probe (8 snippets) shows the LLM mines a plausible
+precondition every time (hallucination $0$) at $0.5$ token recall. The
+contribution is an architecture --- LLM proposes, Z3 disposes --- plus its
+measurement.
+
+\section{Contribution 5: trust-topology analysis}
+An identity/permission graph (users, roles, trust policies, services) is ingested
+by the IAM adapter and analyzed with the Fiedler cut and Forman--Ricci curvature:
+the cut surfaces trust-boundary crossings, and a strongly negative $\kappa_F$
+edge isolates the privilege bridge --- the sole connector between two trust
+subnets. On a demo graph the app$\to$data \texttt{assume} is flagged as the
+most-negative bridge ($\kappa_F=-1$) and the secret bucket surfaces on the Fiedler
+boundary; Z3 then resolves the role-assumption combinatorics.
+
+\section{Limitations}
+The BOLA/IDOR evaluation is a single real API plus a curated corpus, not a
+benchmark; the structural detector over-approximates (sanitized/parameterized
+cases); the Z3 witness holds under the \emph{modeled} semantics, not end-to-end
+exploitability; and the GLMY signal is necessary but not sufficient. Each is
+reported, not hidden.
+
+\section{Conclusion}
+MANIFOLD contributes a falsifiable boundary result, a mechanized and operational
+authorization invariant, evidence that directed homology is the right cycle
+signal, a measured neuro-symbolic arbitration boundary, and a trust-topology
+analysis --- all over one typed graph IR, and all emitting machine-checkable
+witnesses. Together they argue that the productive role of structural invariants
+in security is \emph{verification} of authorization, state, and trust properties,
+not prioritization of injection sinks.
+
+\end{document}

@@ -1,0 +1,158 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\usepackage{lmodern}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{xcolor}
+
+\definecolor{manifold}{RGB}{30,90,170}
+\setbeamercolor{structure}{fg=manifold}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\newcommand{\N}{\mathbb{N}}
+
+\title[MANIFOLD]{Beyond Taint}
+\subtitle{Structural invariants and machine-checkable witnesses for authorization,
+state-cycle, and trust-topology flaws}
+\author{MANIFOLD Project}
+\institute{Typed IR $\cdot$ Lean 4 $\cdot$ GLMY $\cdot$ Z3 witnesses}
+\date{2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Five contributions}
+  \begin{enumerate}
+    \item A \textbf{measured boundary} on geometric priors for injection SAST.
+    \item An \textbf{authorization invariant}, mechanized in Lean~4 and made
+          operational (BOLA/IDOR detector + Z3 ownership witness).
+    \item Evidence that \textbf{directed path homology} beats symmetrized homology
+          for destructive-cycle detection.
+    \item A \textbf{measured neuro-symbolic arbitration boundary}.
+    \item A \textbf{trust-topology analysis} for IAM / lateral movement.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{System: one typed IR, five layers}
+  \begin{center}
+  \begin{tabular}{lll}
+  \toprule
+  \textbf{Layer} & \textbf{Structure} & \textbf{Contribution} \\
+  \midrule
+  Algebraic & privilege function $F:V\to\N$ + auth edges & authorization invariant \\
+  Spectral & Fiedler cut & trust boundaries \\
+  Topological & GLMY directed $H_1$ & state cycles \\
+  Geometric & Forman--Ricci $\kappa_F$ & privilege bridges \\
+  Formal & Z3 + Lean 4 & machine-checkable witnesses \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  Six adapters (Python, Java, binary, OpenAPI, IAM, llm-agent) $\to$ one graph,
+  shared Python $\leftrightarrow$ Rust.
+\end{frame}
+
+\begin{frame}{C1 --- The boundary on geometric priors}
+  \begin{itemize}
+    \item \textbf{Question:} do spectral/topological/geometric invariants add
+          information over taint for injection prioritization?
+    \item \textbf{Measured on OWASP Benchmark 1.2 (2740 cases):} no.
+    \item taint MRR $0.894$ vs.\ fused field $0.872$ ($p=5\times10^{-5}$);
+          spectral $0.496$, topological $0.500$ (chance), curvature $0.376$.
+    \item A flat servlet has no such structure; taint is near-optimal there.
+    \item \textbf{Contribution:} a rigorous, falsifiable answer that redirects
+          effort to where structure \emph{is} the signal.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C2 --- Authorization, mechanized and operational}
+  \begin{itemize}
+    \item $F:V\to\N$, auth edges $E_A=\{(u,v):F(u)<F(v)\}$; \texttt{no\_auth\_bounded}
+          mechanized in Lean~4.
+    \item BOLA/IDOR detector: ungated user-controlled resource access.
+    \item \textbf{Z3 ownership witness}: $\mathrm{SAT}(\mathrm{owner}(id)\neq session)$.
+    \item \texttt{login\_required} (authentication) does \emph{not} block BOLA ---
+          only an object-level \texttt{owner} predicate does.
+    \item \textbf{Real data (crAPI):} $9/9$ BOLA/BFLA recovered, recall $1.0$,
+          precision $0.90$; missing-auth check scores $0$ (all are authenticated).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C3 --- Directed path homology}
+  \begin{itemize}
+    \item Symmetrization is lossy both ways: a 2-cycle collapses (missed), a
+          filled triangle becomes a false cycle.
+    \item GLMY recovers the concrete $\beta_1$ generator.
+    \item \textbf{Measured (12 state graphs):} recall $1.0$ / precision $0.75$
+          vs.\ undirected $0.5$ / $0.5$.
+    \item GLMY $H_1$ = path-space holes $\supset$ feedback cycles: high recall,
+          necessary-not-sufficient.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C4 --- The neuro-symbolic arbitration boundary}
+  \begin{itemize}
+    \item LLM \emph{proposes} a structured spec; Z3 \emph{disposes} it.
+    \item \textbf{Measured (38 files, 29 findings):} detection/ranking agreement
+          $0.974$ (LLM-independent); CWE changes $28\%$ (interpretation).
+    \item Spec-mining (8 snippets): $0.5$ token recall, $0$ hallucination.
+    \item \textbf{Contribution:} an architecture + its measurement, not a claim.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C5 --- Trust-topology analysis}
+  \begin{itemize}
+    \item Identity/permission graph: users, roles, trust policies, services.
+    \item \textbf{Fiedler cut} surfaces trust-boundary crossings.
+    \item \textbf{Forman--Ricci} isolates the privilege bridge (the attacker's pivot).
+    \item Z3 resolves the role-assumption combinatorics.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Measured results at a glance}
+  \begin{center}
+  \begin{tabular}{ll}
+  \toprule
+  \textbf{Contribution} & \textbf{Result} \\
+  \midrule
+  C1 boundary & taint $0.894$ vs.\ field $0.872$ ($p=5\times10^{-5}$) \\
+  C2 authorization & crAPI recall $1.0$, precision $0.90$, F1 $0.947$ \\
+  C3 directed homology & $0.75$/$1.0$ vs.\ undirected $0.5$/$0.5$ \\
+  C4 arbitration & detection/ranking $0.974$; CWE $28\%$ \\
+  C5 trust topology & privilege bridge $\kappa_F=-1$ \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Limitations (reported, not hidden)}
+  \begin{itemize}
+    \item BOLA/IDOR: one real API + a curated corpus, not a benchmark.
+    \item The structural detector over-approximates (sanitized/parameterized).
+    \item Z3 witnesses hold under the \emph{modeled} semantics, not end-to-end.
+    \item GLMY $H_1$ is necessary, not sufficient.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion}
+  \begin{itemize}
+    \item The productive role of structural invariants in security is
+          \emph{verification} of authorization, state, and trust properties ---
+          not prioritization of injection sinks.
+    \item All of it over one typed IR, emitting machine-checkable witnesses.
+  \end{itemize}
+  \vspace{2mm}
+  \centering
+  \Large\color{manifold}\textbf{Map the artifact as a space --- verify the invariant.}
+\end{frame}
+
+\end{document}
