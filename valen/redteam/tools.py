@@ -1,8 +1,13 @@
 """Kali tool inventory and bootstrap.
 
 VALEN's red-team layer wraps Kali reconnaissance tools. This module (1) reports
-which tools are installed, (2) generates the install commands to fetch the
-missing ones, and (3) can run the install (dry-run by default).
+which tools are installed, (2) generates the *correct* install command per tool
+(apt vs pipx vs ``go install``), and (3) can run the install (dry-run by default).
+
+Not every Kali tool ships in Ubuntu's apt repositories: theHarvester is a Python
+package (pipx), and amass / subfinder / nuclei are Go binaries (``go install``).
+The bootstrap emits the right command per tool plus the prerequisite (Go / pipx)
+only when needed.
 
 For authorized engagements only.
 """
@@ -13,31 +18,53 @@ import shutil
 import subprocess
 from typing import Dict, List
 
-# name -> (executable, apt package, description)
-TOOLS: Dict[str, tuple] = {
-    "nmap": ("nmap", "nmap", "port and service discovery"),
-    "masscan": ("masscan", "masscan", "fast port scanning"),
-    "gobuster": ("gobuster", "gobuster", "directory / vhost brute-force"),
-    "ffuf": ("ffuf", "ffuf", "fast fuzzing"),
-    "theHarvester": ("theHarvester", "theharvester", "OSINT email/domain recon"),
-    "amass": ("amass", "amass", "subdomain enumeration"),
-    "subfinder": ("subfinder", "subfinder", "subdomain discovery"),
-    "nuclei": ("nuclei", "nuclei", "template-based vulnerability scanning"),
-    "sqlmap": ("sqlmap", "sqlmap", "SQL injection exploitation"),
-    "nikto": ("nikto", "nikto", "web server scanning"),
+# name -> {exe, method, install (list of shell commands), pkg, description}
+TOOLS: Dict[str, dict] = {
+    "nmap":         {"exe": "nmap", "method": "apt", "pkg": "nmap",
+                     "install": ["sudo apt-get install -y nmap"],
+                     "description": "port and service discovery"},
+    "masscan":      {"exe": "masscan", "method": "apt", "pkg": "masscan",
+                     "install": ["sudo apt-get install -y masscan"],
+                     "description": "fast port scanning"},
+    "gobuster":     {"exe": "gobuster", "method": "apt", "pkg": "gobuster",
+                     "install": ["sudo apt-get install -y gobuster"],
+                     "description": "directory / vhost brute-force"},
+    "ffuf":         {"exe": "ffuf", "method": "apt", "pkg": "ffuf",
+                     "install": ["sudo apt-get install -y ffuf"],
+                     "description": "fast fuzzing"},
+    "sqlmap":       {"exe": "sqlmap", "method": "apt", "pkg": "sqlmap",
+                     "install": ["sudo apt-get install -y sqlmap"],
+                     "description": "SQL injection exploitation"},
+    "nikto":        {"exe": "nikto", "method": "apt", "pkg": "nikto",
+                     "install": ["sudo apt-get install -y nikto"],
+                     "description": "web server scanning"},
+    "theHarvester": {"exe": "theHarvester", "method": "pipx", "pkg": "theHarvester",
+                     "install": ["pipx install theHarvester"],
+                     "description": "OSINT email/domain recon"},
+    "amass":        {"exe": "amass", "method": "go", "pkg": "github.com/owasp-amass/amass/v4",
+                     "install": ["go install -v github.com/owasp-amass/amass/v4/...@master"],
+                     "description": "subdomain enumeration"},
+    "subfinder":    {"exe": "subfinder", "method": "go", "pkg": "github.com/projectdiscovery/subfinder/v2",
+                     "install": ["go install -v github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest"],
+                     "description": "subdomain discovery"},
+    "nuclei":       {"exe": "nuclei", "method": "go", "pkg": "github.com/projectdiscovery/nuclei/v3",
+                     "install": ["go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest"],
+                     "description": "template-based vulnerability scanning"},
 }
 
 
 def tool_status() -> Dict[str, Dict]:
-    """Return per-tool ``{installed, path, pkg, description}``."""
+    """Return per-tool ``{installed, path, method, pkg, description, install}``."""
     out = {}
-    for name, (exe, pkg, desc) in TOOLS.items():
-        path = shutil.which(exe)
+    for name, t in TOOLS.items():
+        path = shutil.which(t["exe"])
         out[name] = {
             "installed": path is not None,
             "path": path or "",
-            "pkg": pkg,
-            "description": desc,
+            "method": t["method"],
+            "pkg": t["pkg"],
+            "description": t["description"],
+            "install": t["install"],
         }
     return out
 
@@ -47,15 +74,36 @@ def missing_tools() -> List[str]:
 
 
 def bootstrap_commands() -> List[str]:
-    """apt commands to install the missing tools."""
+    """Shell commands to install the missing tools, with prerequisites first."""
     missing = missing_tools()
     if not missing:
         return []
-    pkgs = " ".join(TOOLS[name][1] for name in missing)
-    return [
-        "sudo apt-get update",
-        f"sudo apt-get install -y {pkgs}",
-    ]
+
+    apt_tools = [n for n in missing if TOOLS[n]["method"] == "apt"]
+    pipx_tools = [n for n in missing if TOOLS[n]["method"] == "pipx"]
+    go_tools = [n for n in missing if TOOLS[n]["method"] == "go"]
+
+    cmds: List[str] = []
+    prereqs: List[str] = []
+    if apt_tools:
+        cmds.append("sudo apt-get update")
+        cmds.append("sudo apt-get install -y " + " ".join(TOOLS[n]["pkg"] for n in apt_tools))
+    if pipx_tools:
+        prereqs.append("pipx")
+    if go_tools:
+        prereqs.append("golang-go")
+
+    if prereqs:
+        cmds.append("sudo apt-get install -y " + " ".join(prereqs))
+
+    for n in pipx_tools:
+        cmds.extend(TOOLS[n]["install"])
+    for n in go_tools:
+        cmds.extend(TOOLS[n]["install"])
+        # ensure the Go bin dir is on PATH
+    if go_tools:
+        cmds.append("export PATH=\"$PATH:$(go env GOPATH)/bin\"")
+    return cmds
 
 
 def bootstrap(dry_run: bool = True) -> Dict:

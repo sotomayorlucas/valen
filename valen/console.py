@@ -108,7 +108,7 @@ const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'
 function toolsCard(){
   const rows = Object.entries(DATA.tools).map(([n,t]) =>
     `<div class="row tool"><div><span class="dot ${t.installed?'ok':'no'}"></span><b>${esc(n)}</b>
-     <span class="pkg">· ${esc(t.pkg)} · ${esc(t.description)}</span></div>
+     <span class="pkg">· ${esc(t.method)} · ${esc(t.description)}</span></div>
      <span class="mono">${t.installed?esc(t.path||'ok'):'missing'}</span></div>`).join('');
   const boot = DATA.bootstrap && DATA.bootstrap.length
     ? `<pre>${esc(DATA.bootstrap.join('\n'))}</pre>` : '';

@@ -18,15 +18,27 @@ ROOT = Path(__file__).resolve().parent.parent
 def test_tool_status_inventory():
     status = tool_status()
     assert "nmap" in status and "masscan" in status
-    assert set(status["nmap"]) >= {"installed", "path", "pkg", "description"}
+    assert set(status["nmap"]) >= {"installed", "path", "method", "pkg", "description"}
     assert isinstance(missing_tools(), list)
+    # non-apt tools carry the right install method
+    assert status["theHarvester"]["method"] == "pipx"
+    assert status["amass"]["method"] == "go"
+    assert status["subfinder"]["method"] == "go"
+    assert status["nuclei"]["method"] == "go"
 
 
-def test_bootstrap_commands_are_apt():
-    # with nothing missing, commands are empty; otherwise they are apt installs
+def test_bootstrap_commands_use_correct_method_per_tool():
     cmds = bootstrap_commands()
-    if cmds:
-        assert any("apt-get install" in c for c in cmds)
+    if not cmds:
+        return
+    joined = "\n".join(cmds)
+    assert "apt-get install" in joined
+    if "theHarvester" in missing_tools():
+        assert "pipx install theHarvester" in joined
+    if "amass" in missing_tools():
+        assert "go install" in joined
+        assert "golang-go" in joined
+        assert "GOPATH" in joined
 
 
 def test_build_console_embeds_all_panels():
