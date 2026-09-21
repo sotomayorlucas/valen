@@ -190,9 +190,18 @@ id de objeto de una víctima, y un \emph{validador activo}
 confirma el leak en la respuesta --- cerrando el ciclo de ``satisfacible bajo el
 modelo'' a ``impacto demostrado, acá está la evidencia''. Sobre crAPI esto
 produce un PoC por endpoint BOLA/BFLA documentado (9), basado en el mismo spec y
-las mismas etiquetas usadas para la verificación, de modo que un equipo red-team
-recibe un plan de ataque priorizado y respaldado por evidencia, en lugar de una
-lista de alertas.
+las mismas etiquetas usadas para la verificación.
+
+Más allá de hallazgos individuales, VALEN arma un \emph{plan de ataque ordenado}
+(\texttt{valen.redteam.attack\_paths}, \texttt{valen.redteam.mitre}). Los
+hallazgos y las relaciones IAM se etiquetan con tácticas de MITRE ATT\&CK; las
+cadenas de escalada sobre el grafo de identidades/permisos se computan como
+secuencias ordenadas de aristas trust/assume/access, cada paso confirmado por un
+encoding SMT de la propagación de ``attacker\_has(role)''. El resultado es un
+plan en orden de kill-chain Discovery $\to$ Privilege Escalation $\to$
+Collection, donde cada paso lleva su táctica, el PoC concreto y la confirmación
+SMT --- de modo que un equipo red-team recibe un plan priorizado y respaldado por
+evidencia, en lugar de una lista de alertas.
 
 \section{Limitaciones}
 La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un

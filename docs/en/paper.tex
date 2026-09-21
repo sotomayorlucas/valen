@@ -177,8 +177,17 @@ that replays the request against a reachable host and confirms the leak in the
 response --- closing the loop from ``satisfiable under the model'' to
 ``demonstrated impact, here is the evidence''. On crAPI this yields one PoC per
 documented BOLA/BFLA endpoint (9), grounded in the same OpenAPI spec and labels
-used for verification, so a red team gets a prioritized, evidence-backed attack
-plan rather than a list of alerts.
+used for verification.
+
+Beyond single findings, VALEN assembles an \emph{ordered attack plan}
+(\texttt{valen.redteam.attack\_paths}, \texttt{valen.redteam.mitre}). Findings
+and IAM relations are tagged with MITRE ATT\&CK tactics; escalation chains over
+the identity/permission graph are computed as ordered sequences of
+trust/assume/access edges, each step confirmed by a small SMT encoding of
+``attacker\_has(role)'' propagation. The result is a kill-chain ordered
+Discovery $\to$ Privilege Escalation $\to$ Collection plan in which every step
+carries a tactic, the concrete PoC, and the SMT confirmation --- so a red team
+gets a prioritized, evidence-backed attack plan rather than a list of alerts.
 
 \section{Limitations}
 The BOLA/IDOR evaluation is a single real API plus a curated corpus, not a
