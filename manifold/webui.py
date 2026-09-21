@@ -68,7 +68,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
     <select id="example"></select>
     <select id="adapter">
       <option value="">auto</option>
-      <option>python</option><option>java</option><option>binary</option>
+      <option>python</option><option>java</option><option>java-interproc</option><option>binary</option>
       <option>angr-binary</option><option>web</option><option>llm-agent</option>
     </select>
     <input id="path" placeholder="path (optional)" style="width:200px"/>

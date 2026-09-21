@@ -662,11 +662,20 @@ flow-variant files). On 264 cases across five CWEs it scores
 $P=0.333$, $R=0.562$, $\mathrm{F1}=0.419$: detection is partial and precision
 collapses on the ``good'' variants. The reason is structural, not a tuning
 artifact --- Juliet splits source and sink across \texttt{\_a}/\texttt{\_base}/
-\texttt{\_bad} classes, so correct analysis requires \emph{interprocedural,
-context-sensitive} taint, which the current intraprocedural adapter does not
-provide. This is the clearest evidence for the next systems step
-(interprocedural taint) and a threat to the external validity of the OWASP
-numbers.
+\texttt{\_bad} classes, so correct analysis requires \emph{interprocedural}
+taint, which the intraprocedural adapter does not provide.
+
+\subsection{Interprocedural taint: necessary, not sufficient}
+We added a context-insensitive interprocedural fixpoint
+(\texttt{java\_interproc.py}): a callee parameter becomes tainted if some call
+site passes tainted data to it, and a call becomes tainted if its callee returns
+tainted data; the fixpoint is iterated to convergence. On Juliet it raises recall
+$0.562\to0.750$ and F1 $0.419\to0.490$ (CWE78/CWE90 recover from $0.000$ to
+$0.750$). \emph{But on OWASP it is slightly worse} (taint F1 $0.662\to0.637$),
+because context-insensitivity taints a parameter that is also reached by a
+non-attacker caller. The lesson is precise: interprocedural reachability is
+\emph{necessary} for cross-class flows but \emph{not sufficient}; the next step is
+call-site-specific (context-sensitive) summaries, not more geometry.
 
 \subsection{Scalability of each kernel}
 We timed every kernel on synthetic graphs (log--log, Fig.~\ref{fig:scale}).

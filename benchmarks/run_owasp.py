@@ -25,6 +25,7 @@ def main() -> int:
     parser.add_argument("--testcode", required=True, help="path to the testcode directory")
     parser.add_argument("--csv", required=True, help="path to expectedresults-1.2.csv")
     parser.add_argument("--verify", action="store_true", help="use the Z3 verifier as the arbiter")
+    parser.add_argument("--interproc", action="store_true", help="use the interprocedural Java analyzer")
     args = parser.parse_args()
 
     if not Path(args.testcode).is_dir():
@@ -37,6 +38,11 @@ def main() -> int:
 
         def detector(code, _v=verify_java):
             return bool(_v(code))
+    elif args.interproc:
+        from manifold.ingest.java_interproc import JavaInterproceduralIngest
+
+        _a = JavaInterproceduralIngest()
+        detector = lambda code: bool(_a.analyze(code).findings)
 
     total = len(load_expected(args.csv))
     print(f"== OWASP Benchmark 1.2 ({total} test cases){' + Z3' if args.verify else ''} ==")

@@ -5,6 +5,7 @@ from __future__ import annotations
 from .angr_binary import AngrBinaryIngest
 from .binary import BinaryIngest
 from .java import JavaIngest
+from .java_interproc import JavaInterproceduralIngest
 from .llm_agent import LLMAgentIngest
 from .python import PythonIngest
 from .web import WebIngest
@@ -12,6 +13,7 @@ from .web import WebIngest
 __all__ = [
     "PythonIngest",
     "JavaIngest",
+    "JavaInterproceduralIngest",
     "BinaryIngest",
     "AngrBinaryIngest",
     "WebIngest",
@@ -24,6 +26,7 @@ __all__ = [
 LANGUAGE_TO_INGEST = {
     "python": PythonIngest,
     "java": JavaIngest,
+    "java-interproc": JavaInterproceduralIngest,
     "binary": BinaryIngest,
     "angr-binary": AngrBinaryIngest,
     "web": WebIngest,

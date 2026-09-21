@@ -230,6 +230,14 @@ errores residuales son casos adversariales del benchmark, no caminos espurios.
 (`_a`/`_base`/`_bad`) y exige taint **interprocedural** — evidencia para el
 siguiente paso de sistemas y amenaza a la validez externa.
 
+**Taint interprocedural** (`manifold/ingest/java_interproc.py`, adaptador
+`java-interproc`): punto fijo insensible al contexto (parámetro manchado si un
+call site le pasa taint; llamada manchada si el callee devuelve taint). En
+**Juliet**: R 0.562→0.750, F1 0.419→0.490 (CWE78/CWE90 de 0.000→0.750). En
+**OWASP** empeora levemente (F1 de taint 0.662→0.637) por insensibilidad al
+contexto → necesario pero no suficiente; el siguiente paso son summaries
+sensibles al contexto.
+
 **Escalabilidad** (`core/src/bin/scale.rs`, `benchmarks/scale_results.csv`):
 Forman–Ricci y Mapper casi lineales ($10^3\to10^5$ aristas en $<0.2$ s);
 homología superlineal (123 s @ $10^5$); Sinkhorn/Ollivier cuadráticos;

@@ -23,17 +23,26 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", required=True)
     ap.add_argument("--cwes", default="CWE89,CWE78,CWE80,CWE81,CWE90,CWE643,CWE22,CWE501")
+    ap.add_argument("--interproc", action="store_true", help="use the interprocedural Java analyzer")
     args = ap.parse_args()
+
+    if args.interproc:
+        from manifold.ingest.java_interproc import JavaInterproceduralIngest
+
+        analyzer = JavaInterproceduralIngest()
+    else:
+        analyzer = JavaIngest()
 
     cwes = [c.strip() for c in args.cwes.split(",") if c.strip()]
     cases = load_juliet(args.root, cwes=cwes)
-    print(f"== Juliet Java: {len(cases)} test cases, CWEs={cwes} ==")
+    print(f"== Juliet Java ({'interprocedural' if args.interproc else 'intraprocedural'}): "
+          f"{len(cases)} test cases, CWEs={cwes} ==")
     print(f"{'CWE':<8}{'TP':>5}{'FP':>5}{'FN':>5}{'TN':>5}{'prec':>8}{'recall':>8}{'f1':>8}")
 
     per = defaultdict(Metrics)
     for case in cases:
         cwe = case.name.split("_")[0]
-        pred = bool(JavaIngest().analyze(case.code, path=case.name).findings)
+        pred = bool(analyzer.analyze(case.code, path=case.name).findings)
         m = per[cwe]
         if case.vulnerable and pred:
             m.tp += 1

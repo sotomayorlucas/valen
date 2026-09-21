@@ -696,10 +696,20 @@ $P=0.333$, $R=0.562$, $\mathrm{F1}=0.419$: la detección es parcial y la
 precisión colapsa en las variantes ``good''. La razón es estructural, no un
 artefacto de ajuste --- Juliet separa fuente y sumidero entre clases
 \texttt{\_a}/\texttt{\_base}/\texttt{\_bad}, por lo que el análisis correcto
-requiere taint \emph{interprocedural y sensible al contexto}, que el adaptador
-intraprocedural actual no aporta. Es la evidencia más clara del siguiente paso de
-sistemas (taint interprocedural) y una amenaza a la validez externa de los
-números de OWASP.
+requiere taint \emph{interprocedural}, que el adaptador intraprocedural no aporta.
+
+\subsection{Taint interprocedural: necesario, no suficiente}
+Añadimos un punto fijo interprocedural insensible al contexto
+(\texttt{java\_interproc.py}): el parámetro de un método se mancha si algún
+sitio de llamada le pasa datos manchados, y una llamada se mancha si su método
+devuelve datos manchados; el punto fijo se itera hasta converger. Sobre Juliet
+eleva el recall $0.562\to0.750$ y el F1 $0.419\to0.490$ (CWE78/CWE90 pasan de
+$0.000$ a $0.750$). \emph{Pero en OWASP es ligeramente peor} (F1 de taint
+$0.662\to0.637$), porque la insensibilidad al contexto mancha un parámetro que
+también alcanza un llamador no atacante. La lección es precisa: la alcanzabilidad
+interprocedural es \emph{necesaria} para flujos entre clases pero \emph{no
+suficiente}; el siguiente paso son summaries específicos por sitio de llamada
+(sensibles al contexto), no más geometría.
 
 \subsection{Escalabilidad de cada kernel}
 Cronometramos cada kernel sobre grafos sintéticos (log--log,
