@@ -142,6 +142,99 @@ def cost_curve(ranks: Sequence[int], budget: int) -> List[float]:
     return [sum(1 for r in ranks if r <= b) / n for b in range(1, budget + 1)]
 
 
+def reciprocal_ranks(cache: Sequence[Tuple[List[Candidate], str]], method: str, seed: int = 0) -> List[float]:
+    return [1.0 / rank_of_target(order(c, method, seed), cat) for c, cat in cache]
+
+
+def paired_permutation(a: Sequence[float], b: Sequence[float], iters: int = 5000, seed: int = 0) -> dict:
+    """Paired permutation test on the difference of means.
+
+    Returns the observed mean difference, a 95\\% bootstrap CI and a two-sided
+    permutation p-value. Used to test ``taint`` vs the fused field.
+    """
+    rnd = random.Random(seed)
+    n = min(len(a), len(b))
+    diffs = [a[i] - b[i] for i in range(n)]
+    obs = sum(diffs) / n if n else 0.0
+
+    # bootstrap CI of the mean difference
+    boots = []
+    for _ in range(2000):
+        s = sum(diffs[rnd.randrange(n)] for _ in range(n)) / n if n else 0.0
+        boots.append(s)
+    boots.sort()
+    lo = boots[int(0.025 * len(boots))]
+    hi = boots[int(0.975 * len(boots)) - 1]
+
+    # two-sided permutation: flip each pair's sign at random
+    ge = 0
+    for _ in range(iters):
+        stat = sum(diffs[i] if rnd.random() < 0.5 else -diffs[i] for i in range(n)) / n if n else 0.0
+        if abs(stat) >= abs(obs):
+            ge += 1
+    p = ge / iters if iters else 1.0
+    return {"mean_diff": obs, "ci95": [lo, hi], "p_value": p, "n": n}
+
+
+def global_metrics(
+    entries: Sequence[Tuple[List[Candidate], str, bool]],
+    method: str = "taint",
+    seed: int = 0,
+    ks: Sequence[int] = (10, 50, 100),
+) -> dict:
+    """Global-pool ranking over *all* candidates (safe and vulnerable cases).
+
+    ``entries`` is a list of ``(candidates, target_category, vulnerable)``. A
+    candidate is *relevant* iff its case is truly vulnerable and its category is
+    the target. Returns precision@k, recall@k, average precision (PR-AUC) and the
+    number of queries needed to reach 90% recall.
+    """
+    pool: List[Tuple[float, bool]] = []  # (key, relevant)
+    for cands, cat, vuln in entries:
+        for c in cands:
+            relevant = bool(vuln and c.category == cat)
+            if method == "random":
+                key = 0.0
+            elif method == "dfs":
+                key = (c.line,)
+            elif method == "taint":
+                key = (not c.tainted, c.line)
+            else:  # field (V_prior): tainted first, then structural score
+                key = (not c.tainted, -c.score, c.line)
+            pool.append((key, relevant))
+
+    if method == "random":
+        rnd = random.Random(seed)
+        rnd.shuffle(pool)
+    else:
+        pool.sort(key=lambda p: p[0])
+
+    relevant_flags = [rel for _, rel in pool]
+    total_rel = sum(1 for r in relevant_flags if r)
+    running = 0
+    precisions: List[float] = []
+    recalls: List[float] = []
+    queries_90 = None
+    for i, rel in enumerate(relevant_flags, 1):
+        running += 1 if rel else 0
+        precisions.append(running / i)
+        rec = running / total_rel if total_rel else 0.0
+        recalls.append(rec)
+        if queries_90 is None and rec >= 0.9:
+            queries_90 = i
+    ap = sum(precisions[i] for i in range(len(relevant_flags)) if relevant_flags[i]) / total_rel if total_rel else 0.0
+    out = {
+        "candidates": len(pool),
+        "relevant": total_rel,
+        "average_precision": round(ap, 4),
+        "queries_to_90_recall": queries_90,
+    }
+    for k in ks:
+        out[f"precision@{k}"] = round(sum(1 for r in relevant_flags[:k] if r) / k, 4) if k <= len(relevant_flags) else None
+        out[f"recall@{k}"] = round(sum(1 for r in relevant_flags[:k] if r) / total_rel, 4) if total_rel else 0.0
+    return out
+
+
 def _auc(points: Sequence[Tuple[float, int]]) -> float:
     """Rank-based AUC (Mann-Whitney) for (score, label) points."""
     pos = [s for s, l in points if l == 1]

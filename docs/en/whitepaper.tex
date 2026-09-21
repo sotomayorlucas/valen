@@ -24,33 +24,38 @@
 \newcommand{\catProg}{\mathbf{Prog}}
 \newcommand{\catAuth}{\mathbf{Auth}}
 
-\title{\bfseries MANIFOLD\\[2mm]\Large Prioritizing What to Verify: a Reproducible\\ Neuro-Symbolic Vulnerability Pipeline, and an\\ Honest Measurement on OWASP Benchmark~1.2}
+\title{\bfseries Do geometric invariants of program graphs add information\\ over classic semantic analysis?\\[2mm]\Large MANIFOLD: a falsifiable study on OWASP Benchmark~1.2}
 \author{MANIFOLD Project}
-\date{Whitepaper v0.3 --- working draft, not peer reviewed}
+\date{Working draft v0.4 --- not peer reviewed}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent The bottleneck of static analysis is not \emph{detecting} sinks but
-\emph{deciding which one to verify}. MANIFOLD turns a software artifact into a
-typed, weighted graph (the IR) enriched with algebraic, spectral, topological and
-geometric structure, computes a \emph{vulnerability scalar field} $V(x)$, and
-lets a neuro-symbolic loop (LLM hypothesis generation + Z3 verification with
-concrete witnesses) act on the prioritized regions. This document makes three
-contributions and reports them honestly. \textbf{(1)} A \emph{prioritization-oracle}
-harness with standard ranking metrics (MRR, R@1, NDCG@$k$, cost curve) and
-baselines. \textbf{(2)} An end-to-end Java pipeline (SAST adapter + Z3 symbolic
-verifier with witnesses) and a reproducible artifact. \textbf{(3)} A measurement
-study on the full \textbf{OWASP Benchmark~1.2} (2740 cases) and a cross-corpus
-transfer to \textbf{Juliet}. The headline result is \emph{negative and useful}:
-raw taint ranks the vulnerable sink best (MRR $0.894$, AUC $0.895$) while the
-\emph{spectral} ($0.496$) and \emph{topological} ($0.500$) signals are at chance
-and \emph{curvature} is below chance ($0.376$); the Z3 verifier reproduces the
-adapter's precision ($P=0.549$, $R=0.834$) and adds proof, not precision; and the
-OWASP-tuned adapter transfers poorly to Juliet ($P=0.333$, $R=0.562$), exposing
-the need for interprocedural taint. We state a naturality theorem with proof,
-give per-kernel scalability curves, and release the artifact, datasets and seeds.
+\noindent Static-analysis pipelines are often bottlenecked not by
+\emph{detecting} sinks but by \emph{deciding which one to verify}. We ask a
+deliberately falsifiable question: \emph{do spectral, topological and geometric
+invariants of program graphs carry information about the vulnerable sink beyond
+classic semantic analysis (taint)?} MANIFOLD is our instrument for the
+experiment: it turns an artifact into a typed graph (the IR), computes a
+\emph{pre-verification} field $V_{\text{prior}}(x)$ from cheap signals only
+(deliberately excluding the formal signal, to avoid circularity), and lets a
+neuro-symbolic loop act on the prioritized regions. We report a rigorous
+\emph{negative} result. On OWASP Benchmark~1.2 (2740 cases), raw taint ranks the
+vulnerable sink best (MRR $0.894$, AUC $0.895$) and beats the fused field with
+$p=0.000$ (paired permutation); \emph{spectral} ($0.496$) and \emph{topological}
+($0.500$) signals are at chance and \emph{Forman--Ricci curvature} is
+\emph{below} chance ($0.376$). On a global pool of all candidates the structural
+field helps only at the extreme top ($P@10=0.8$ vs.\ $0.6$) but loses on average
+precision. The hypotheses H1/H2/H5 are therefore \emph{not supported}. We
+contribute: (1) a prioritization-oracle harness (MRR, R@1, NDCG@$k$, global
+AP/P@$k$/R@$k$, queries-to-90\%-recall, paired permutation tests); (2) a
+reproducible end-to-end Java pipeline (SAST + Z3 verifier producing
+\emph{machine-checkable witnesses under the modeled semantics}); (3) external
+validation on the Juliet suite and real CVE fix commits, which locates the true
+bottleneck in \emph{interprocedural} taint rather than in more geometry; and (4)
+a Lean~4 mechanization of the taint-abstraction soundness and the authorization
+invariant.
 \end{abstract}
 
 \section{Motivation}
@@ -127,6 +132,12 @@ API, LLM agent) must produce a program graph; every analysis consumes it. The
 schema is language-agnostic and JSON-serializable (the Python and Rust layers
 share the identical schema).
 
+\emph{Naming note.} Despite the codename, the object is a \emph{program-analysis
+space}: a typed graph together with derived complexes, embeddings and a scalar
+field. We do \emph{not} claim it is a mathematical manifold (there is no atlas,
+chart or local Euclidean structure); ``manifold'' is used informally, as in
+``data manifold''.
+
 \section{Mathematical layers}
 For each layer we fix a subgraph by edge type $\tau_E$, then compute structure.
 
@@ -178,14 +189,16 @@ $\mathbb{T} = (2^{\mathcal{K}}, \subseteq, \cup, \cap)$, with $\bot = \emptyset$
 (clean) and $\top$ (tainted). It forms a Galois connection $(\alpha, \gamma)$
 with the concrete collecting semantics; soundness is proved in \S4.6.
 \emph{Program category.} Let $\catProg$ be the category whose objects are
-program points $v \in V$ (with an abstract state), whose morphisms are directed
-edges, and whose composition is path concatenation. The \emph{authorization
-functor} $F : \catProg \to \catAuth$ maps each point to a privilege level in the
-poset $\catAuth$ (e.g.\ \texttt{untrusted <= user <= admin}). A \emph{sanitizer} is an endomorphism $s : v \to v$ that is
-maps every tag to clean. \textbf{Naturality law:} a taint flow
-is a morphism whose image under the taint functor is non-$\bot$; it is a
-\emph{violation} when $F$ fails to commute on an $\texttt{auth}$ edge. This is
-made precise and proved in \S4.6.
+program points $v \in V$ (each carrying an abstract state), whose morphisms are
+directed edges, and whose composition is path concatenation. The
+\emph{authorization functor} $F : \catProg \to \catAuth$ maps each point to a
+privilege level in the poset $\catAuth$ (e.g.\ \texttt{untrusted <= user <=
+admin}); an edge $e=(u,v)$ is an \emph{auth edge} iff $F(u) < F(v)$. A
+\emph{sanitizer} is an endomorphism $s : v \to v$ that maps every tag to clean.
+\textbf{Authorization invariant:} a taint flow is a morphism with non-empty tag
+image; it is a \emph{violation} when its path crosses an auth edge and no
+sanitizer on the crossing segment restores the invariant. This is stated
+precisely, on a consistent type-theoretic footing, and mechanized in \S4.6.
 
 \subsection{Formal layer (symbolic execution \& model checking)}
 Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
@@ -204,41 +217,48 @@ pair $(\alpha, \gamma)$ satisfies $\alpha(\mathcal{C}(v)) \sqsubseteq A(v)$ and
 $\mathcal{C}(v) \subseteq \gamma(A(v))$.
 
 \smallskip
-\noindent\textbf{Proposition 1 (soundness of the taint lattice).} \emph{If
-$A(v) = \bot$ then no execution taints a value at $v$.}
+\noindent\textbf{Proposition 1 (soundness of the taint abstraction).} \emph{If the
+abstract analysis reports a variable clean, no concrete execution taints it.}
 
-\noindent\emph{Proof.} By induction on the length of the transition sequence
-from an entry point to $v$. Base: entry variables are untainted unless a source
-is executed, in which case $A \ge \bot$. Step: each transfer function is
-monotone and over-approximates its concrete counterpart (assignments propagate
-the join of operand tags, sanitizers map to $\bot$, joins upper-bound branch
-merges). Hence $A$ dominates $\alpha \circ \mathcal{C}$, and $A(v) = \bot$
-forces $\mathcal{C}(v) \subseteq \gamma(\bot) = \{\text{clean}\}$. $\square$
+\noindent\emph{Proof scheme.} By induction on the transition sequence, using the
+invariant ``concrete taint $\subseteq$ abstract taint'' at every state. The base
+holds for entry variables; the step holds because each transfer function is
+monotone and over-approximates its concrete counterpart (assignments join operand
+tags, sanitizers map to clean, branch joins upper-bound the merge). The guarantee
+is contingent on the sanitizer \emph{summary} matching the sanitizer's real
+semantics: a wrong summary (claiming to clean what it does not) breaks soundness.
+This is exactly the mechanized statement \texttt{prop1\_soundness} (\S4.6), proved
+for a concrete boolean abstraction; extending it to the full tag lattice is
+straightforward but assumed here.
 
 \smallskip
-\noindent\textbf{Proposition 2 (naturality violation characterization).}
-\emph{Let $p = e_1 \circ \dots \circ e_n : s \to k$ be a taint flow, $E_A$ the
-set of \texttt{auth} edges, and $\mathrm{San}(p)$ the sanitizer endomorphisms on
-$p$. Then $F$ fails to commute on $p$ (a naturality violation) if and only if
-$p \cap E_A \neq \emptyset$ and $\mathrm{San}(p) = \emptyset$.}
+\noindent\textbf{Proposition 2 (authorization invariant / naturality
+violation).} \emph{Let $F : \catProg \to \catAuth$ be the authorization functor
+into the poset $(\mathbb{N}, \le)$, and let $p = e_1 \circ \dots \circ e_n :
+s \to k$ be a path. Write $\mathrm{Auth}(p)$ for the auth edges on $p$ and
+$\mathrm{San}(p)$ for the sanitizer endomorphisms on $p$. Then: (i) if
+$\mathrm{Auth}(p) = \emptyset$ then $F(k) \le F(s)$ (no privilege escalation);
+(ii) if $\mathrm{Auth}(p) \neq \emptyset$ and no sanitizer covers the crossing
+segment, the flow witnesses a privilege-escalating, attacker-controlled reach to
+$k$ --- an authorization violation.}
 
-\noindent\emph{Proof.} $(\Leftarrow)$ Let $e_i \in E_A$. Because $e_i$ guards a
-privilege boundary, $F$ assigns its target a strictly higher level than its
-source; composing with the taint morphism then gives $F(p)\circ \eta_s \neq
-\eta_k \circ T(p)$ for a tag carried across $e_i$, so the square does not
-commute. No sanitizer is present to restore $\bot$, so the failure is
-irreparable. $(\Rightarrow)$ If $p \cap E_A = \emptyset$ every edge is
-level-preserving and the square commutes; if a sanitizer is present it is
-$\bot$-preserving by definition, so the tag is killed and the square commutes.
-$\square$
+\noindent\emph{Proof.} (i) Each non-auth edge satisfies $\neg(F(u) < F(v))$, i.e.\
+$F(v) \le F(u)$, so $F$ is non-increasing along $p$; transitivity gives
+$F(k) \le F(s)$. This is the mechanized \texttt{no\_auth\_bounded} (\S4.6). (ii) An
+auth edge strictly raises $F$; absent a $\bot$-preserving sanitizer on the crossing
+segment, the tag survives, so the composed reach does not preserve the policy. The
+``only if'' direction of the earlier formulation is \emph{definitional}, not a
+theorem, and is presented here as an invariant rather than a natural transformation
+(the earlier $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ was under-typed and is
+withdrawn). $\square$
 
-\noindent Proposition 2 is exactly the operational rule implemented as L4
-(§8/C4): a taint finding inside an auth-gated function is a naturality violation.
-Both propositions are \emph{mechanized} in Lean~4 (core only, no Mathlib) in
+\noindent The invariant (ii) is exactly the operational rule H4 (§8/C4): a taint
+finding inside an auth-gated function is an authorization violation. Both
+propositions are \emph{mechanized} in Lean~4 (core only, no Mathlib) in
 \texttt{formal/Manifold.lean}: \texttt{prop1\_soundness} proves the boolean taint
 abstraction sound against the tag-collecting semantics (\S3 there), and
-\texttt{no\_auth\_bounded} proves the path-level naturality law (\S4 there). The
-proof checking is part of the reproducibility artifact
+\texttt{no\_auth\_bounded} proves the path-level authorization invariant (\S4
+there). The proof checking is part of the reproducibility artifact
 (\texttt{scripts/check\_formal.sh}).
 
 \section{The vulnerability scalar field}
@@ -269,27 +289,33 @@ agent to inspect and the verifier to confirm.}
 \[
 V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
-where $s_i$ are normalized layer signals (spectral anomaly, persistence
-outlier, curvature, lattice height, formal reachability), $\alpha_i$ are
-weights, and $\sigma$ a logistic squeeze. $V$ is a ranking, a
-Mapper filter, and a cost field for navigation. In the current prototype the
-weights are \emph{uniform} ($\alpha_i = 1/N$ over the available signals) and
-$V$ is reported as the raw fused score; calibrating $\alpha_i$ (balanced
-initialization $\to$ empirical tuning on the micro-benchmarks $\to$ a logistic
-classifier over labeled traces) is future work.
+where $s_i$ are normalized layer signals and $\alpha_i$ weights. To avoid a
+\emph{circularity} --- the field that decides \emph{what to verify} must not
+depend on verification --- we distinguish two fields:
+\begin{itemize}[leftmargin=1.5em]
+  \item $V_{\text{prior}}(x)$ fuses only signals computable \emph{before} SMT
+        (\texttt{taint}, spectral, topological, geometric). This is the field used
+        for ranking and for the prioritization experiment (\S12.1).
+  \item $V_{\text{post}}(x)$ additionally consumes the \texttt{formal} (Z3) signal
+        and is used only for re-embedding / post-hoc analysis; it never feeds the
+        pre-verification ranking.
+\end{itemize}
+In the prototype the weights are \emph{uniform} ($\alpha_i = 1/N$ over the chosen
+signals) and $V$ is reported as the raw fused score; calibrating $\alpha_i$ is
+future work.
 
-\section{Mapping laws}
+\section{Mapping hypotheses}
 \begin{center}
 \begin{tabular}{cll}
 \toprule
 \# & Law & Vulnerability class \\
 \midrule
-L1 & Chokepoint ($\kappa \ll 0$) & privilege escalation, auth bypass \\
-L2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
-L3 & Trust cut (Fiedler cut) & injection across trust boundary \\
-L4 & Naturality break & arbitrary taint violation \\
-L5 & Persistence outlier & real vs.\ spurious features \\
-L6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & concrete exploit \\
+H1 & Chokepoint ($\kappa \ll 0$) & privilege escalation, auth bypass \\
+H2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
+H3 & Trust cut (Fiedler cut) & injection across trust boundary \\
+H4 & Naturality break & arbitrary taint violation \\
+H5 & Persistence outlier & real vs.\ spurious features \\
+H6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & concrete exploit \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -311,7 +337,7 @@ verifier returns \texttt{SAT} with a concrete witness (e.g.\
 the attacker-controlled symbol. The parameterized variant
 \texttt{execute(query, (param,))} is correctly \emph{not} flagged, and a
 \texttt{@login\_required} gate on the enclosing function upgrades the finding to
-an L4 naturality violation (a taint flow crossing an \texttt{auth} edge).
+an H4 naturality violation (a taint flow crossing an \texttt{auth} edge).
 
 \section{The autonomous LLM agent}
 A closed loop: (1) \emph{ingest} into the IR; (2) \emph{embed \& map} ($V(x)$,
@@ -342,10 +368,12 @@ Symmetrizing can destroy the direction of taint. \emph{Mitigation:} the
 prototype implements Chung's directed Laplacian restricted to the largest
 strongly connected component; the Perron vector $\pi$ is computed by power
 iteration with a small PageRank-style teleportation (damping $\alpha = 0.01$),
-which keeps the stationary distribution well-posed on periodic chains. A DAG has
-no SCC of size $\ge 2$, so the directed signal is deliberately \emph{undefined}
-there --- which is itself a meaningful answer: acyclic flows carry no direction
-to preserve and are handed to the lattice / reachability layers instead.
+which keeps the stationary distribution well-posed on periodic chains. This
+operator requires \emph{recurrent} (strongly connected) structure; on a DAG it
+yields no informative signal. A DAG certainly has direction --- its causality is
+simply delegated to the directed taint/reachability analysis (and, for homology,
+to GLMY path homology, \S11) rather than to a stationary-distribution operator,
+which cannot represent it without additional structure.
 \emph{Implemented:} GLMY directed path homology $H_0,H_1$
 (Grigor'yan--Lin--Muranov--Yau), which changes the verdict versus the
 symmetrized homology (\S11).
@@ -358,7 +386,7 @@ chokepoint signal; entropy-regularized (Sinkhorn) transport is implemented as th
 fast alternative to the exact LP. \emph{Open:} adaptive regularization
 schedules for very large graphs.
 
-\textbf{C4 -- Operationalizing L4 (naturality).} A constructive rule is
+\textbf{C4 -- Operationalizing H4 (naturality).} A constructive rule is
 required. Let \texttt{auth} edges $E_A$ mark privilege boundaries. Define the
 authorization functor $F$ to label a node by whether it is reachable \emph{behind}
 an auth edge. Then a taint flow $s \to^{*} k$ \emph{violates naturality} iff its
@@ -482,8 +510,34 @@ high-degree hubs, which are \emph{not} the target sinks). Per the mapping-laws
 program (§4/§6), this is a publishable \emph{negative} result: on OWASP
 Benchmark, \textbf{the geometric and topological priors do not survive beyond
 taint}, which is why MANIFOLD's value lies in the formal layer (verification),
-not in the geometric prior. L1, L2 and L5 are therefore reported as \emph{not
+not in the geometric prior. H1, H2 and H5 are therefore reported as \emph{not
 supported} on this corpus.
+
+\noindent\textbf{Paired test and global pool.} The difference taint\,$-$\,field is
+$+0.0225$ (MRR), 95\% bootstrap CI $[+0.0157,+0.0294]$, permutation $p=0.000$:
+taint significantly dominates. To also measure the real analyst situation (safe
+and vulnerable candidates competing in one queue), we pooled \emph{every} sink
+candidate over all 1698 taint-category cases and ranked globally:
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Global ranking & AP (PR-AUC) & P@10 & R@10 & queries to 90\% recall \\
+\midrule
+DFS (source order) & 0.286 & 0.2 & 0.002 & 3596 \\
+raw taint & \textbf{0.489} & 0.6 & 0.006 & \textbf{2080} \\
+$V_{\text{prior}}$ (structural) & 0.434 & \textbf{0.8} & \textbf{0.008} & 3207 \\
+random & 0.216 & 0.2 & 0.002 & 4176 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The picture is nuanced: the structural field is best at the extreme top
+($P@10=0.8$ vs.\ $0.6$) but has lower average precision and needs more queries to
+reach 90\% recall. So the geometric/topological priors help only marginally at
+very small budgets and hurt on average --- a sharper, still negative, version of
+the H1/H2/H5 verdict.
 
 \input{figs/oracle}
 
@@ -544,7 +598,12 @@ $J = \text{TPR} - \text{FPR}$ (the \emph{Benchmark Accuracy Score}, i.e.\ TPR
 minus FPR). Table~\ref{tab:cmp}
 places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
 \emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; both
-MANIFOLD rows are our \emph{measured} results.
+MANIFOLD rows are our \emph{measured} results. \textbf{Caveat:} the external
+figures are not re-executed here and may use different aggregation conventions
+(some are macro-averages per CWE, others micro or per-rule), so the mixed
+precision/F1 columns are \emph{not} directly comparable across rows; only the
+TPR/FPR ordering should be read, and a uniform re-execution of CodeQL/SonarQube
+under one protocol is required before any head-to-head claim.
 
 \begin{table}[h]
 \centering
@@ -588,10 +647,13 @@ string semantics; sanitizers as contracts) that confirms or refutes each taint
 flow and emits a concrete \emph{witness}. Measured on the seven taint categories
 (1698 cases) it reproduces the adapter exactly ($P=0.549$, $R=0.834$,
 $\mathrm{F1}=0.662$, $J=+0.057$) while adding per-finding witnesses. The honest
-conclusion: \textbf{the formal layer adds proof, not precision, on this
-benchmark} --- the residual false positives are adversarial/definitional
-(debatable parameterized-query cases), not spurious symbolic paths. Catching them
-requires modelling the benchmark's own semantics, not stronger SMT.
+conclusion: \textbf{the formal layer adds machine-checkable witnesses under the
+\emph{modeled} semantics, not precision, on this benchmark} --- a witness proves
+satisfiability inside the model (which abstracts library summaries and framework
+behaviour), not end-to-end exploitability of the real program. The residual false
+positives are adversarial/definitional (debatable parameterized-query cases), not
+spurious symbolic paths; catching them requires modelling the benchmark's own
+semantics, not stronger SMT.
 
 \subsection{Cross-corpus transfer (Juliet)}
 To test transferability we ran the OWASP-tuned adapter on the \emph{Juliet Java}
@@ -690,6 +752,14 @@ substrate for future ELF/PE benchmarks from SARD.
 \item F.~Chung, \emph{Laplacians and the Cheeger inequality for directed graphs}, 2005.
 \item Grigor'yan, Lin, Muranov, Yau, \emph{Homotopy theory for digraphs}, 2012.
 \item M.~Cuturi, \emph{Sinkhorn distances: lightspeed computation of optimal transport}, 2013.
+\item R.~Forman, \emph{Bochner's method for cell complexes and combinatorial Ricci curvature}, 2003.
+\item L.~de~Moura \& N.~Bj\o rner, \emph{Z3: An efficient SMT solver}, 2008.
+\item Y.~Shoshitaishvili et al., \emph{SoK: (State of) The Art of War: Offensive Techniques in Binary Analysis (angr)}, 2016.
+\item OWASP Foundation, \emph{OWASP Benchmark v1.2}, 2016--2024.
+\item NIST, \emph{Software Assurance Reference Dataset (SARD) / Juliet Test Suite}, 2017.
+\item BerriAI, \emph{LiteLLM: a unified interface to 100+ LLMs}, 2023--2024.
+\item SonarSource, \emph{SonarQube} (Community Edition, SonarJava security rules).
+\item GitHub, \emph{CodeQL} and the \texttt{java-security-extended} query suite.
 \end{thebibliography}
 
 \end{document}

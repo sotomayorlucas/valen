@@ -318,6 +318,11 @@ function renderExperiments(R){
       s+=`<text x="${mm.l+w+6}" y="${y+12}" fill="#8b949e" font-size="11">${v.toFixed(3)}</text>`;});
     svg.innerHTML=s;})();
   $("#oracle-table").innerHTML=table(Object.keys(m).map(k=>[k,m[k].mrr,m[k]["recall@1"],m[k].mean_rank,m[k]["ndcg@5"]]),["ranking","MRR","R@1","mean rank","NDCG@5"]);
+  const pt=m.taint_vs_field;
+  const g=o.global||{};
+  const grows=Object.keys(g).map(k=>[k,g[k].average_precision,g[k]["precision@10"],g[k]["recall@10"],g[k].queries_to_90_recall]);
+  $("#oracle-table").innerHTML+= (pt?`<div class="small" style="margin:8px 0">paired test taint−field: ${pt.mean_diff>=0?'+':''}${pt.mean_diff.toFixed(4)} CI95=[${pt.ci95[0].toFixed(4)}, ${pt.ci95[1].toFixed(4)}] p=${pt.p_value}</div>`:"")
+    + (grows.length?`<h3 style="font-size:12px;color:#8b949e">global pool (all candidates)</h3>`+table(grows,["ranking","AP","P@10","R@10","queries@90%recall"]):"");
   const ow=R.owasp||{};
   function block(t,obj){if(!obj)return "";const rows=Object.keys(obj).filter(k=>k!=="overall").sort().map(k=>{const v=obj[k];const fpr=v.fp/(v.fp+v.tn||1);return[k,v.tp,v.fp,v.fn,v.tn,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3),(v.recall-fpr).toFixed(3)];});
     const ov=obj.overall,fpr=ov.fp/(ov.fp+ov.tn||1);rows.push(["<b>overall</b>",ov.tp,ov.fp,ov.fn,ov.tn,ov.precision.toFixed(3),ov.recall.toFixed(3),ov.f1.toFixed(3),(ov.recall-fpr).toFixed(3)]);

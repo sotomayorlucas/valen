@@ -9,11 +9,18 @@ In the current prototype the weights are uniform (``alpha_i = 1/N``).
 from __future__ import annotations
 
 import math as _math
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from ..ir import EdgeKind, Graph, NodeKind
 
 _SIGNAL_KEYS = ("taint", "spectral", "topological", "geometric", "formal")
+
+#: Signals computable *before* formal verification (cheap). `V_prior` fuses only
+#: these, so the field that decides what to verify never depends on verification.
+PRIOR_SIGNALS = ("taint", "spectral", "topological", "geometric")
+#: `V_post` additionally consumes formal (Z3) results; it is for re-embedding and
+#: post-hoc analysis, never for the pre-verification ranking.
+POST_SIGNALS = PRIOR_SIGNALS + ("formal",)
 
 
 def _normalize(scores: Dict[str, float]) -> Dict[str, float]:
@@ -86,21 +93,35 @@ def vulnerability_field(
     math: Optional[Dict[str, Any]] = None,
     findings: Optional[List[Any]] = None,
     weights: Optional[Dict[str, float]] = None,
+    signals: Sequence[str] = PRIOR_SIGNALS,
 ) -> Dict[str, float]:
-    """Compute V(x) for every node (raw fused score in [0, 1]).
+    """Compute the field for every node (raw fused score in [0, 1]).
 
-    ``weights`` maps a signal name to ``alpha_i``; by default the weights are
-    uniform (``alpha_i = 1/N`` over the available signals).
+    By default this is ``V_prior`` (cheap signals only, *excluding* the formal
+    signal, so the pre-verification ranking is not circular). Pass
+    ``signals=POST_SIGNALS`` for ``V_post``. ``weights`` maps a signal name to
+    ``alpha_i``; by default the weights are uniform over the chosen signals.
     """
-    signals = signal_fields(graph, math=math, findings=findings)
+    all_signals = signal_fields(graph, math=math, findings=findings)
+    keys = [k for k in signals if k in all_signals]
     node_ids = [n.id for n in graph.nodes]
-    weights = weights or {k: 1.0 / len(signals) for k in signals}
+    weights = weights or {k: 1.0 / len(keys) for k in keys}
 
     fused = {nid: 0.0 for nid in node_ids}
-    for k in signals:
+    for k in keys:
         for nid in node_ids:
-            fused[nid] += weights.get(k, 0.0) * signals[k][nid]
+            fused[nid] += weights.get(k, 0.0) * all_signals[k][nid]
     return fused
+
+
+def post_field(
+    graph: Graph,
+    math: Optional[Dict[str, Any]] = None,
+    findings: Optional[List[Any]] = None,
+    weights: Optional[Dict[str, float]] = None,
+) -> Dict[str, float]:
+    """``V_post``: the field including the formal (Z3) signal."""
+    return vulnerability_field(graph, math=math, findings=findings, weights=weights, signals=POST_SIGNALS)
 
 
 def probability_field(fused: Dict[str, float]) -> Dict[str, float]:

@@ -24,28 +24,39 @@
 \newcommand{\catProg}{\mathbf{Prog}}
 \newcommand{\catAuth}{\mathbf{Auth}}
 
-\title{\bfseries MANIFOLD\\[2mm]\Large Un Motor Matemático para Mapear Vulnerabilidades}
+\title{\bfseries ¿Aportan información las invariantes geométricas de los\\ grafos de programa por encima del análisis semántico clásico?\\[2mm]\Large MANIFOLD: un estudio falsable sobre OWASP Benchmark~1.2}
 \author{Proyecto MANIFOLD}
-\date{Whitepaper v0.1 --- borrador de trabajo, no revisado por pares}
+\date{Borrador de trabajo v0.4 --- no revisado por pares}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent MANIFOLD trata un artefacto de software no como un conjunto de reglas
-a emparejar, sino como un \emph{objeto matemático}: un grafo tipado y ponderado
-enriquecido con estructura \emph{algebraica}, \emph{espectral},
-\emph{topológica} y \emph{geométrica}. Sobre ese objeto se computa un campo
-escalar de \textbf{potencial de vulnerabilidad} $V(x)$, que hace emerger las
-regiones anómalas como \emph{rasgos} geométricos / topológicos / espectrales en
-lugar de coincidencias literales de cadenas. Un \textbf{agente LLM autónomo}
-navega el ``manifold'' resultante, formula hipótesis sobre esas regiones y
-despacha \textbf{verificadores formales} (SMT, ejecución simbólica,
-interpretación abstracta) que confirman o refutan cada hipótesis --- cerrando el
-ciclo entre intuición estadística y prueba matemática. Este documento define la
-representación intermedia, formaliza cada capa matemática, enuncia las leyes de
-mapeo que conectan rasgos matemáticos con clases de vulnerabilidad, y especifica
-la arquitectura del agente y la hoja de ruta.
+\noindent Los pipelines de análisis estático suelen tener el cuello de botella no
+en \emph{detectar} sinks sino en \emph{decidir cuál verificar}. Planteamos una
+pregunta deliberadamente falsable: \emph{¿aportan las invariantes espectrales,
+topológicas y geométricas de los grafos de programa información sobre el sink
+vulnerable más allá del análisis semántico clásico (taint)?} MANIFOLD es nuestro
+instrumento: convierte un artefacto en un grafo tipado (la IR), computa un campo
+\emph{pre-verificación} $V_{\text{prior}}(x)$ usando solo señales baratas
+(excluyendo deliberadamente la señal formal, para evitar circularidad), y deja
+que un ciclo neuro-simbólico actúe sobre las regiones priorizadas. Reportamos un
+resultado \emph{negativo} riguroso. Sobre OWASP Benchmark~1.2 (2740 casos), el
+taint crudo ordena mejor el sink vulnerable (MRR $0.894$, AUC $0.895$) y supera
+al campo fusionado con $p=0.000$ (permutación pareada); las señales
+\emph{espectral} ($0.496$) y \emph{topológica} ($0.500$) están en el azar y la
+\emph{curvatura de Forman--Ricci} está \emph{por debajo} ($0.376$). En una cola
+global de todos los candidatos, el campo estructural ayuda solo en el extremo
+superior ($P@10=0.8$ vs.\ $0.6$) pero pierde en precisión media. Las hipótesis
+H1/H2/H5 quedan por tanto \emph{no soportadas}. Contribuimos: (1) un arnés de
+oráculo de priorización (MRR, R@1, NDCG@$k$, AP/P@$k$/R@$k$ global,
+consultas-para-90\%-recall, test de permutación pareada); (2) un pipeline Java
+end-to-end reproducible (SAST + verificador Z3 que produce \emph{witnesses
+verificables por máquina bajo la semántica modelada}); (3) validación externa en
+la suite Juliet y en commits de fix de CVEs reales, que localiza el cuello de
+botella real en el taint \emph{interprocedural} y no en más geometría; y (4) una
+mecanización en Lean~4 de la solidez de la abstracción de taint y de la
+invariante de autorización.
 \end{abstract}
 
 \section{Motivación}
@@ -124,6 +135,12 @@ web, agente LLM) debe producir un grafo de programa; cada análisis lo consume.
 El esquema es agnóstico al lenguaje y serializable a JSON (las capas Python y
 Rust comparten el mismo esquema).
 
+\emph{Nota sobre el nombre.} Pese al nombre en clave, el objeto es un
+\emph{espacio de análisis de programas}: un grafo tipado junto con complejos,
+embeddings y un campo escalar derivados. \emph{No} afirmamos que sea una variedad
+matemática (no hay atlas, cartas ni estructura local euclídea); ``manifold'' se
+usa informalmente, como en ``data manifold''.
+
 \section{Capas matemáticas}
 Para cada capa fijamos un subgrafo por tipo de arista $\tau_E$, y luego
 computamos estructura.
@@ -181,11 +198,14 @@ $(\alpha, \gamma)$ con la semántica recolectora concreta; la solidez se prueba 
 son puntos de programa $v \in V$ (con un estado abstracto), cuyos morfismos son
 aristas dirigidas y cuya composición es la concatenación de caminos. El
 \emph{funtor de autorización} $F : \catProg \to \catAuth$ mapea cada punto a un
-nivel de privilegio en el poset $\catAuth$ (p.~ej.\ \texttt{no confiable <= usuario <= admin}). Un \emph{sanitizador} es
-un endomorfismo $s : v \to v$ que mapea toda etiqueta a limpio.
-\textbf{Ley de naturalidad:} un flujo de taint es un morfismo cuya imagen bajo el
-funtor de taint no es vacía; es una \emph{violación} cuando $F$ no conmuta en una
-arista \texttt{auth}. Esto se precisa y prueba en \S4.6.
+nivel de privilegio en el poset $\catAuth$ (p.~ej.\ \texttt{no confiable <=
+usuario <= admin}); una arista $e=(u,v)$ es \emph{arista auth} si y solo si
+$F(u) < F(v)$. Un \emph{sanitizador} es un endomorfismo $s : v \to v$ que mapea
+toda etiqueta a limpio. \textbf{Invariante de autorización:} un flujo de taint es
+un morfismo con imagen de etiquetas no vacía; es una \emph{violación} cuando su
+camino cruza una arista auth y ningún sanitizador del segmento de cruce restaura
+la invariante. Esto se enuncia con precisión, sobre una base de tipos coherente, y
+se mecaniza en \S4.6.
 
 \subsection{Capa formal (ejecución simbólica y model checking)}
 La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
@@ -206,38 +226,47 @@ $\alpha(\mathcal{C}(v)) \sqsubseteq A(v)$ y
 $\mathcal{C}(v) \subseteq \gamma(A(v))$.
 
 \smallskip
-\noindent\textbf{Proposición 1 (solidez del retículo de taint).} \emph{Si
-$A(v) = \bot$ entonces ninguna ejecución mancha un valor en $v$.}
+\noindent\textbf{Proposición 1 (solidez de la abstracción de taint).} \emph{Si
+el análisis abstracto reporta una variable limpia, ninguna ejecución concreta la
+mancha.}
 
-\noindent\emph{Demostración.} Por inducción en la longitud de la secuencia de
-transiciones desde un punto de entrada hasta $v$. Base: las variables de entrada
-están limpias salvo que se ejecute una fuente, en cuyo caso $A \ge \bot$. Paso:
-cada función de transferencia es monótona y sobre-aproxima su contraparte
-concreta (las asignaciones propagan el supremo de las etiquetas de los operandos,
-los sanitizadores mapean a $\bot$, los joins acotan superiormente el merge de
-ramas). Por tanto $A$ domina a $\alpha \circ \mathcal{C}$, y $A(v) = \bot$ fuerza
-$\mathcal{C}(v) \subseteq \gamma(\bot) = \{\text{limpio}\}$. $\square$
+\noindent\emph{Esquema de demostración.} Por inducción en la secuencia de
+transiciones, con la invariante ``taint concreto $\subseteq$ taint abstracto'' en
+cada estado. La base vale para las variables de entrada; el paso vale porque cada
+función de transferencia es monótona y sobre-aproxima su contraparte concreta (las
+asignaciones unen las etiquetas de los operandos, los sanitizadores mapean a
+limpio, los joins acotan superiormente el merge de ramas). La garantía es
+condicional a que el \emph{summary} del sanitizador corresponda a su semántica
+real: un summary incorrecto (que afirme limpiar lo que no limpia) rompe la
+solidez. Este es exactamente el enunciado mecanizado \texttt{prop1\_soundness}
+(\S4.6), probado para una abstracción booleana concreta; extenderlo al retículo
+completo de etiquetas es directo pero se asume aquí.
 
 \smallskip
-\noindent\textbf{Proposición 2 (caracterización de la violación de
-naturalidad).} \emph{Sea $p = e_1 \circ \dots \circ e_n : s \to k$ un flujo de
-taint, $E_A$ el conjunto de aristas \texttt{auth}, y $\mathrm{San}(p)$ los
-endomorfismos sanitizadores en $p$. Entonces $F$ no conmuta en $p$ (violación de
-naturalidad) si y solo si $p \cap E_A \neq \emptyset$ y
-$\mathrm{San}(p) = \emptyset$.}
+\noindent\textbf{Proposición 2 (invariante de autorización / violación de
+naturalidad).} \emph{Sea $F : \catProg \to \catAuth$ el funtor de autorización al
+poset $(\mathbb{N}, \le)$, y sea $p = e_1 \circ \dots \circ e_n : s \to k$ un
+camino. Denotemos $\mathrm{Auth}(p)$ las aristas auth de $p$ y
+$\mathrm{San}(p)$ los endomorfismos sanitizadores en $p$. Entonces: (i) si
+$\mathrm{Auth}(p) = \emptyset$ entonces $F(k) \le F(s)$ (sin escalada de
+privilegio); (ii) si $\mathrm{Auth}(p) \neq \emptyset$ y ningún sanitizador cubre
+el segmento de cruce, el flujo atestigua un alcance a $k$ con privilegio escalado
+y controlado por el atacante --- una violación de autorización.}
 
-\noindent\emph{Demostración.} $(\Leftarrow)$ Sea $e_i \in E_A$. Como $e_i$
-guarda una frontera de privilegio, $F$ asigna a su destino un nivel estrictamente
-mayor que a su origen; componer con el morfismo de taint da
-$F(p)\circ \eta_s \neq \eta_k \circ T(p)$ para una etiqueta que cruza $e_i$, así
-que el cuadrado no conmuta. No hay sanitizador que restaure la limpieza, así que la
-falla es irreparable. $(\Rightarrow)$ Si $p \cap E_A = \emptyset$ toda arista
-preserva el nivel y el cuadrado conmuta; si hay un sanitizador, por definición
-mapea toda etiqueta a limpio, así que la etiqueta se mata y el cuadrado conmuta. $\square$
+\noindent\emph{Demostración.} (i) Cada arista no-auth cumple
+$\neg(F(u) < F(v))$, es decir $F(v) \le F(u)$, así que $F$ no crece a lo largo de
+$p$; por transitividad $F(k) \le F(s)$. Este es el enunciado mecanizado
+\texttt{no\_auth\_bounded} (\S4.6). (ii) Una arista auth eleva estrictamente $F$;
+sin un sanitizador que preserve la limpieza en el segmento de cruce, la etiqueta
+sobrevive, así que el alcance compuesto no preserva la política. La dirección
+``solo si'' de la formulación anterior es \emph{de definición}, no un teorema, y
+aquí se presenta como invariante en lugar de como transformación natural (la
+expresión previa $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ estaba mal tipada y se
+retira). $\square$
 
-\noindent La Proposición 2 es exactamente la regla operacional implementada como
-L4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
-violación de naturalidad. Ambas proposiciones están \emph{mecanizadas} en Lean~4
+\noindent La invariante (ii) es exactamente la regla operacional implementada como
+H4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
+violación de autorización. Ambas proposiciones están \emph{mecanizadas} en Lean~4
 (solo core, sin Mathlib) en \texttt{formal/Manifold.lean}:
 \texttt{prop1\_soundness} prueba la solidez de la abstracción booleana de taint
 frente a la semántica recolectora de etiquetas (\S3 allí), y
@@ -274,28 +303,35 @@ confirme.}
 \[
 V(x) = \sigma\!\Big(\textstyle\sum_i \alpha_i \, s_i(x)\Big),
 \]
-donde $s_i$ son las señales normalizadas de cada capa (anomalía espectral,
-outlier de persistencia, curvatura, altura de retículo, alcanzabilidad formal),
-$\alpha_i$ son pesos y $\sigma$ una compresión logística. $V$ es un
-ranking, un filtro de Mapper y un campo de costos para la navegación. En el
-prototipo actual los pesos son \emph{uniformes} ($\alpha_i = 1/N$ sobre las
+donde $s_i$ son las señales normalizadas de cada capa y $\alpha_i$ son pesos.
+Para evitar una \emph{circularidad} --- el campo que decide \emph{qué verificar}
+no debe depender de la verificación --- distinguimos dos campos:
+\begin{itemize}[leftmargin=1.5em]
+  \item $V_{\text{prior}}(x)$ fusiona solo señales computables \emph{antes} de
+        SMT (\texttt{taint}, espectral, topológica, geométrica). Es el campo usado
+        para el ranking y para el experimento de priorización (\S12.1).
+  \item $V_{\text{post}}(x)$ consume además la señal \texttt{formal} (Z3) y se usa
+        solo para re-embedding / análisis post-hoc; nunca alimenta el ranking
+        pre-verificación.
+\end{itemize}
+En el prototipo actual los pesos son \emph{uniformes} ($\alpha_i = 1/N$ sobre las
 señales disponibles) y $V$ se reporta como el puntaje fusionado crudo; calibrar
 $\alpha_i$ (inicialización balanceada $\to$ ajuste empírico sobre los
 micro-benchmarks $\to$ un clasificador logístico sobre trazas etiquetadas) es
 trabajo futuro.
 
-\section{Leyes de mapeo}
+\section{Hipótesis de mapeo}
 \begin{center}
 \begin{tabular}{cll}
 \toprule
 \# & Ley & Clase de vulnerabilidad \\
 \midrule
-L1 & Cuello de botella ($\kappa \ll 0$) & escalada de privilegios, bypass de auth \\
-L2 & Ciclo ($H_1$ persistente) & reentrancia, recursión infinita \\
-L3 & Corte de confianza (corte de Fiedler) & inyección que cruza la frontera de confianza \\
-L4 & Ruptura de naturalidad & violación arbitraria de taint \\
-L5 & Outlier de persistencia & rasgo real vs.\ espurio \\
-L6 & Alcanzabilidad ($\mathrm{SAT}(\phi_{\text{malo}})$) & exploit concreto \\
+H1 & Cuello de botella ($\kappa \ll 0$) & escalada de privilegios, bypass de auth \\
+H2 & Ciclo ($H_1$ persistente) & reentrancia, recursión infinita \\
+H3 & Corte de confianza (corte de Fiedler) & inyección que cruza la frontera de confianza \\
+H4 & Ruptura de naturalidad & violación arbitraria de taint \\
+H5 & Outlier de persistencia & rasgo real vs.\ espurio \\
+H6 & Alcanzabilidad ($\mathrm{SAT}(\phi_{\text{malo}})$) & exploit concreto \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -317,7 +353,7 @@ verificador simbólico Z3 devuelve \texttt{SAT} con un witness concreto (p.~ej.\
 depende del símbolo controlado por el atacante. La variante parametrizada
 \texttt{execute(query, (param,))} se excluye correctamente, y un decorador
 \texttt{@login\_required} en la función contenedora eleva el hallazgo a una
-violación de naturalidad L4 (un flujo de taint que cruza una arista
+violación de naturalidad H4 (un flujo de taint que cruza una arista
 \texttt{auth}).
 
 \section{El agente LLM autónomo}
@@ -352,11 +388,12 @@ dirección del taint. \emph{Mitigación:} el prototipo implementa el Laplaciano
 dirigido de Chung restringido a la componente fuertemente conexa más grande; el
 vector de Perron $\pi$ se calcula por iteración de potencia con una pequeña
 teletransportación estilo PageRank (amortiguación $\alpha = 0.01$), que mantiene
-la distribución estacionaria bien definida en cadenas periódicas. Un DAG no
-tiene SCC de tamaño $\ge 2$, así que la señal dirigida queda deliberadamente
-\emph{indefinida} ahí --- lo cual es en sí mismo una respuesta significativa: los
-flujos acíclicos no tienen dirección que preservar y se delegan a las capas de
-retículos / alcanzabilidad. \emph{Implementado:} homología de caminos dirigida
+la distribución estacionaria bien definida en cadenas periódicas. Este operador
+requiere estructura \emph{recurrente} (fuertemente conexa); sobre un DAG no
+aporta señal informativa. Un DAG sí tiene dirección --- su causalidad se delega
+al análisis dirigido de taint/alcanzabilidad (y, para homología, a la homología
+de caminos GLMY, \S11) en lugar de a un operador basado en distribución
+estacionaria, que no puede representarla sin estructura adicional. \emph{Implementado:} homología de caminos dirigida
 GLMY $H_0,H_1$ (Grigor'yan--Lin--Muranov--Yau), que cambia el veredicto frente a
 la homología simetrizada (\S11).
 
@@ -368,7 +405,7 @@ defecto; el transporte regularizado por entropía (Sinkhorn) está implementado
 como la alternativa rápida al PL exacto. \emph{Abierto:} esquemas adaptativos de
 regularización para grafos muy grandes.
 
-\textbf{C4 -- Operacionalizar L4 (naturalidad).} Se requiere una regla
+\textbf{C4 -- Operacionalizar H4 (naturalidad).} Se requiere una regla
 constructiva. Sean las aristas \texttt{auth} $E_A$ las que marcan fronteras de
 privilegio. Definamos el funtor de autorización $F$ como la etiqueta de si un
 nodo es alcanzable \emph{detrás} de una arista auth. Entonces un flujo de taint
@@ -498,8 +535,35 @@ grado, que \emph{no} son los sinks objetivo). Según el programa de leyes de
 mapeo (§4/§6), este es un resultado \emph{negativo} publicable: sobre OWASP
 Benchmark, \textbf{los priors geométrico y topológico no sobreviven más allá del
 taint}, por lo que el valor de MANIFOLD está en la capa formal (verificación),
-no en el prior geométrico. L1, L2 y L5 se reportan por tanto como \emph{no
+no en el prior geométrico. H1, H2 y H5 se reportan por tanto como \emph{no
 soportadas} en este corpus.
+
+\noindent\textbf{Test pareado y cola global.} La diferencia taint\,$-$\,campo es
+$+0.0225$ (MRR), IC bootstrap 95\% $[+0.0157,+0.0294]$, permutación $p=0.000$:
+el taint domina significativamente. Para medir también la situación real del
+analista (candidatos seguros y vulnerables compitiendo en una única cola),
+agrupamos \emph{todos} los sinks de los 1698 casos de categorías de taint y los
+ordenamos globalmente:
+
+\begin{center}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Ordenamiento global & AP (PR-AUC) & P@10 & R@10 & consultas a 90\% recall \\
+\midrule
+DFS (orden de fuente) & 0.286 & 0.2 & 0.002 & 3596 \\
+taint crudo & \textbf{0.489} & 0.6 & 0.006 & \textbf{2080} \\
+$V_{\text{prior}}$ (estructural) & 0.434 & \textbf{0.8} & \textbf{0.008} & 3207 \\
+aleatorio & 0.216 & 0.2 & 0.002 & 4176 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+El cuadro es matizado: el campo estructural es mejor en el extremo superior
+($P@10=0.8$ vs.\ $0.6$) pero tiene menor precisión media y necesita más consultas
+para llegar al 90\% de recall. Es decir, los priors geométrico/topológico ayudan
+solo marginalmente con presupuestos muy pequeños y perjudican en promedio --- una
+versión más fina, y aún negativa, del veredicto H1/H2/H5.
 
 \input{figs/oracle}
 
@@ -563,7 +627,12 @@ menos FPR). La
 Tabla~\ref{tab:cmp-es} sitúa a MANIFOLD frente a dos herramientas ampliamente
 desplegadas. Las filas de SonarQube y CodeQL son números \emph{reportados} en
 evaluaciones públicas de OWASP~Benchmark~1.2; ambas filas de MANIFOLD son
-resultados \emph{medidos}.
+resultados \emph{medidos}. \textbf{Advertencia:} las cifras externas no se
+re-ejecutan aquí y pueden usar convenciones de agregación distintas (algunas son
+promedios macro por CWE, otras micro o por regla), de modo que las columnas de
+precisión/F1 \emph{no} son directamente comparables entre filas; solo debe leerse
+el orden TPR/FPR, y se requiere una re-ejecución uniforme de CodeQL/SonarQube bajo
+un mismo protocolo antes de cualquier afirmación comparativa.
 
 \begin{table}[h]
 \centering
@@ -609,10 +678,14 @@ semántica de strings; sanitizadores como contratos) que confirma o refuta cada
 flujo de taint y emite un \emph{witness} concreto. Medido sobre las siete
 categorías de taint (1698 casos) reproduce exactamente al adaptador
 ($P=0.549$, $R=0.834$, $\mathrm{F1}=0.662$, $J=+0.057$), añadiendo witnesses por
-hallazgo. Conclusión honesta: \textbf{la capa formal aporta prueba, no precisión,
-en este benchmark} --- los falsos positivos residuales son adversariales/de
-definición (casos discutibles de query parametrizada), no caminos simbólicos
-espurios. Atraparlos requiere modelar la semántica propia del benchmark, no un
+hallazgo. Conclusión honesta: \textbf{la capa formal aporta witnesses
+verificables por máquina bajo la semántica \emph{modelada}, no precisión, en este
+benchmark} --- un witness prueba satisfacibilidad dentro del modelo (que abstrae
+summaries de librerías y comportamiento de frameworks), no explotabilidad
+end-to-end del programa real. Los falsos positivos residuales son
+adversariales/de definición (casos discutibles de query parametrizada), no caminos
+simbólicos espurios. Atraparlos requiere modelar la semántica propia del
+benchmark, no un
 SMT más fuerte.
 
 \subsection{Transferencia entre corpus (Juliet)}
@@ -718,6 +791,14 @@ ELF/PE de SARD.
 \item F.~Chung, \emph{Laplacians and the Cheeger inequality for directed graphs}, 2005.
 \item Grigor'yan, Lin, Muranov, Yau, \emph{Homotopy theory for digraphs}, 2012.
 \item M.~Cuturi, \emph{Sinkhorn distances: lightspeed computation of optimal transport}, 2013.
+\item R.~Forman, \emph{Bochner's method for cell complexes and combinatorial Ricci curvature}, 2003.
+\item L.~de~Moura \& N.~Bj\o rner, \emph{Z3: An efficient SMT solver}, 2008.
+\item Y.~Shoshitaishvili et al., \emph{SoK ... (angr)}, 2016.
+\item OWASP Foundation, \emph{OWASP Benchmark v1.2}, 2016--2024.
+\item NIST, \emph{SARD / Juliet Test Suite}, 2017.
+\item BerriAI, \emph{LiteLLM}, 2023--2024.
+\item SonarSource, \emph{SonarQube} (Community Edition, reglas SonarJava).
+\item GitHub, \emph{CodeQL} y la suite \texttt{java-security-extended}.
 \end{thebibliography}
 
 \end{document}

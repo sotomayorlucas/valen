@@ -1,6 +1,14 @@
 """Tests for the prioritization-oracle experiment."""
 
-from manifold.oracle import analyze_case, cost_curve, order, rank_of_target
+from manifold.oracle import (
+    Candidate,
+    analyze_case,
+    cost_curve,
+    global_metrics,
+    order,
+    paired_permutation,
+    rank_of_target,
+)
 
 CODE = """
 class T {
@@ -39,3 +47,21 @@ def test_cost_curve_is_monotone_and_bounded():
     assert curve == sorted(curve)
     assert curve[-1] == 1.0
     assert curve[0] == 2 / 5
+
+
+def test_paired_permutation_detects_consistent_difference():
+    a = [1.0] * 8
+    b = [0.5] * 8
+    r = paired_permutation(a, b, iters=2000)
+    assert r["mean_diff"] > 0
+    assert r["p_value"] < 0.05
+
+
+def test_global_metrics_rewards_taint_first_ordering():
+    c_vuln = [Candidate(1, "exec", "sql", True, 0.9), Candidate(2, "println", "xss", False, 0.0)]
+    c_safe = [Candidate(1, "exec", "sql", True, 0.5)]
+    entries = [(c_vuln, "sql", True), (c_safe, "sql", False)]
+    taint = global_metrics(entries, method="taint", ks=(1,))
+    rand = global_metrics(entries, method="random", ks=(1,))
+    assert taint["average_precision"] >= rand["average_precision"]
+    assert taint["relevant"] == 1

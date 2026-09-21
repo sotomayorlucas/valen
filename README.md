@@ -1,24 +1,34 @@
 # MANIFOLD
 
-Un motor matemático para **mapear vulnerabilidades** de forma intuitiva y
-**asistir a un agente LLM autónomo** a encontrarlas y verificarlas.
+**¿Aportan información las invariantes geométricas/topológicas de los grafos de
+programa por encima del análisis semántico clásico (taint)?** MANIFOLD es el
+instrumento para responderlo de forma **falsable**: convierte un artefacto en un
+grafo tipado (IR), computa un campo *pre-verificación* `V_prior(x)` con señales
+baratas, y deja que un ciclo neuro-simbólico (LLM + Z3) actúe sobre las regiones
+priorizadas.
 
-A mathematical engine for **mapping vulnerabilities** intuitively and **assisting
-an autonomous LLM agent** to find and verify them.
+**Do geometric/topological invariants of program graphs add information over
+classic semantic analysis (taint)?** MANIFOLD is the instrument to answer this
+**falsifiably**: it turns an artifact into a typed graph (IR), computes a
+*pre-verification* field `V_prior(x)` from cheap signals, and lets a
+neuro-symbolic loop (LLM + Z3) act on the prioritized regions.
+
+> **Resultado principal (honesto):** en OWASP Benchmark 1.2, el taint crudo
+> ordena mejor el sink vulnerable (MRR 0.894, AUC 0.895) y supera al campo
+> fusionado con **p=0.000**; las señales espectral (AUC 0.496) y topológica
+> (0.500) están en el azar y la curvatura (0.376) por debajo. El campo
+> estructural solo ayuda en el extremo superior de una cola global (P@10 0.8 vs
+> 0.6). Las hipótesis H1/H2/H5 quedan **no soportadas**.
 
 ## Idea central / Core idea
 
 Un artefacto (código fuente, binario, API web, agente LLM) se transforma en un
-**objeto matemático unificado**: un grafo tipado (IR) enriquecido con estructura
-**algebraica, espectral, topológica y geométrica**. Sobre él se computa un campo
-escalar de vulnerabilidad `V(x)`; un agente LLM navega ese "manifold", formula
-hipótesis y las **verifica formalmente** (Z3 / ejecución simbólica / taint).
-
-A target (source code, binary, web API, LLM agent) becomes a unified mathematical
-object: a typed graph (IR) enriched with **algebraic, spectral, topological and
-geometric** structure. A vulnerability scalar field `V(x)` is computed over it;
-an LLM agent navigates that "manifold", hypothesizes, and **formally verifies**
-(Z3 / symbolic execution / taint).
+grafo tipado (IR) enriquecido con estructura **algebraica, espectral, topológica
+y geométrica**. Sobre él se computan dos campos: `V_prior` (señales baratas,
+pre-verificación, sin la señal formal → sin circularidad) y `V_post` (incorpora
+Z3). Un agente LLM navega ese espacio, formula hipótesis y las **verifica
+formalmente** (Z3 / ejecución simbólica / taint), produciendo *witnesses*
+verificables por máquina bajo la semántica modelada.
 
 ## Estado / Status
 
@@ -202,6 +212,11 @@ Resultados del adaptador Java (corpus completo):
 |---|---|---|---|
 | categorías de taint (7, 1698 casos) | 0.549 | 0.834 | 0.662 |
 | todas las categorías (11, 2740 casos) | 0.572 | 0.842 | 0.681 |
+
+**Oráculo (priorización)**: `taint` MRR 0.894 vs campo `V_prior` 0.872; test
+pareado **+0.0225, p=0.000**. **Cola global** (todos seguros+vulnerables): AP
+taint 0.489, `V_prior` 0.434, DFS 0.286, random 0.216; P@10 `V_prior` 0.8 vs
+taint 0.6 (el campo ayuda solo en el extremo superior).
 
 **Verificación Z3 para Java** (`manifold/analysis/java_verifier.py`): con
 `--verify` el verificador simbólico (branches con merge, strings, sanitizadores

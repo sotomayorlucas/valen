@@ -336,6 +336,10 @@ function table(rows, cols){
   const m=o.metrics||{};
   const rows=Object.keys(m).map(k=>[k,m[k].mrr,m[k]["recall@1"],m[k].mean_rank,m[k]["ndcg@5"]]);
   $("#oracle-table").innerHTML=table(rows,["ranking","MRR","R@1","mean rank","NDCG@5"]);
+  const pt=m.taint_vs_field; const g=o.global||{};
+  const grows=Object.keys(g).map(k=>[k,g[k].average_precision,g[k]["precision@10"],g[k].queries_to_90_recall]);
+  $("#oracle-table").innerHTML += (pt?`<div class="small" style="margin:8px 0">paired test taint-field: ${pt.mean_diff.toFixed(4)} p=${pt.p_value}</div>`:"")
+    + (grows.length?`<h3 style="font-size:12px;color:#8b949e">global pool</h3>`+table(grows,["ranking","AP","P@10","queries@90%recall"]):"");
 })();
 
 (function(){
