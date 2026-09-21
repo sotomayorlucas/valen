@@ -14,8 +14,8 @@ Usage (offline is the default; online needs the local LiteLLM proxy):
     python benchmarks/run_llm_ablation.py
     # online:
     set -a; . ~/litellm/.env; set +a
-    MANIFOLD_LLM_MODEL=openai/flash MANIFOLD_LLM_BASE_URL=http://127.0.0.1:4000 \
-    MANIFOLD_LLM_API_KEY=$LITELLM_MASTER_KEY python benchmarks/run_llm_ablation.py
+    VALEN_LLM_MODEL=openai/flash VALEN_LLM_BASE_URL=http://127.0.0.1:4000 \
+    VALEN_LLM_API_KEY=$LITELLM_MASTER_KEY python benchmarks/run_llm_ablation.py
 
 Writes benchmarks/llm_ablation.json.
 """
@@ -31,7 +31,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent.agent import ManifoldAgent
+from agent.agent import ValenAgent
 from agent.llm import LLMClient
 
 CORPUS = ROOT / "examples" / "python" / "ablation"
@@ -57,8 +57,8 @@ def main() -> int:
     ap.add_argument("--out", type=str, default="", help="output JSON path (default benchmarks/llm_ablation.json)")
     args = ap.parse_args()
 
-    live = bool(os.environ.get("MANIFOLD_LLM_MODEL") and os.environ.get("MANIFOLD_LLM_BASE_URL"))
-    print(f"LLM configured: {live}  (model={os.environ.get('MANIFOLD_LLM_MODEL','-')})")
+    live = bool(os.environ.get("VALEN_LLM_MODEL") and os.environ.get("VALEN_LLM_BASE_URL"))
+    print(f"LLM configured: {live}  (model={os.environ.get('VALEN_LLM_MODEL','-')})")
 
     files = sorted(CORPUS.glob("*.py"))
     if args.limit:
@@ -67,8 +67,8 @@ def main() -> int:
     rows = []
     for src in files:
         code = src.read_text()
-        offline = _confirmed(ManifoldAgent(llm=OfflineLLM()).run(code, path=src.name))
-        online_runs = [_confirmed(ManifoldAgent(llm=LLMClient()).run(code, path=src.name))
+        offline = _confirmed(ValenAgent(llm=OfflineLLM()).run(code, path=src.name))
+        online_runs = [_confirmed(ValenAgent(llm=LLMClient()).run(code, path=src.name))
                        for _ in range(args.runs)]
         online = online_runs[0]
 

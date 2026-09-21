@@ -1,5 +1,5 @@
 /-
-  MANIFOLD — mechanized formal core (Lean 4, core only, no Mathlib).
+  VALEN — mechanized formal core (Lean 4, core only, no Mathlib).
 
   Mechanizes the paper's "formal core":
 
@@ -8,10 +8,10 @@
   * Prop. 2 — the authorization invariant: an authorization edge is a
     privilege escalation, and a path with no authorization edges cannot escalate.
 
-  Build:  lean formal/Manifold.lean
+  Build:  lean formal/Valen.lean
 -/
 
-namespace Manifold
+namespace Valen
 
 /-! ## 1. The taint lattice -/
 
@@ -184,4 +184,4 @@ theorem no_auth_bounded (F : Nat → Nat) (a b : Nat) :
       intro h
       exact Nat.le_trans (ih c h.2) (no_auth_no_escalation F a c h.1)
 
-end Manifold
+end Valen

@@ -1,6 +1,6 @@
 """Tests for the OWASP Benchmark runner."""
 
-from manifold.owasp import evaluate, load_expected
+from valen.owasp import evaluate, load_expected
 
 
 def test_load_expected_parses_csv(tmp_path):

@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-from manifold.analysis.math_core import core_binary
-from manifold.analysis.trust import privilege_bridges, trust_analysis
-from manifold.ingest.iam import IAMIgest
+from valen.analysis.math_core import core_binary
+from valen.analysis.trust import privilege_bridges, trust_analysis
+from valen.ingest.iam import IAMIgest
 
 EX = Path(__file__).resolve().parent.parent / "examples" / "iam"
 
@@ -30,7 +30,7 @@ def test_iam_builds_trust_graph():
 
 def test_privilege_bridges_flag_trust_crossing(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     graph = IAMIgest().analyze((EX / "demo.json").read_text()).graph
     bridges = privilege_bridges(graph)
     assert bridges
@@ -42,7 +42,7 @@ def test_privilege_bridges_flag_trust_crossing(binary_available):
 
 def test_trust_analysis_fiedler_surfaces_sensitive_resource(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     graph = IAMIgest().analyze((EX / "demo.json").read_text()).graph
     report = trust_analysis(graph)
     boundary = [b[0] for b in report["fiedler_boundary"]]

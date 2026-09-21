@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.owasp import _TAINT_CATEGORIES, evaluate
+from valen.owasp import _TAINT_CATEGORIES, evaluate
 
 
 def main() -> int:
@@ -33,7 +33,7 @@ def main() -> int:
     out["adapter_taint"] = {k: m.as_dict() for k, m in taint.items()}
 
     if args.verify:
-        from manifold.analysis.java_verifier import verify_java
+        from valen.analysis.java_verifier import verify_java
 
         z3 = evaluate(args.testcode, args.csv, categories=_TAINT_CATEGORIES, detector=lambda c: bool(verify_java(c)))
         out["z3_taint"] = {k: m.as_dict() for k, m in z3.items()}

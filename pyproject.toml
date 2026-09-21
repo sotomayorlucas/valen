@@ -3,7 +3,7 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "manifold"
+name = "valen"
 version = "0.1.0"
 description = "A mathematical engine for mapping vulnerabilities (spectral + topological + algebraic + formal)."
 readme = "README.md"
@@ -26,7 +26,7 @@ angr = [
 ]
 
 [tool.setuptools.packages.find]
-include = ["manifold*"]
+include = ["valen*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

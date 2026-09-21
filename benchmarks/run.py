@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from benchmarks.cases import CASES
-from manifold.analysis.calibration import FEATURE_KEYS, calibrate, calibrated_detector
-from manifold.benchmark import evaluate, evaluate_report, taint_detector, verified_detector
+from valen.analysis.calibration import FEATURE_KEYS, calibrate, calibrated_detector
+from valen.benchmark import evaluate, evaluate_report, taint_detector, verified_detector
 
 
 def main() -> int:

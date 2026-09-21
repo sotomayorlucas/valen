@@ -2,7 +2,7 @@
 
 The field fuses per-layer signals into a node-level score. The per-layer signals
 are exposed separately (``signal_fields``) so the weights ``alpha_i`` can be
-*calibrated* (see ``manifold/analysis/calibration``) against a labeled benchmark.
+*calibrated* (see ``valen/analysis/calibration``) against a labeled benchmark.
 In the current prototype the weights are uniform (``alpha_i = 1/N``).
 """
 

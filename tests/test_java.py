@@ -1,6 +1,6 @@
 """Tests for the Java SAST adapter improvements (found on OWASP Benchmark)."""
 
-from manifold.ingest.java import JavaIngest
+from valen.ingest.java import JavaIngest
 
 
 def _cats(code: str) -> set:

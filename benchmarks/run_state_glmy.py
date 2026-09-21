@@ -27,8 +27,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.analysis.math_core import topology  # noqa: E402
-from manifold.ir import EdgeKind, Graph, NodeKind  # noqa: E402
+from valen.analysis.math_core import topology  # noqa: E402
+from valen.ir import EdgeKind, Graph, NodeKind  # noqa: E402
 
 # name -> (node_count, edges, has_cycle)
 CORPUS = {

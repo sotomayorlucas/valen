@@ -1,11 +1,11 @@
-"""Tests for the MANIFOLD web server."""
+"""Tests for the VALEN web server."""
 
 import json
 import threading
 import urllib.request
 from http.server import ThreadingHTTPServer
 
-from manifold.server import Handler, _analyze, _compare, _example_index, _read_example, _results
+from valen.server import Handler, _analyze, _compare, _example_index, _read_example, _results
 
 
 def test_analyze_python_offline():

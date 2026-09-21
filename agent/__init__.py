@@ -1,4 +1,4 @@
-"""Autonomous LLM agent that navigates the vulnerability manifold.
+"""Autonomous LLM agent that navigates the vulnerability valen.
 
 The agent closes the loop the whitepaper describes:
 
@@ -10,6 +10,6 @@ proposes hypotheses; the formal layer (Z3 / taint / topology) proves or refutes
 them.
 """
 
-from .agent import ManifoldAgent, Report, ReportEntry
+from .agent import ValenAgent, Report, ReportEntry
 
-__all__ = ["ManifoldAgent", "Report", "ReportEntry"]
+__all__ = ["ValenAgent", "Report", "ReportEntry"]

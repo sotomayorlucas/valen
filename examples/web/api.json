@@ -6,7 +6,7 @@
       "get": {
         "operationId": "searchUsers",
         "parameters": [{"name": "q", "in": "query"}],
-        "x-manifold-sinks": ["q"]
+        "x-valen-sinks": ["q"]
       }
     },
     "/admin/users": {
@@ -14,7 +14,7 @@
         "operationId": "listAdminUsers",
         "parameters": [{"name": "filter", "in": "query"}],
         "security": [{"apiKey": []}],
-        "x-manifold-sinks": ["filter"]
+        "x-valen-sinks": ["filter"]
       }
     },
     "/health": {

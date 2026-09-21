@@ -4,14 +4,14 @@ from pathlib import Path
 
 import pytest
 
-from manifold.analysis.math_core import (
+from valen.analysis.math_core import (
     core_binary,
     cycle_ranking,
     fiedler_ranking,
     run_core,
     topology,
 )
-from manifold.ingest.python import PythonIngest
+from valen.ingest.python import PythonIngest
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 
@@ -32,13 +32,13 @@ def binary_available() -> bool:
 
 def test_core_binary_found(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     assert core_binary().exists()
 
 
 def test_reentrancy_call_graph_has_nonzero_fiedler(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     res = _analyze("reentrancy.py")
     result = run_core(res.graph)
     call = result["spectral"]["call"]
@@ -49,7 +49,7 @@ def test_reentrancy_call_graph_has_nonzero_fiedler(binary_available):
 
 def test_fiedler_ranking_returns_labels(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     res = _analyze("reentrancy.py")
     ranked = fiedler_ranking(res.graph, kind="call")
     assert ranked
@@ -58,7 +58,7 @@ def test_fiedler_ranking_returns_labels(binary_available):
 
 def test_topology_detects_reentrancy_cycle(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     # reentrancy.py has a mutual-recursion cycle -> beta1 >= 1.
     res = _analyze("reentrancy.py")
     topo = topology(res.graph, kind="call")
@@ -68,7 +68,7 @@ def test_topology_detects_reentrancy_cycle(binary_available):
 
 def test_topology_safe_has_no_cycle(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     res = _analyze("safe.py")
     topo = topology(res.graph, kind="call")
     assert topo["beta1"] == 0
@@ -76,7 +76,7 @@ def test_topology_safe_has_no_cycle(binary_available):
 
 def test_cycle_ranking_returns_labels(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     res = _analyze("reentrancy.py")
     cycles = cycle_ranking(res.graph, kind="call")
     assert cycles
@@ -87,7 +87,7 @@ def test_cycle_ranking_returns_labels(binary_available):
 
 def test_directed_path_homology_present_and_differs(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     res = _analyze("reentrancy.py")
     topo = topology(res.graph, kind="call")
     assert "directed_path" in topo

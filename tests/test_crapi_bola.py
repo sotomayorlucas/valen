@@ -5,7 +5,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from manifold.analysis.api_bola import api_bola_candidates
+from valen.analysis.api_bola import api_bola_candidates
 
 ROOT = Path(__file__).resolve().parent.parent
 SPEC = ROOT / "examples" / "api" / "crapi-openapi-spec.json"

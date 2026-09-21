@@ -1,6 +1,6 @@
 //! Typed graph mirror of the Python IR.
 //!
-//! The JSON schema is identical to `manifold/ir.py::Graph.to_dict`, so a graph
+//! The JSON schema is identical to `valen/ir.py::Graph.to_dict`, so a graph
 //! serialized in Python deserializes directly into this struct with
 //! `serde_json::from_str`.
 

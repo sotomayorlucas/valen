@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from agent.agent import ManifoldAgent
+from agent.agent import ValenAgent
 from agent.llm import LLMClient
-from manifold.analysis.math_core import core_binary
+from valen.analysis.math_core import core_binary
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 
@@ -22,7 +22,7 @@ def binary_available() -> bool:
 
 def _run(name: str):
     code = (EXAMPLES / name).read_text()
-    agent = ManifoldAgent(llm=LLMClient(model="__offline__"))
+    agent = ValenAgent(llm=LLMClient(model="__offline__"))
     return agent.run(code, path=name)
 
 
@@ -46,7 +46,7 @@ def test_agent_confirms_sanitized_only_vulnerable():
 
 def test_agent_detects_reentrancy_cycle(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     report = _run("reentrancy.py")
     cycles = [e for e in report.confirmed if e.cwe == "CWE-835"]
     assert cycles, f"expected a cycle finding, got {report.to_dict()}"

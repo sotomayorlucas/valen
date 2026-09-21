@@ -1,4 +1,4 @@
-# MANIFOLD — Prioritizing What to Verify: a Reproducible Neuro-Symbolic Vulnerability Pipeline
+# VALEN — Prioritizing What to Verify: a Reproducible Neuro-Symbolic Vulnerability Pipeline
 
 **Whitepaper v0.3 (rev 8)** · *Working draft — not peer reviewed*
 
@@ -8,7 +8,7 @@
 
 ## Abstract
 
-MANIFOLD is a **neuro-symbolic trust & logic verifier**: an autonomous agent that
+VALEN is a **neuro-symbolic trust & logic verifier**: an autonomous agent that
 mines security specifications (authorization invariants, state-machine cycles,
 taint preconditions) from code with an LLM and discharges them with formal methods
 (Z3, GLMY directed homology, a mechanized Lean 4 core), emitting only
@@ -112,7 +112,7 @@ evaluated corpora.
 ## 7. The autonomous LLM agent
 
 Closed loop: **map → rank → hypothesize → verify → refine → report**. The
-manifold supplies a structured spec `(sink, source, line, category)`; the LLM
+VALEN supplies a structured spec `(sink, source, line, category)`; the LLM
 supplies the interpretation (CWE, description); the verifier consumes the spec —
 never the LLM prose. Provider layer via **LiteLLM** (OpenAI/Anthropic/local), with
 a deterministic offline fallback.
@@ -128,7 +128,7 @@ a deterministic offline fallback.
   with Sinkhorn is the fast alternative.
 * **C4 — H4 operationalization.** A taint flow crossing an `auth` edge is an
   authorization-invariant violation (reachability over `data ∪ taint ∪ auth`).
-* **C5 — Manifold→verifier bridge.** Fixed verification grammar; the LLM never
+* **C5 — Valen→verifier bridge.** Fixed verification grammar; the LLM never
   emits SMT-LIB.
 
 ## 9. A worked example
@@ -181,10 +181,10 @@ XSS (`System.out.println` is not XSS). Ablation (taint categories, 1698 cases):
 |---|---|---|---|---|---|
 | SonarQube (reported) | 0.956 | 0.946 | 0.330 | 0.490 | +0.010 |
 | CodeQL (reported) | 0.902 | 0.682 | 0.603 | 0.744 | +0.220 |
-| **MANIFOLD adapter (measured)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
-| MANIFOLD adapter + Z3 (measured, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
+| **VALEN adapter (measured)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
+| VALEN adapter + Z3 (measured, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
 
-*External rows are reported in public evaluations; MANIFOLD adapter is measured
+*External rows are reported in public evaluations; VALEN adapter is measured
 (all eleven categories); the last two rows are the **projected** Stage-2 target,
 not measured (Z3 with a 5 s per-query timeout; on timeout the case is marked
 unknown/conservative, never counted as a detection).*
@@ -196,7 +196,7 @@ path and an optional `angr` backend (`CFGFast` + interprocedural taint).
 
 ## 12. Responsible use
 
-MANIFOLD is a defensive / authorized-testing tool; released under the assumption
+VALEN is a defensive / authorized-testing tool; released under the assumption
 of authorized use and coordinated disclosure.
 
 ## 13. References
@@ -216,7 +216,7 @@ of authorized use and coordinated disclosure.
 
 The negative OWASP result is a diagnosis of the terrain, not a failure of the
 machinery: a flat servlet has no curvature or persistent topology, and taint is
-near-optimal there. MANIFOLD is repositioned as a **formal engine for structural
+near-optimal there. VALEN is repositioned as a **formal engine for structural
 invariants and business logic**, targeting four domains where conventional static
 analysis is blind:
 
@@ -229,23 +229,23 @@ analysis is blind:
 | Symbolic verifier (Z3) | path constraints in business logic | **executable counterexamples (witnesses)** |
 
 Substrate already in the repo: the **BOLA/IDOR detector**
-(`manifold.analysis.authorization.bola_idor_candidates`, corpus
+(`valen.analysis.authorization.bola_idor_candidates`, corpus
 `examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precision 0.72 / F1 0.837 with
 **0 taint findings** on vulnerable cases); the **Z3 ownership witness**
-(`manifold.analysis.bola_verifier`) separating object authorization from mere
+(`valen.analysis.bola_verifier`) separating object authorization from mere
 authentication; the **OpenAPI adapter**
-(`manifold.ingest.web`) emitting `auth` edges from security schemes and flagging
+(`valen.ingest.web`) emitting `auth` edges from security schemes and flagging
 sink-without-scheme operations (CWE-862); **GLMY directed homology**
 (`core/src/path_homology.rs`, benchmarked at R 1.0 / P 0.75 vs undirected
 0.5/0.5, `benchmarks/run_state_glmy.py`); the **IAM adapter**
-(`manifold.ingest.iam` + `manifold.analysis.trust`) for privilege bridges via
+(`valen.ingest.iam` + `valen.analysis.trust`) for privilege bridges via
 Fiedler/Forman-Ricci (`examples/iam/demo.json`); **spec-mining**
 (`benchmarks/run_spec_mining.py`, 0.5 recall / 0 hallucination); and a
 **real-data evaluation on OWASP crAPI**
-(`manifold.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) recovering the 9
+(`valen.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) recovering the 9
 documented BOLA/BFLA endpoints at recall 1.0 / precision 0.90, where the
 missing-auth check scores 0 because every BOLA endpoint is authenticated. The
 **LLM-agent adapter**
-(`manifold.ingest.llm_agent`) for confused-deputy / indirect prompt injection.
+(`valen.ingest.llm_agent`) for confused-deputy / indirect prompt injection.
 It abandons the sterile competition with Semgrep/CodeQL on local SQLi/XSS and
 attacks the architectural flaws where syntactic rules are silent.

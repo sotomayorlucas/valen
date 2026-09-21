@@ -1,4 +1,4 @@
-"""Unified Intermediate Representation (IR) for MANIFOLD.
+"""Unified Intermediate Representation (IR) for VALEN.
 
 The IR is a typed, attributed, directed multigraph. It is the single source of
 truth that every ingest adapter must produce, and that every analysis module

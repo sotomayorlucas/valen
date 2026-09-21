@@ -5,9 +5,9 @@
 
     # with the local LiteLLM proxy (~/litellm):
     set -a; . ~/litellm/.env; set +a
-    MANIFOLD_LLM_MODEL=openai/flash \
-    MANIFOLD_LLM_BASE_URL=http://127.0.0.1:4000 \
-    MANIFOLD_LLM_API_KEY=$LITELLM_MASTER_KEY \
+    VALEN_LLM_MODEL=openai/flash \
+    VALEN_LLM_BASE_URL=http://127.0.0.1:4000 \
+    VALEN_LLM_API_KEY=$LITELLM_MASTER_KEY \
     python benchmarks/run_llm.py
 
 Writes benchmarks/llm_results.json.
@@ -25,7 +25,7 @@ from typing import Optional
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent.agent import ManifoldAgent
+from agent.agent import ValenAgent
 from agent.llm import LLMClient
 
 EXAMPLES = ROOT / "examples" / "python"
@@ -52,17 +52,17 @@ def main() -> int:
     ap.add_argument("--runs", type=int, default=1, help="LLM runs per example (for stability)")
     args = ap.parse_args()
 
-    live = bool(os.environ.get("MANIFOLD_LLM_MODEL") and os.environ.get("MANIFOLD_LLM_BASE_URL"))
-    print(f"LLM configured: {live}  (model={os.environ.get('MANIFOLD_LLM_MODEL','-')} "
-          f"base={os.environ.get('MANIFOLD_LLM_BASE_URL','-')})")
+    live = bool(os.environ.get("VALEN_LLM_MODEL") and os.environ.get("VALEN_LLM_BASE_URL"))
+    print(f"LLM configured: {live}  (model={os.environ.get('VALEN_LLM_MODEL','-')} "
+          f"base={os.environ.get('VALEN_LLM_BASE_URL','-')})")
 
     results = []
     for source in sorted(EXAMPLES.glob("*.py")):
         code = source.read_text()
-        offline = _entries(ManifoldAgent(llm=OfflineLLM()).run(code, path=source.name))
+        offline = _entries(ValenAgent(llm=OfflineLLM()).run(code, path=source.name))
         online_runs = []
         for _ in range(args.runs):
-            online_runs.append(_entries(ManifoldAgent(llm=LLMClient()).run(code, path=source.name)))
+            online_runs.append(_entries(ValenAgent(llm=LLMClient()).run(code, path=source.name)))
 
         online = online_runs[0]
         llm_entries = [e for e in online if e["source"] == "llm"]

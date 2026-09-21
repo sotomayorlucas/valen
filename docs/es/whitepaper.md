@@ -1,4 +1,4 @@
-# MANIFOLD — Priorizar Qué Verificar: un Pipeline Neuro-Simbólico Reproducible
+# VALEN — Priorizar Qué Verificar: un Pipeline Neuro-Simbólico Reproducible
 
 **Whitepaper v0.3 (rev 8)** · *Borrador de trabajo — no revisado por pares*
 
@@ -8,7 +8,7 @@
 
 ## Resumen
 
-MANIFOLD es un **verificador neuro-simbólico de confianza y lógica**: un agente
+VALEN es un **verificador neuro-simbólico de confianza y lógica**: un agente
 autónomo que extrae especificaciones de seguridad (invariantes de autorización,
 ciclos de máquinas de estado, precondiciones de taint) desde el código con un LLM
 y las descarga con métodos formales (Z3, homología dirigida GLMY, un núcleo
@@ -115,7 +115,7 @@ evaluados.
 ## 7. El agente LLM autónomo
 
 Ciclo cerrado: **mapea → ordena → hipotetiza → verifica → refina → reporta**. El
-manifold aporta una spec estructurada `(sink, fuente, línea, categoría)`; el LLM
+valen aporta una spec estructurada `(sink, fuente, línea, categoría)`; el LLM
 aporta la interpretación (CWE, descripción); el verificador consume la spec —nunca
 la prosa del LLM. Capa de proveedor vía **LiteLLM** (OpenAI/Anthropic/local), con
 fallback offline determinista.
@@ -131,7 +131,7 @@ fallback offline determinista.
   Ollivier–Ricci con Sinkhorn como alternativa rápida.
 * **C4 — Operacionalización de H4.** Un flujo de taint que cruza una arista `auth`
   es violación de la invariante de autorización (alcanzabilidad sobre `dato ∪ taint ∪ auth`).
-* **C5 — Puente manifold→verificador.** Gramática de verificación fija; el LLM
+* **C5 — Puente valen→verificador.** Gramática de verificación fija; el LLM
   nunca emite SMT-LIB.
 
 ## 9. Un ejemplo resuelto
@@ -188,11 +188,11 @@ de taint, 1698 casos):
 |---|---|---|---|---|---|
 | SonarQube (reportado) | 0.956 | 0.946 | 0.330 | 0.490 | +0.010 |
 | CodeQL (reportado) | 0.902 | 0.682 | 0.603 | 0.744 | +0.220 |
-| **MANIFOLD adaptador (medido)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
-| MANIFOLD adaptador + Z3 (medido, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
+| **VALEN adaptador (medido)** | 0.842 | 0.674 | 0.572 | 0.681 | **+0.168** |
+| VALEN adaptador + Z3 (medido, taint) | 0.834 | 0.776 | 0.549 | 0.662 | +0.057 |
 
 *Las filas externas son números reportados en evaluaciones públicas; el adaptador
-MANIFOLD es medido (once categorías); las dos últimas filas son el objetivo
+VALEN es medido (once categorías); las dos últimas filas son el objetivo
 **proyectado** de la Etapa 2, no medido (Z3 con timeout de 5 s por consulta; ante
 timeout el caso se marca desconocido/conservador, nunca como detección).*
 
@@ -203,7 +203,7 @@ dependencias y un backend `angr` opcional (`CFGFast` + taint interprocedural).
 
 ## 12. Uso responsable
 
-MANIFOLD es una herramienta de defensa / pruebas autorizadas; se libera bajo el
+VALEN es una herramienta de defensa / pruebas autorizadas; se libera bajo el
 supuesto de uso autorizado y divulgación coordinada.
 
 ## 13. Referencias
@@ -223,7 +223,7 @@ supuesto de uso autorizado y divulgación coordinada.
 
 El resultado negativo de OWASP es un diagnóstico del terreno, no un fallo de la
 maquinaria: un servlet plano no tiene curvatura ni topología persistente, y el
-taint ya es casi óptimo allí. MANIFOLD se reposiciona como un **motor formal de
+taint ya es casi óptimo allí. VALEN se reposiciona como un **motor formal de
 invariantes estructurales y lógica de negocio**, apuntando a cuatro dominios
 donde el análisis estático convencional es ciego:
 
@@ -236,23 +236,23 @@ donde el análisis estático convencional es ciego:
 | Verificador simbólico (Z3) | restricciones de camino en la lógica de negocio | **contraejemplos ejecutables (witnesses)** |
 
 Sustrato ya en el repo: el **detector BOLA/IDOR**
-(`manifold.analysis.authorization.bola_idor_candidates`, corpus
+(`valen.analysis.authorization.bola_idor_candidates`, corpus
 `examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precisión 0.72 / F1 0.837 con
 **0 hallazgos de taint** en los casos vulnerables); el **witness de ownership en
-Z3** (`manifold.analysis.bola_verifier`) que separa autorización de objeto de
+Z3** (`valen.analysis.bola_verifier`) que separa autorización de objeto de
 mera autenticación; el **adaptador OpenAPI**
-(`manifold.ingest.web`) que emite aristas `auth` desde esquemas de seguridad y
+(`valen.ingest.web`) que emite aristas `auth` desde esquemas de seguridad y
 marca operaciones con sink y sin esquema (CWE-862); la
 **homología dirigida GLMY** (`core/src/path_homology.rs`, evaluada en R 1.0 /
 P 0.75 vs no dirigida 0.5/0.5, `benchmarks/run_state_glmy.py`); el **adaptador
-IAM** (`manifold.ingest.iam` + `manifold.analysis.trust`) para puentes de
+IAM** (`valen.ingest.iam` + `valen.analysis.trust`) para puentes de
 privilegio vía Fiedler/Forman-Ricci (`examples/iam/demo.json`); la
 **spec-mining** (`benchmarks/run_spec_mining.py`, 0.5 recall / 0 alucinación); y
 una **evaluación en datos reales sobre OWASP crAPI**
-(`manifold.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) que recupera los 9
+(`valen.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) que recupera los 9
 endpoints BOLA/BFLA documentados con recall 1.0 / precisión 0.90, donde el
 chequeo de auth-ausente puntúa 0 porque todo endpoint BOLA está autenticado. El
 **adaptador de agentes LLM**
-(`manifold.ingest.llm_agent`) para confused-deputy / inyección indirecta de
+(`valen.ingest.llm_agent`) para confused-deputy / inyección indirecta de
 prompt. Abandona la competencia estéril con Semgrep/CodeQL en SQLi/XSS locales y
 ataca las fallas arquitectónicas donde las reglas sintácticas callan.

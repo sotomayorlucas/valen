@@ -1,6 +1,6 @@
 """Tests for the Java Z3 symbolic verifier."""
 
-from manifold.analysis.java_verifier import verify_java
+from valen.analysis.java_verifier import verify_java
 
 
 def test_confirms_reachable_taint_flow_with_witness():

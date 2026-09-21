@@ -2,14 +2,14 @@
 
 This is the *trust & logic* pivot: classic taint analysis is structurally blind
 here (the object selector is a clean cast value; a bound parameter carries no
-taint), while MANIFOLD's structural signal --- an ungated, user-controlled
+taint), while VALEN's structural signal --- an ungated, user-controlled
 resource access --- surfaces the flaw.
 """
 
 from pathlib import Path
 
-from manifold.analysis.authorization import bola_idor_candidates
-from manifold.ingest.python import PythonIngest
+from valen.analysis.authorization import bola_idor_candidates
+from valen.ingest.python import PythonIngest
 
 BOLA = Path(__file__).resolve().parent.parent / "examples" / "python" / "bola"
 

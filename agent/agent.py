@@ -6,12 +6,12 @@ import json
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
-from manifold.analysis.math_core import run_core
-from manifold.analysis.verifier import Verification, verify
-from manifold.analysis.authorization import annotate_findings
-from manifold.ingest.python import PythonIngest
-from manifold.ingest.sources_sinks import LanguageProfile, PYTHON
-from manifold.ir import Graph, NodeKind
+from valen.analysis.math_core import run_core
+from valen.analysis.verifier import Verification, verify
+from valen.analysis.authorization import annotate_findings
+from valen.ingest.python import PythonIngest
+from valen.ingest.sources_sinks import LanguageProfile, PYTHON
+from valen.ir import Graph, NodeKind
 from .llm import LLMClient
 from .prompts import SYSTEM, hypothesis_prompt
 
@@ -125,8 +125,8 @@ def _parse_json(text: str) -> Optional[Dict[str, Any]]:
         return None
 
 
-class ManifoldAgent:
-    """Navigates the vulnerability manifold and verifies hypotheses.
+class ValenAgent:
+    """Navigates the vulnerability valen and verifies hypotheses.
 
     With an LLM available, hypotheses come from the model; otherwise a
     deterministic heuristic maps each mathematical signal to a vulnerability

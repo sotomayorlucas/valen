@@ -66,14 +66,14 @@ echo "== 7. demos (toy corpora) =="
 "$VENV/bin/python" benchmarks/run.py | tee benchmarks/results/toy.txt
 
 echo "== 7b. dashboard =="
-"$VENV/bin/python" -m manifold.dashboard --out dashboard.html
+"$VENV/bin/python" -m valen.dashboard --out dashboard.html
 echo "wrote dashboard.html"
 
 echo "== 7d. real CVE fixes (needs network) =="
 "$VENV/bin/python" benchmarks/run_cves.py | tee benchmarks/results/cves.txt || true
 
 echo "== 7c. web UI (serve on http://127.0.0.1:8000) =="
-echo "run:  $VENV/bin/python -m manifold.server --port 8000"
+echo "run:  $VENV/bin/python -m valen.server --port 8000"
 
 echo "== 7e. mechanized formal core (Lean 4, optional) =="
 bash scripts/check_formal.sh || true

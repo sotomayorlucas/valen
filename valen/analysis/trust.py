@@ -1,6 +1,6 @@
 """Trust-topology analysis: privilege bridges and lateral movement.
 
-On an identity/permission graph (see ``manifold.ingest.iam``) two structural
+On an identity/permission graph (see ``valen.ingest.iam``) two structural
 signals surface where the trust boundary leaks:
 
 * the **Fiedler cut** (algebraic connectivity) partitions the graph into trust

@@ -1,11 +1,11 @@
 [package]
-name = "manifold-core"
+name = "valen-core"
 version = "0.1.0"
 edition = "2021"
-description = "Numeric core for MANIFOLD: spectral, geometric, topological and algebraic kernels."
+description = "Numeric core for VALEN: spectral, geometric, topological and algebraic kernels."
 
 [lib]
-name = "manifold_core"
+name = "valen_core"
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]

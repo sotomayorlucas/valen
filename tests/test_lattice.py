@@ -1,6 +1,6 @@
 """Tests for the taint lattice (abstract-interpretation layer)."""
 
-from manifold.analysis.lattice import TaintLattice, join_all
+from valen.analysis.lattice import TaintLattice, join_all
 
 
 def test_bottom_is_clean():

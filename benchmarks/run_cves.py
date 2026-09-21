@@ -21,9 +21,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.server import _compare
+from valen.server import _compare
 
-UA = {"User-Agent": "manifold-cve-harness"}
+UA = {"User-Agent": "valen-cve-harness"}
 _HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@")
 
 

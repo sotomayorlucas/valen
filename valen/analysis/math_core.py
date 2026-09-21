@@ -1,8 +1,8 @@
-"""Bridge to the Rust numeric core (`manifold-core`).
+"""Bridge to the Rust numeric core (`valen-core`).
 
 The Python layer serializes the IR graph to JSON, hands it to the compiled Rust
 binary, and parses the spectral/geometric results. The JSON schema is the single
-contract between the two layers (see `manifold/ir.py` and `core/src/graph.rs`).
+contract between the two layers (see `valen/ir.py` and `core/src/graph.rs`).
 """
 
 from __future__ import annotations
@@ -19,17 +19,17 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def core_binary() -> Path:
-    """Locate the `manifold-core` binary, preferring an explicit override."""
-    override = os.environ.get("MANIFOLD_CORE_BIN")
+    """Locate the `valen-core` binary, preferring an explicit override."""
+    override = os.environ.get("VALEN_CORE_BIN")
     if override:
         return Path(override)
     for build in ("release", "debug"):
-        candidate = _REPO_ROOT / "core" / "target" / build / "manifold-core"
+        candidate = _REPO_ROOT / "core" / "target" / build / "valen-core"
         if candidate.exists():
             return candidate
     raise FileNotFoundError(
-        "manifold-core binary not found; run `cargo build --release` in core/ "
-        "or set MANIFOLD_CORE_BIN"
+        "valen-core binary not found; run `cargo build --release` in core/ "
+        "or set VALEN_CORE_BIN"
     )
 
 
@@ -44,7 +44,7 @@ def run_core(graph: Graph) -> Dict[str, Any]:
         check=False,
     )
     if proc.returncode != 0:
-        raise RuntimeError(f"manifold-core failed: {proc.stderr}")
+        raise RuntimeError(f"valen-core failed: {proc.stderr}")
     return json.loads(proc.stdout)
 
 

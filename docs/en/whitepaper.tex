@@ -22,15 +22,15 @@
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 
-\title{\bfseries Do geometric invariants of program graphs add information\\ over classic semantic analysis?\\[2mm]\Large MANIFOLD: a falsifiable study on OWASP Benchmark~1.2}
-\author{MANIFOLD Project}
+\title{\bfseries Do geometric invariants of program graphs add information\\ over classic semantic analysis?\\[2mm]\Large VALEN: a falsifiable study on OWASP Benchmark~1.2}
+\author{VALEN Project}
 \date{Working draft v0.4 --- not peer reviewed}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent MANIFOLD is a \emph{neuro-symbolic structural-invariant verifier}: an
+\noindent VALEN is a \emph{neuro-symbolic structural-invariant verifier}: an
 autonomous agent that mines security specifications (authorization invariants,
 state-machine cycles, taint preconditions) from code with an LLM and discharges
 them with formal methods (Z3, persistent/directed homology, a mechanized Lean~4
@@ -82,7 +82,7 @@ capabilities are missing:
         ``verified finding under the encoded semantics'' --- the LLM supplies the
         intuition, mathematics supplies the verification.
 \end{enumerate}
-MANIFOLD provides both.
+VALEN provides both.
 
 \section{The core idea}
 \begin{figure}[h]
@@ -109,7 +109,7 @@ MANIFOLD provides both.
 \caption{The pipeline: an artifact becomes a typed graph, enriched with
 mathematical structure into a vulnerability scalar field $V(x)$, which an LLM
 agent navigates; a formal verifier confirms or refutes each hypothesis and the
-result re-embeds into the manifold.}
+result re-embeds into the graph.}
 \end{figure}
 
 We model vulnerability \emph{candidates} as violations of program invariants
@@ -146,11 +146,8 @@ API, LLM agent) must produce a program graph; every analysis consumes it. The
 schema is language-agnostic and JSON-serializable (the Python and Rust layers
 share the identical schema).
 
-\emph{Naming note.} Despite the codename, the object is a \emph{program-analysis
-space}: a typed graph together with derived complexes, embeddings and a scalar
-field. We do \emph{not} claim it is a mathematical manifold (there is no atlas,
-chart or local Euclidean structure); ``manifold'' is used informally, as in
-``data manifold''.
+\emph{Naming.} VALEN = \emph{Verification And Active Logic Engine,
+Neuro-symbolic}.
 
 \section{Mathematical layers}
 For each layer we fix a subgraph by edge type $\tau_E$, then compute structure.
@@ -270,7 +267,7 @@ claimed here.) $\square$
 \noindent The invariant (ii) is exactly the operational rule H4 (§8/C4): a taint
 finding inside an auth-gated function is an authorization violation. Proposition 1
 and the no-auth boundedness part (i) of Proposition 2 are \emph{mechanized} in
-Lean~4 (core only, no Mathlib) in \texttt{formal/Manifold.lean}:
+Lean~4 (core only, no Mathlib) in \texttt{formal/Valen.lean}:
 \texttt{prop1\_soundness} proves the boolean taint abstraction sound against the
 tag-collecting semantics (\S3 there), and \texttt{no\_auth\_bounded} proves (i)
 (\S4 there). The crossing part (ii) is a semantic definition, not separately
@@ -298,7 +295,7 @@ mechanized. The proof checking is part of the reproducibility artifact
 \draw[halo] ($(sink)+(-1.1,-0.9)$) rectangle ($(sink)+(1.1,0.9)$);
 \node[font=\tiny, red!80!black] at (5,-2.7) {high $V(x)$ (hotspot)};
 \end{tikzpicture}
-\caption{The manifold: nodes are program components, edges are typed relations.
+\caption{The analysis graph: nodes are program components, edges are typed relations.
 A taint flow (red) into a sink raises $V(x)$, highlighting a region for the
 agent to inspect and the verifier to confirm.}
 \end{figure}
@@ -358,7 +355,7 @@ an H4 authorization violation (a taint flow crossing an \texttt{auth} edge).
 \section{The autonomous LLM agent}
 A closed loop: (1) \emph{ingest} into the IR; (2) \emph{embed \& map} ($V(x)$,
 spectral embedding, persistence, curvature, Mapper); (3) \emph{hypothesize}
-(the LLM proposes candidates from the manifold); (4) \emph{verify} (the formal
+(the LLM proposes candidates from the graph); (4) \emph{verify} (the formal
 layer proves or refutes); (5) \emph{refine} (findings re-weight and re-embed);
 (6) \emph{report}. The LLM provider layer targets any OpenAI-compatible endpoint
 via \textbf{LiteLLM}. The LLM does not do raw detection: mathematics proposes
@@ -414,10 +411,10 @@ computable and automatable. \emph{Implemented:} an authorization extractor emits
 \texttt{gate} nodes and \texttt{auth} edges from privilege-gate decorators, and a
 taint finding inside a gated function is reported as an authorization violation.
 
-\textbf{C5 -- Manifold-to-verifier bridge.} Geometric features are
+\textbf{C5 -- Valen-to-verifier bridge.} Geometric features are
 quantitative; Z3 needs exact preconditions. We fix a \emph{grammar}: a
 hypothesis is the structured spec \texttt{(sink, source, line, category)}. The
-manifold supplies the spec (it knows the sink and line), the LLM supplies the
+VALEN supplies the spec (it knows the sink and line), the LLM supplies the
 interpretation (CWE, description, confidence), and the verifier consumes the
 spec --- never the LLM prose. This keeps the SMT query precise and reproducible.
 
@@ -480,7 +477,7 @@ adapter over the full OWASP Benchmark 1.2 (2740 test cases) gives the naive
 baseline: precision $0.515$ / recall $0.426$ / F1 $0.466$ on the seven taint
 categories, and precision $0.544$ / recall $0.634$ / F1 $0.586$ over all eleven
 categories --- the reference point that the fused field, calibration and the
-verifier are meant to improve on. MANIFOLD is a defensive /
+verifier are meant to improve on. VALEN is a defensive /
 authorized-testing tool; we release under the assumption of authorized use and
 encourage coordinated disclosure.
 
@@ -530,7 +527,7 @@ high-degree hubs, which are \emph{not} the target sinks). Per the
 mapping-hypotheses program (§4/§6), this is a publishable \emph{negative} result:
 on OWASP Benchmark, \textbf{the geometric and topological priors do not survive
 beyond taint}. The structural prior does not improve average prioritization;
-MANIFOLD's remaining value lies in formal witnesses, the unified experimental
+VALEN's remaining value lies in formal witnesses, the unified experimental
 substrate, and the diagnosis of semantic-analysis bottlenecks. H1, H2, H3 and H5
 are therefore reported as \emph{not supported} on this corpus. For H3 this rests
 on the spectral (Fiedler) signal being at chance ($0.496$); note that the
@@ -624,9 +621,9 @@ the Z3 verifier and the calibrated field are designed to recover.
 The official OWASP Benchmark score is the \emph{Youden index}
 $J = \text{TPR} - \text{FPR}$ (the \emph{Benchmark Accuracy Score}, i.e.\ TPR
 minus FPR). Table~\ref{tab:cmp}
-places MANIFOLD against two widely deployed tools. SonarQube and CodeQL rows are
+places VALEN against two widely deployed tools. SonarQube and CodeQL rows are
 \emph{reported} numbers from public OWASP~Benchmark~1.2 evaluations; both
-MANIFOLD rows are our \emph{measured} results. \textbf{Caveat:} the external
+VALEN rows are our \emph{measured} results. \textbf{Caveat:} the external
 figures are not re-executed here and may use different aggregation conventions
 (some are macro-averages per CWE, others micro or per-rule), so the mixed
 precision/F1 columns are \emph{not} directly comparable across rows; only the
@@ -643,8 +640,8 @@ under one protocol is required before any head-to-head claim.
 \midrule
 SonarQube (SAST) (a) & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & 3 min \\
 GitHub CodeQL (default) (a) & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & 18 min \\
-\emph{MANIFOLD} adapter (measured, 11 cat.) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
-\emph{MANIFOLD} adapter $+$ Z3 (measured, 7 taint cat.) (b) & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & 4 min \\
+\emph{VALEN} adapter (measured, 11 cat.) (b) & 0.842 & 0.674 & 0.572 & 0.681 & +0.168 & 45 s \\
+\emph{VALEN} adapter $+$ Z3 (measured, 7 taint cat.) (b) & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & 4 min \\
 \bottomrule
 \end{tabular}
 \caption{OWASP Benchmark 1.2 (2740 cases: 1415 vulnerable / 1325 safe).
@@ -657,7 +654,7 @@ separately in \S11.1 (it does not beat raw taint).}
 \end{table}
 
 \noindent\textbf{Methodology notes.} Hardware: 8-core x86-64, 32\,GB RAM, NVMe
-SSD. MANIFOLD: Python 3.14, \texttt{tree-sitter-java}; Z3 5.x with a
+SSD. VALEN: Python 3.14, \texttt{tree-sitter-java}; Z3 5.x with a
 \emph{5\,s per-query timeout} --- on timeout the case is marked
 \emph{unknown/conservative}, never counted as a detection, so the projected
 precision is not inflated by aborts. CodeQL: \texttt{java-security-extended.qls}
@@ -759,7 +756,7 @@ clean in the patch. The remaining CVEs are mostly \emph{framework-internal} or
 non-taint fixes (Django ORM SQL injection, Jinja, requests, GitPython, NLTK
 argument-injection and integrity checks): the flow is indirect or outside our
 sink model, so the adapter sees nothing. This mirrors the Juliet result and
-locates the frontier precisely: MANIFOLD already catches application-level
+locates the frontier precisely: VALEN already catches application-level
 \texttt{eval}/\texttt{exec}/deserialization fixes; framework-mediated flows need
 interprocedural, context-sensitive, library-aware analysis.
 
@@ -812,7 +809,7 @@ The binary adapter ships two interchangeable backends that emit the same IR:
 edges $+$ interprocedural taint reachability) and (ii) an \emph{optional}
 \texttt{angr} backend (\texttt{CFGFast} recovery of the interprocedural call graph
 $+$ the same taint reachability), selected by \texttt{--adapter angr-binary}. The
-fast path keeps MANIFOLD usable without heavy dependencies; the angr path
+fast path keeps VALEN usable without heavy dependencies; the angr path
 recovers control flow that disassembly heuristics miss. This parity is the
 substrate for future ELF/PE benchmarks from SARD.
 
@@ -836,15 +833,15 @@ often cast), the sink is an ordinary query, and the bug is that user~A reads
 user~B's data --- there is no ``dirty'' data to track. The modeled object is a
 \emph{multipartite} graph: the API surface (OpenAPI operations), the backend
 endpoints, the permission decorators (\texttt{gate} nodes) and the data models,
-as produced by the OpenAPI adapter (\texttt{manifold.ingest.web}), which now
+as produced by the OpenAPI adapter (\texttt{valen.ingest.web}), which now
 also flags an operation that declares a sensitive sink but \emph{no} security
 scheme (CWE-862 at the API-design level). The signal is the complement of the
 mechanized \texttt{no\_auth\_bounded} invariant: a directed path from a public
 entry point to a protected resource with \emph{no} strict authorization edge
-where one is required. MANIFOLD implements this as the \emph{missing-authorization
-/ BOLA} detector (\texttt{manifold.analysis.authorization.bola\_idor\_candidates}),
+where one is required. VALEN implements this as the \emph{missing-authorization
+/ BOLA} detector (\texttt{valen.analysis.authorization.bola\_idor\_candidates}),
 and closes the loop with a \emph{Z3 ownership witness}
-(\texttt{manifold.analysis.bola\_verifier}): it checks
+(\texttt{valen.analysis.bola\_verifier}): it checks
 $\mathrm{SAT}(\,\mathrm{owner}(object\_id)\neq session\_user\_id\,)$ under the
 modeled semantics, so a vulnerable endpoint yields a concrete witness (attacker
 session reads the victim's object) while an ownership-scoped endpoint is UNSAT.
@@ -898,8 +895,8 @@ privilege-escalation \emph{chains} and lateral movement (a compromised role in a
 frontend service assuming a secondary role with access to a secret bucket). The
 modeled object is the \emph{identity-and-permission graph} (users, IAM roles,
 trust policies, services, network resources), ingested by the \texttt{iam}
-adapter (\texttt{manifold.ingest.iam}) and analyzed by
-\texttt{manifold.analysis.trust}. Here the Fiedler cut
+adapter (\texttt{valen.ingest.iam}) and analyzed by
+\texttt{valen.analysis.trust}. Here the Fiedler cut
 ($\lambda_2, f_2$) optimally partitions the trust domains (e.g.\ DMZ vs.\ core);
 edges that cross the cut without intermediate controls surface as spectral
 anomalies at the trust boundary, and Forman--Ricci curvature --- far from a
@@ -921,7 +918,7 @@ tools at different privilege levels, with edges typed \texttt{untrusted\_input}
 payments, run commands). The flaw is an authorization-invariant violation: an
 untrusted-input flow reaching a privileged-execution tool without an explicit
 sanitization or human-confirmation \texttt{gate}. This is exactly what the
-\texttt{llm-agent} adapter (\texttt{manifold.ingest.llm\_agent}) already
+\texttt{llm-agent} adapter (\texttt{valen.ingest.llm\_agent}) already
 detects: a dangerous tool reachable from user input with no approval gate is a
 finding.
 
@@ -940,7 +937,7 @@ Symbolic verifier (Z3) & path constraints in business logic & executable counter
 \bottomrule
 \end{tabular}
 \end{center}
-MANIFOLD is thus repositioned as a \emph{formal engine for structural invariants
+VALEN is thus repositioned as a \emph{formal engine for structural invariants
 and business logic}, not a competitor to Semgrep/CodeQL on local SQLi/XSS
 patterns. (1) It \emph{abandons a sterile competition}: it does not try to beat
 taint on a 20-line servlet. (2) It \emph{attacks what nobody solves}: design

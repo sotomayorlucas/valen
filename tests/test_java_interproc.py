@@ -1,7 +1,7 @@
 """Tests for the interprocedural Java taint analyzer."""
 
-from manifold.ingest.java import JavaIngest
-from manifold.ingest.java_interproc import JavaInterproceduralIngest
+from valen.ingest.java import JavaIngest
+from valen.ingest.java_interproc import JavaInterproceduralIngest
 
 CODE = """class T {
   void handle(HttpServletRequest req) throws Exception {

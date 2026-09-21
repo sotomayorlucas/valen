@@ -6,11 +6,11 @@ from pathlib import Path
 
 import pytest
 
-from manifold.ingest import analyze, infer_adapter
-from manifold.ingest.binary import BinaryIngest
-from manifold.ingest.llm_agent import LLMAgentIngest
-from manifold.ingest.web import WebIngest
-from manifold.ir import EdgeKind, NodeKind
+from valen.ingest import analyze, infer_adapter
+from valen.ingest.binary import BinaryIngest
+from valen.ingest.llm_agent import LLMAgentIngest
+from valen.ingest.web import WebIngest
+from valen.ir import EdgeKind, NodeKind
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples"
 
@@ -78,7 +78,7 @@ def _have_angr():
 
 @pytest.mark.skipif(not _have_angr(), reason="angr or gcc not available")
 def test_angr_binary_detects_command_flow(tmp_path):
-    from manifold.ingest.angr_binary import AngrBinaryIngest
+    from valen.ingest.angr_binary import AngrBinaryIngest
 
     src = tmp_path / "vuln.c"
     src.write_text(

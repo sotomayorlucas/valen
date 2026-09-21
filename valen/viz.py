@@ -1,4 +1,4 @@
-"""Visualization: render the vulnerability manifold as a self-contained HTML page.
+"""Visualization: render the vulnerability valen as a self-contained HTML page.
 
 The page draws the IR graph (nodes + typed edges) with a force-directed layout
 seeded by the spectral embedding, colors nodes/edges by kind and taint, and lists
@@ -50,7 +50,7 @@ svg{width:100%;height:100%;background:radial-gradient(circle at 50% 50%,#161b22 
 </head>
 <body>
 <header>
-  <h1>MANIFOLD &mdash; vulnerability manifold</h1>
+  <h1>VALEN &mdash; vulnerability valen</h1>
   <div class="sub">__SUBTITLE__</div>
 </header>
 <div class="layout">
@@ -205,10 +205,10 @@ def render_html(
     math: Optional[Dict[str, Any]] = None,
     report: Optional["Report"] = None,
     *,
-    title: str = "MANIFOLD",
+    title: str = "VALEN",
     subtitle: str = "",
 ) -> str:
-    """Render the manifold to a self-contained HTML document."""
+    """Render the valen to a self-contained HTML document."""
     payload = {
         "nodes": _node_data(graph, math),
         "edges": _edge_data(graph),
@@ -226,9 +226,9 @@ def write_html(
     math: Optional[Dict[str, Any]] = None,
     report: Optional["Report"] = None,
     *,
-    title: str = "MANIFOLD",
+    title: str = "VALEN",
     subtitle: str = "",
 ) -> None:
-    """Write the rendered manifold HTML to ``path``."""
+    """Write the rendered valen HTML to ``path``."""
     with open(path, "w", encoding="utf-8") as f:
         f.write(render_html(graph, math, report, title=title, subtitle=subtitle))

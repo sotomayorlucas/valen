@@ -9,7 +9,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
-\definecolor{manifold}{RGB}{30,90,170}
+\definecolor{valen}{RGB}{30,90,170}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
@@ -25,14 +25,15 @@
 
 \title{\bfseries Beyond Taint: Structural Invariants and Machine-Checkable
 Witnesses\\ for Authorization, State-Cycle, and Trust-Topology Flaws}
-\author{MANIFOLD Project}
+\author{VALEN Project}
 \date{Research contributions --- methods, measured results, and limitations}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent We present MANIFOLD, a system for verifying \emph{structural} security
+\noindent We present VALEN --- \emph{Verification And Active Logic Engine,
+Neuro-symbolic} --- a system for verifying \emph{structural} security
 invariants --- authorization, state-transition, and trust-topology properties ---
 where classic taint analysis is provably blind because the offending data is
 legitimate. We make five measured contributions. (1) A rigorous \emph{boundary
@@ -174,7 +175,7 @@ exploitability; and the GLMY signal is necessary but not sufficient. Each is
 reported, not hidden.
 
 \section{Conclusion}
-MANIFOLD contributes a falsifiable boundary result, a mechanized and operational
+VALEN contributes a falsifiable boundary result, a mechanized and operational
 authorization invariant, evidence that directed homology is the right cycle
 signal, a measured neuro-symbolic arbitration boundary, and a trust-topology
 analysis --- all over one typed graph IR, and all emitting machine-checkable

@@ -17,7 +17,7 @@ LEAN = shutil.which("lean") or (
 @pytest.mark.skipif(LEAN is None, reason="Lean not installed")
 def test_formal_core_compiles():
     r = subprocess.run(
-        [LEAN, str(ROOT / "formal" / "Manifold.lean")],
+        [LEAN, str(ROOT / "formal" / "Valen.lean")],
         capture_output=True, text=True, timeout=600,
     )
     assert r.returncode == 0, r.stderr

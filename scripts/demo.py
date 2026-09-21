@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""End-to-end demo: run MANIFOLD over every example program and emit HTML maps.
+"""End-to-end demo: run VALEN over every example program and emit HTML maps.
 
 Usage:
     python scripts/demo.py
@@ -14,11 +14,11 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from agent.agent import ManifoldAgent
-from manifold.analysis.math_core import run_core
-from manifold.ingest import analyze, infer_adapter
-from manifold.ingest.python import PythonIngest
-from manifold.viz import write_html
+from agent.agent import ValenAgent
+from valen.analysis.math_core import run_core
+from valen.ingest import analyze, infer_adapter
+from valen.ingest.python import PythonIngest
+from valen.viz import write_html
 
 EXAMPLES = ROOT / "examples"
 OUT = ROOT / "viz" / "out"
@@ -38,7 +38,7 @@ def main() -> int:
         result = analyze(code, path=source.name, adapter=adapter)
 
         if adapter == "python":
-            report = ManifoldAgent().run(code, path=source.name)
+            report = ValenAgent().run(code, path=source.name)
             confirmed = len(report.confirmed)
             candidates = len(report.entries) - confirmed
         else:

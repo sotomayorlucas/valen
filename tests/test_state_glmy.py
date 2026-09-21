@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from manifold.analysis.math_core import core_binary
+from valen.analysis.math_core import core_binary
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -23,7 +23,7 @@ def binary_available() -> bool:
 
 def test_glmy_dominates_symmetrized(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     subprocess.run(
         [sys.executable, str(ROOT / "benchmarks" / "run_state_glmy.py")],
         capture_output=True, text=True, check=True,
@@ -39,7 +39,7 @@ def test_glmy_dominates_symmetrized(binary_available):
 
 def test_glmy_catches_2cycle_and_avoids_filled_triangle(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     data = json.loads((ROOT / "benchmarks" / "glmy_state_results.json").read_text())
     rows = {r["name"]: r for r in data["rows"]}
     # the two cases where symmetrization is wrong in opposite directions

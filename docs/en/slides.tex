@@ -12,14 +12,14 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
-\definecolor{manifold}{RGB}{30,90,170}
-\setbeamercolor{structure}{fg=manifold}
+\definecolor{valen}{RGB}{30,90,170}
+\setbeamercolor{structure}{fg=valen}
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[frame number]
 
-\title[MANIFOLD]{MANIFOLD}
+\title[VALEN]{VALEN}
 \subtitle{A neuro-symbolic trust \& logic verifier}
-\author{MANIFOLD Project}
+\author{VALEN Project}
 \institute{Typed IR $\cdot$ authorization invariants $\cdot$ directed homology $\cdot$ Z3 witnesses}
 \date{2026}
 
@@ -77,7 +77,7 @@
   \begin{tikzpicture}[
     node distance=4mm and 5mm,
     box/.style={draw, rounded corners=2pt, minimum height=9mm, minimum width=16mm, align=center, font=\scriptsize},
-    arr/.style={-{Stealth}, thick, color=manifold}
+    arr/.style={-{Stealth}, thick, color=valen}
   ]
   \node[box] (art) {artifact};
   \node[box, right=of art] (ir) {IR\\(typed graph)};
@@ -186,8 +186,8 @@
   \midrule
   SonarQube\textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
   CodeQL\textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
-  \textbf{MANIFOLD} adapter\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
-  MANIFOLD adapter $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
+  \textbf{VALEN} adapter\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
+  VALEN adapter $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
   \bottomrule
   \end{tabular}
   \end{center}
@@ -224,14 +224,14 @@
 
 \begin{frame}{Visualization and demo}
   \begin{itemize}
-    \item \textbf{Manifold map}: IR graph with a force-directed layout; nodes by kind,
+    \item \textbf{VALEN graph}: IR graph with a force-directed layout; nodes by kind,
           edges by kind (red taint), purple \texttt{gate}.
     \item \textbf{Findings panel}: \emph{confirmed} (Z3 with witness) vs \emph{candidate}.
     \item \textbf{Self-contained HTML} (no dependencies) $+$ end-to-end demo on 10 artifacts.
   \end{itemize}
   \vspace{2mm}
   \begin{center}
-  \texttt{python -m manifold.cli target --agent --viz out.html}
+  \texttt{python -m valen.cli target --agent --viz out.html}
   \end{center}
 \end{frame}
 
@@ -269,7 +269,7 @@
     \item \textbf{One integral study, two sides of a boundary:} on linear injection
           SAST semantic dataflow dominates (negative); on trust \& logic flaws
           structure is the only signal (positive).
-    \item MANIFOLD is a \emph{formal engine for structural invariants and business
+    \item VALEN is a \emph{formal engine for structural invariants and business
           logic} --- BOLA/IDOR, state cycles, IAM/agent trust --- where taint is
           structurally blind.
     \item Substrate shipped: BOLA/IDOR detector, OpenAPI gates, GLMY state cycles,
@@ -286,7 +286,7 @@
 
 \begin{frame}
   \centering
-  \Large\color{manifold}\textbf{Thank you}\\[4mm]
+  \Large\color{valen}\textbf{Thank you}\\[4mm]
   \normalsize\color{black}
   Map the program as a space --- then test whether structure actually helps.\\[1mm]
   When geometry fails, the failure is information too.

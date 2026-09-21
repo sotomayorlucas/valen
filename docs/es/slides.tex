@@ -12,14 +12,14 @@
 \usepackage{listings}
 \usepackage{xcolor}
 
-\definecolor{manifold}{RGB}{30,90,170}
-\setbeamercolor{structure}{fg=manifold}
+\definecolor{valen}{RGB}{30,90,170}
+\setbeamercolor{structure}{fg=valen}
 \setbeamertemplate{navigation symbols}{}
 \setbeamertemplate{footline}[frame number]
 
-\title[MANIFOLD]{MANIFOLD}
+\title[VALEN]{VALEN}
 \subtitle{Un verificador neuro-simbólico de invariantes estructurales}
-\author{Proyecto MANIFOLD}
+\author{Proyecto VALEN}
 \institute{IR tipada $\cdot$ invariantes de autorización $\cdot$ homología dirigida $\cdot$ witnesses Z3}
 \date{2026}
 
@@ -77,7 +77,7 @@
   \begin{tikzpicture}[
     node distance=4mm and 5mm,
     box/.style={draw, rounded corners=2pt, minimum height=9mm, minimum width=16mm, align=center, font=\scriptsize},
-    arr/.style={-{Stealth}, thick, color=manifold}
+    arr/.style={-{Stealth}, thick, color=valen}
   ]
   \node[box] (art) {artefacto};
   \node[box, right=of art] (ir) {IR\\(grafo tipado)};
@@ -186,8 +186,8 @@
   \midrule
   SonarQube\textsuperscript{(a)} & 0.956 & 0.946 & 0.330 & 0.490 & +0.010 & \textasciitilde3 min \\
   CodeQL\textsuperscript{(a)} & 0.902 & 0.682 & 0.603 & 0.744 & +0.220 & \textasciitilde18 min \\
-  \textbf{MANIFOLD} adaptador\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
-  MANIFOLD adaptador $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
+  \textbf{VALEN} adaptador\textsuperscript{(b)} & 0.842 & 0.674 & 0.572 & 0.681 & \textbf{+0.168} & \textasciitilde45 s \\
+  VALEN adaptador $+$ Z3\textsuperscript{(b)} & 0.834 & 0.776 & 0.549 & 0.662 & +0.057 & \textasciitilde4 min \\
   \bottomrule
   \end{tabular}
   \end{center}
@@ -224,14 +224,14 @@
 
 \begin{frame}{Visualización y demo}
   \begin{itemize}
-    \item \textbf{Mapa del manifold}: grafo IR con layout force-directed; nodos por tipo,
+    \item \textbf{Mapa del valen}: grafo IR con layout force-directed; nodos por tipo,
           aristas por tipo (taint rojo), \texttt{gate} morado.
     \item \textbf{Panel de hallazgos}: \emph{confirmed} (Z3 con witness) vs \emph{candidate}.
     \item \textbf{HTML autocontenido} (sin dependencias) $+$ demo end-to-end sobre 10 artefactos.
   \end{itemize}
   \vspace{2mm}
   \begin{center}
-  \texttt{python -m manifold.cli target --agent --viz out.html}
+  \texttt{python -m valen.cli target --agent --viz out.html}
   \end{center}
 \end{frame}
 
@@ -269,7 +269,7 @@
     \item \textbf{Un estudio integral, dos caras de una frontera:} en SAST de
           inyección lineal el dataflow semántico domina (negativo); en fallas de
           confianza y lógica la estructura es la única señal (positivo).
-    \item MANIFOLD es un \emph{motor formal de invariantes estructurales y lógica de
+    \item VALEN es un \emph{motor formal de invariantes estructurales y lógica de
           negocio} --- BOLA/IDOR, ciclos de estado, confianza IAM/agente --- donde
           el taint es estructuralmente ciego.
     \item Sustrato entregado: detector BOLA/IDOR, gates OpenAPI, ciclos de estado
@@ -286,7 +286,7 @@
 
 \begin{frame}
   \centering
-  \Large\color{manifold}\textbf{Gracias}\\[4mm]
+  \Large\color{valen}\textbf{Gracias}\\[4mm]
   \normalsize\color{black}
   Mapear el programa como un espacio --- y probar si la estructura realmente ayuda.\\[1mm]
   Cuando la geometría falla, el fallo también es información.

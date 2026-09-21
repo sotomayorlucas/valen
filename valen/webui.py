@@ -1,6 +1,6 @@
-"""Web UI for MANIFOLD: a single-page app served by the stdlib HTTP server.
+"""Web UI for VALEN: a single-page app served by the stdlib HTTP server.
 
-The page talks to `/api/*` endpoints (see `manifold/server.py`) to analyze code
+The page talks to `/api/*` endpoints (see `valen/server.py`) to analyze code
 live, browse the bundled examples, and render the experiment dashboard and the
 methodology diagrams. Everything is self-contained (no external JS/CSS).
 """
@@ -12,7 +12,7 @@ PAGE = r"""<!doctype html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>MANIFOLD — web UI</title>
+<title>VALEN — web UI</title>
 <style>
 :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--text:#e6edf3;--muted:#8b949e;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922;--purple:#bc8cff;}
 *{box-sizing:border-box;}
@@ -52,7 +52,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
 </head>
 <body>
 <header>
-  <h1>MANIFOLD</h1>
+  <h1>VALEN</h1>
   <span class="sub">web UI — analyze, explore, reproduce</span>
   <nav>
     <button data-tab="analyze" class="on">Analyze</button>
@@ -103,7 +103,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
     <div><h2 style="font-size:13px">V(x) ranking (top nodes)</h2><div id="top" class="small"></div><div id="topology" class="small" style="margin-top:10px"></div></div>
     <div><div id="verify-block"></div><div id="agent-block"></div></div>
   </div>
-  <h2 style="margin-top:18px">Manifold</h2>
+  <h2 style="margin-top:18px">Valen</h2>
   <svg id="map" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet"></svg>
   <div class="small" id="mlegend" style="margin-top:6px"></div>
 </section>

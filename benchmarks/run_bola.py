@@ -3,7 +3,7 @@
 This is the *trust & logic* experiment: classic taint analysis is structurally
 blind to BOLA/IDOR (the object selector is a clean, cast value) and to missing
 authorization (the data may even be tainted, but the bug is the absent privilege
-boundary). MANIFOLD's structural signal --- an ungated, user-controlled resource
+boundary). VALEN's structural signal --- an ungated, user-controlled resource
 access --- is what surfaces them.
 
 Two corpora:
@@ -28,10 +28,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.analysis.authorization import (  # noqa: E402
+from valen.analysis.authorization import (  # noqa: E402
     bola_idor_candidates,
 )
-from manifold.ingest.python import PythonIngest  # noqa: E402
+from valen.ingest.python import PythonIngest  # noqa: E402
 
 SMALL = ROOT / "examples" / "python" / "bola"
 SMALL_LABELS = {

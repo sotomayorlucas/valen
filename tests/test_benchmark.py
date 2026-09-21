@@ -1,12 +1,12 @@
 """Tests for the benchmark harness and calibration."""
 
-from manifold.analysis.calibration import (
+from valen.analysis.calibration import (
     FEATURE_KEYS,
     calibrated_detector,
     logistic_regression,
     sigmoid,
 )
-from manifold.benchmark import Case, Metrics, evaluate, taint_detector, verified_detector
+from valen.benchmark import Case, Metrics, evaluate, taint_detector, verified_detector
 
 
 def test_metrics_counts():

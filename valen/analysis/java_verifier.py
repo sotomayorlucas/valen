@@ -4,7 +4,7 @@ Confirms (or refutes) the taint flows found by the Java adapter, using bounded,
 path-insensitive symbolic execution with the Z3 string theory. Branches are
 merged with `If` selectors (so a model picks the feasible path), sanitizers
 sever the dependency, and each confirmed sink yields a concrete *witness*. This
-turns MANIFOLD's "projected" neuro-symbolic row into a measured one.
+turns VALEN's "projected" neuro-symbolic row into a measured one.
 """
 
 from __future__ import annotations

@@ -8,10 +8,10 @@ deterministic heuristic hypothesizer.
 
 Configuration (environment variables):
 
-* ``MANIFOLD_LLM_MODEL``    — model name (e.g. ``gpt-4o-mini``, ``claude-3-5-sonnet-*``,
+* ``VALEN_LLM_MODEL``    — model name (e.g. ``gpt-4o-mini``, ``claude-3-5-sonnet-*``,
   ``ollama/llama3``). Default ``gpt-4o-mini``.
-* ``MANIFOLD_LLM_API_KEY``  — API key (optional for local endpoints).
-* ``MANIFOLD_LLM_BASE_URL`` — base URL (optional; used for local/self-hosted).
+* ``VALEN_LLM_API_KEY``  — API key (optional for local endpoints).
+* ``VALEN_LLM_BASE_URL`` — base URL (optional; used for local/self-hosted).
 """
 
 from __future__ import annotations
@@ -41,9 +41,9 @@ class LLMClient:
         base_url: Optional[str] = None,
         temperature: float = 0.0,
     ) -> None:
-        self.model = model or os.environ.get("MANIFOLD_LLM_MODEL", "gpt-4o-mini")
-        self.api_key = api_key or os.environ.get("MANIFOLD_LLM_API_KEY")
-        self.base_url = base_url or os.environ.get("MANIFOLD_LLM_BASE_URL")
+        self.model = model or os.environ.get("VALEN_LLM_MODEL", "gpt-4o-mini")
+        self.api_key = api_key or os.environ.get("VALEN_LLM_API_KEY")
+        self.base_url = base_url or os.environ.get("VALEN_LLM_BASE_URL")
         self.temperature = temperature
 
     @property

@@ -1,6 +1,9 @@
-# MANIFOLD
+# VALEN
 
-**MANIFOLD es un *verificador neuro-simbólico de invariantes estructurales*:** un
+> **VALEN** = *Verification And Active Logic Engine, Neuro-symbolic* (Verificación
+> y Lógica Activa, Neuro-simbólica).
+
+**VALEN es un *verificador neuro-simbólico de invariantes estructurales*:** un
 agente autónomo que extrae especificaciones de seguridad (invariantes de
 autorización, ciclos de máquinas de estado, precondiciones de taint) con un LLM y
 las descarga con métodos formales (Z3, homología dirigida GLMY, un núcleo
@@ -12,7 +15,7 @@ fallas de inyección lineal los priors estructurales no aportan sobre el taint, 
 en las fallas de confianza y lógica (**BOLA/IDOR, autorización ausente, ciclos de
 estado**) son la única señal, porque ahí el dato es legítimo y el taint es ciego.
 
-**MANIFOLD is a *neuro-symbolic structural-invariant verifier*:** an autonomous
+**VALEN is a *neuro-symbolic structural-invariant verifier*:** an autonomous
 agent that mines security specifications (authorization invariants, state-machine
 cycles, taint preconditions) from code with an LLM and discharges them with
 formal methods (Z3, GLMY directed homology, a mechanized Lean 4 core), emitting
@@ -77,13 +80,13 @@ verificables por máquina bajo la semántica modelada.
 ## Estructura / Layout
 
 ```
-manifold/          # núcleo Python: IR, ingesta, análisis
+valen/          # núcleo Python: IR, ingesta, análisis
   ir.py            #   grafo tipado (Node/Edge/Graph, serializable)
   ingest/          #   adaptadores (tree-sitter, perfiles source/sink)
   analysis/        #   taint engine + findings
 core/              # núcleo numérico Rust (espectral, topología, álgebra)
 agent/             # agente LLM autónomo (LiteLLM)  [F5]
-viz/               # visualización del manifold     [F6]
+viz/               # visualización del valen     [F6]
 examples/python/   # programas vulnerables de juguete
 docs/es, docs/en/  # whitepaper en español e inglés
 ```
@@ -91,7 +94,7 @@ docs/es, docs/en/  # whitepaper en español e inglés
 ## Interfaz web (sin CLI)
 
 ```bash
-.venv/bin/python -m manifold.server --port 8000
+.venv/bin/python -m valen.server --port 8000
 # abrir http://127.0.0.1:8000
 ```
 
@@ -100,7 +103,7 @@ pestañas:
 
 - **Analyze** — pegá código, elegí un ejemplo del repo o fijá un `path`; elegí el
   adaptador (auto/python/java/binary/angr-binary/web/llm-agent) y corré el
-  análisis. Muestra hallazgos, **ranking de V(x)**, manifold force-directed,
+  análisis. Muestra hallazgos, **ranking de V(x)**, valen force-directed,
   verificaciones Z3 (con witness) y el reporte del agente. `POST /api/analyze`.
 - **Experiments** — oráculo de priorización (curva de costo + AUC), OWASP
   Benchmark, ablación y escalabilidad. `GET /api/results`.
@@ -115,7 +118,7 @@ La API es estática (tree-sitter + Z3 + el núcleo Rust); **nunca ejecuta tu có
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 
 # Analiza un archivo y emite hallazgos + grafo IR como JSON
-.venv/bin/python -m manifold.cli examples/python/sqli.py
+.venv/bin/python -m valen.cli examples/python/sqli.py
 ```
 
 Para el núcleo Rust:
@@ -137,7 +140,7 @@ cd core && cargo test
 cd core && cargo test && cargo build --release
 # El binario lee el IR (JSON) por stdin y emite señales espectrales/geométricas.
 ```
-El puente Python está en `manifold/analysis/math_core.py` (`run_core`, `fiedler_ranking`).
+El puente Python está en `valen/analysis/math_core.py` (`run_core`, `fiedler_ranking`).
 
 Núcleo incluye además: **Laplaciano dirigido de Chung** (`directed_laplacian`) y
 **Ollivier–Ricci aproximado vía Sinkhorn** (`ollivier_ricci_sinkhorn`). La capa
@@ -148,48 +151,48 @@ topológica tiene dos invariantes: homología **no dirigida** (`homology`) y
 ## Agente autónomo (F5)
 
 ```bash
-.venv/bin/python -m manifold.cli examples/python/sqli.py --agent
+.venv/bin/python -m valen.cli examples/python/sqli.py --agent
 ```
 
 Funciona **offline** (hipótesis heurísticas deterministas) por defecto. Para usar
 un LLM vía LiteLLM, define las variables de entorno y se activa automáticamente:
 
 ```bash
-export MANIFOLD_LLM_MODEL="gpt-4o-mini"      # o claude-3-5-sonnet-*, ollama/llama3, ...
-export MANIFOLD_LLM_API_KEY="..."             # opcional para endpoints locales
-export MANIFOLD_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLLM)
+export VALEN_LLM_MODEL="gpt-4o-mini"      # o claude-3-5-sonnet-*, ollama/llama3, ...
+export VALEN_LLM_API_KEY="..."             # opcional para endpoints locales
+export VALEN_LLM_BASE_URL="http://localhost:11434/v1"  # opcional (Ollama/vLLM)
 ```
 
 ## Visualización y demo (F6)
 
 ```bash
-# Renderiza el manifold (grafo IR + señales + findings) a un HTML autocontenido
-.venv/bin/python -m manifold.cli examples/python/sqli.py --viz /tmp/sqli.html
+# Renderiza el valen (grafo IR + señales + findings) a un HTML autocontenido
+.venv/bin/python -m valen.cli examples/python/sqli.py --viz /tmp/sqli.html
 
 # Demo end-to-end: analiza todos los ejemplos y genera HTML + summary.json
 .venv/bin/python scripts/demo.py   # escribe en viz/out/
 
-# Dashboard: todos los experimentos + metodología + explorador del manifold
-.venv/bin/python -m manifold.dashboard --out dashboard.html
+# Dashboard: todos los experimentos + metodología + explorador del valen
+.venv/bin/python -m valen.dashboard --out dashboard.html
 ```
 
 El dashboard (autocontenido) muestra las **metodologías** (pipeline, capas→señal→
 evidencia con su AUC, leyes de mapeo con estado, protocolo de evaluación), la tabla
 del oráculo de priorización, OWASP Benchmark, la ablación, la escalabilidad, un
-explorador del manifold de los ejemplos y recetas de uso con los datos de los
+explorador del valen de los ejemplos y recetas de uso con los datos de los
 experimentos.
 
 ## Multi-dominio (F7)
 
 ```bash
-.venv/bin/python -m manifold.cli examples/binary/vuln.asm      # binario (objdump)
-.venv/bin/python -m manifold.cli examples/web/api.json         # OpenAPI
-.venv/bin/python -m manifold.cli examples/llm_agent/agent.json # agente LLM
-.venv/bin/python -m manifold.cli Foo.java --adapter java        # Java (SAST)
+.venv/bin/python -m valen.cli examples/binary/vuln.asm      # binario (objdump)
+.venv/bin/python -m valen.cli examples/web/api.json         # OpenAPI
+.venv/bin/python -m valen.cli examples/llm_agent/agent.json # agente LLM
+.venv/bin/python -m valen.cli Foo.java --adapter java        # Java (SAST)
 
 # Binario con angr (CFGFast real + taint interprocedural); requiere: pip install ".[angr]"
 gcc -o /tmp/vuln /tmp/vuln.c
-.venv/bin/python -m manifold.cli /tmp/vuln --adapter angr-binary
+.venv/bin/python -m valen.cli /tmp/vuln --adapter angr-binary
 ```
 Los adaptadores producen el mismo IR tipado, así que el núcleo espectral /
 topológico / geométrico y el verificador se aplican sin cambios.
@@ -201,9 +204,9 @@ topológico / geométrico y el verificador se aplican sin cambios.
 ./scripts/reproduce.sh --fetch-owasp   # además descarga y corre OWASP Benchmark
 ```
 
-- **Docker**: `docker build -t manifold . && docker run --rm manifold`
+- **Docker**: `docker build -t valen . && docker run --rm valen`
 - **Núcleo formal mecanizado** (Lean 4, sin Mathlib): `bash scripts/check_formal.sh`
-  verifica `formal/Manifold.lean` (`prop1_soundness`, `no_auth_bounded`).
+  verifica `formal/Valen.lean` (`prop1_soundness`, `no_auth_bounded`).
 - Versiones fijadas en `requirements.txt` y `core/Cargo.lock`; semillas fijas en el
   oráculo (20 semillas) y en el calibrador; TODAS las figuras/tablas del paper se
   regeneran con `scripts/make_figures.py` desde `benchmarks/oracle_results.json`.
@@ -252,19 +255,19 @@ global** (todos seguros+vulnerables): AP taint 0.489, `V_prior` 0.434, DFS 0.286
 random 0.216; P@10 `V_prior` 0.8 vs taint 0.6 (el campo ayuda solo en el extremo
 superior; la diferencia es pequeña en absoluto y no se reporta como significativa).
 
-**Verificación Z3 para Java** (`manifold/analysis/java_verifier.py`): con
+**Verificación Z3 para Java** (`valen/analysis/java_verifier.py`): con
 `--verify` el verificador simbólico (branches con merge, strings, sanitizadores
 como contratos, witness concreto) reproduce exactamente la precisión del
 adaptador (P=0.549, R=0.834, J=+0.057) — **aporta prueba, no precisión**: los
 errores residuales son casos adversariales del benchmark, no caminos espurios.
 
-**Juliet Java** (`benchmarks/run_juliet.py`, `manifold/corpus.py::load_juliet`):
+**Juliet Java** (`benchmarks/run_juliet.py`, `valen/corpus.py::load_juliet`):
 264 casos de 5 CWEs; el adaptador ajustado en OWASP transfiere mal
 (P=0.333, R=0.562) porque Juliet separa fuente/sumidero entre clases
 (`_a`/`_base`/`_bad`) y exige taint **interprocedural** — evidencia para el
 siguiente paso de sistemas y amenaza a la validez externa.
 
-**Taint interprocedural** (`manifold/ingest/java_interproc.py`, adaptador
+**Taint interprocedural** (`valen/ingest/java_interproc.py`, adaptador
 `java-interproc`): punto fijo insensible al contexto (parámetro manchado si un
 call site le pasa taint; llamada manchada si el callee devuelve taint). En
 **Juliet**: R 0.562→0.750, F1 0.419→0.490 (CWE78/CWE90 de 0.000→0.750). En
@@ -287,8 +290,8 @@ cuota de API).
 **Ablación del LLM** (`benchmarks/run_llm.py`, LiteLLM local en `:4000`):
 ```bash
 set -a; . ~/litellm/.env; set +a
-MANIFOLD_LLM_MODEL=openai/flash MANIFOLD_LLM_BASE_URL=http://127.0.0.1:4000 \
-MANIFOLD_LLM_API_KEY=$LITELLM_MASTER_KEY .venv/bin/python benchmarks/run_llm.py --runs 2
+VALEN_LLM_MODEL=openai/flash VALEN_LLM_BASE_URL=http://127.0.0.1:4000 \
+VALEN_LLM_API_KEY=$LITELLM_MASTER_KEY .venv/bin/python benchmarks/run_llm.py --runs 2
 ```
 Resultado: los **confirmados son idénticos** offline vs LLM (el verificador Z3 es
 el árbitro); el LLM cambia la interpretación (CWE/título más ricos, p.ej. CWE-674

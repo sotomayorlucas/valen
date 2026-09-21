@@ -9,7 +9,7 @@
 //!   minimum spanning forest closes a cycle, which is born at that edge's
 //!   weight and never dies (there are no 2-cells in the 1-skeleton).
 //!
-//! The **Mapper** algorithm builds the navigable "manifold": choose a filter
+//! The **Mapper** algorithm builds the navigable "valen": choose a filter
 //! function `f : V -> R`, cover its image with overlapping intervals, cluster
 //! each fiber into connected components, and return the nerve (a graph whose
 //! nodes are clusters).

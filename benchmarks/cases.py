@@ -6,7 +6,7 @@ cases are deliberate *limitations* of the current intraprocedural taint pass:
 taint sink; only the topological H1 signal reveals the recursion cycle).
 """
 
-from manifold.benchmark import Case
+from valen.benchmark import Case
 
 CASES = [
     # ---- true positives -------------------------------------------------

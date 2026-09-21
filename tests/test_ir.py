@@ -1,6 +1,6 @@
 """Tests for the IR data model."""
 
-from manifold.ir import EdgeKind, Graph, NodeKind
+from valen.ir import EdgeKind, Graph, NodeKind
 
 
 def test_add_and_lookup():

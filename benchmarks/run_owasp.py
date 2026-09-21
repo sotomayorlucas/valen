@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.owasp import _TAINT_CATEGORIES, evaluate, load_expected
+from valen.owasp import _TAINT_CATEGORIES, evaluate, load_expected
 
 _HEADER = f"{'category':<14}{'TP':>5}{'FP':>5}{'FN':>5}{'TN':>5}{'prec':>8}{'recall':>8}{'f1':>8}{'J':>8}"
 
@@ -35,12 +35,12 @@ def main() -> int:
 
     detector = None
     if args.verify:
-        from manifold.analysis.java_verifier import verify_java
+        from valen.analysis.java_verifier import verify_java
 
         def detector(code, _v=verify_java):
             return bool(_v(code))
     elif args.interproc:
-        from manifold.ingest.java_interproc import JavaInterproceduralIngest
+        from valen.ingest.java_interproc import JavaInterproceduralIngest
 
         _a = JavaInterproceduralIngest()
         if args.cs:

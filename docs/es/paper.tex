@@ -9,7 +9,7 @@
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
 \definecolor{codegray}{gray}{0.4}
-\definecolor{manifold}{RGB}{30,90,170}
+\definecolor{valen}{RGB}{30,90,170}
 \lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
 \usepackage[margin=1in]{geometry}
 \usepackage{amsmath,amssymb}
@@ -26,14 +26,15 @@
 \title{\bfseries Más allá del taint: invariantes estructurales y witnesses
 verificables por máquina\\ para fallas de autorización, ciclos de estado y
 topologías de confianza}
-\author{Proyecto MANIFOLD}
+\author{Proyecto VALEN}
 \date{Contribuciones de investigación --- método, resultados medidos y limitaciones}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent Presentamos MANIFOLD, un sistema para verificar invariantes de seguridad
+\noindent Presentamos VALEN --- \emph{Verificación y Lógica Activa,
+Neuro-simbólica} --- un sistema para verificar invariantes de seguridad
 \emph{estructurales} --- propiedades de autorización, de transición de estado y de
 topología de confianza --- donde el análisis de taint clásico es demostrablemente
 ciego porque el dato infractor es legítimo. Hacemos cinco contribuciones medidas.
@@ -187,7 +188,7 @@ frente a la explotabilidad end-to-end; y la señal GLMY es necesaria pero no
 suficiente. Cada una se reporta, no se oculta.
 
 \section{Conclusión}
-MANIFOLD contribuye un resultado de frontera falsable, una invariante de
+VALEN contribuye un resultado de frontera falsable, una invariante de
 autorización mecanizada y operacional, evidencia de que la homología dirigida es
 la señal de ciclo correcta, una frontera de arbitraje neuro-simbólico medida y un
 análisis de topología de confianza --- todo sobre una única IR de grafo tipado, y

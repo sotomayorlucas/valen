@@ -10,8 +10,8 @@ This is a small, honest feasibility signal (n=8), not a benchmark.
 
 Usage (online needs the LiteLLM proxy):
     set -a; . ~/litellm/.env; set +a
-    MANIFOLD_LLM_MODEL=openai/flash MANIFOLD_LLM_BASE_URL=http://127.0.0.1:4000 \
-    MANIFOLD_LLM_API_KEY=$LITELLM_MASTER_KEY python benchmarks/run_spec_mining.py
+    VALEN_LLM_MODEL=openai/flash VALEN_LLM_BASE_URL=http://127.0.0.1:4000 \
+    VALEN_LLM_API_KEY=$LITELLM_MASTER_KEY python benchmarks/run_spec_mining.py
 Writes benchmarks/spec_mining_results.json.
 """
 
@@ -96,7 +96,7 @@ def main() -> int:
     ap.add_argument("--out", type=str, default="")
     args = ap.parse_args()
 
-    live = bool(os.environ.get("MANIFOLD_LLM_MODEL") and os.environ.get("MANIFOLD_LLM_BASE_URL"))
+    live = bool(os.environ.get("VALEN_LLM_MODEL") and os.environ.get("VALEN_LLM_BASE_URL"))
     client = LLMClient()
 
     rows = []

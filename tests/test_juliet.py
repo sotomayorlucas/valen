@@ -1,6 +1,6 @@
 """Tests for the Juliet corpus loader."""
 
-from manifold.corpus import load_juliet
+from valen.corpus import load_juliet
 
 
 def test_load_juliet_labels_and_concatenates(tmp_path):

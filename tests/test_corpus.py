@@ -2,8 +2,8 @@
 
 from pathlib import Path
 
-from manifold.benchmark import evaluate
-from manifold.corpus import adapter_detector, load_corpus, load_directory
+from valen.benchmark import evaluate
+from valen.corpus import adapter_detector, load_corpus, load_directory
 
 FIXTURES = Path(__file__).resolve().parent.parent / "benchmarks" / "fixtures"
 

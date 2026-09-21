@@ -2,7 +2,7 @@
 
 Each operation becomes a node; its parameters (query/path/body) become taint
 *sources* (untrusted input), ``security`` requirements become *gate* nodes with
-``auth`` edges (L4), and an optional ``x-manifold-sinks`` extension declares
+``auth`` edges (L4), and an optional ``x-valen-sinks`` extension declares
 which parameters reach a dangerous sink. The same spectral / topological /
 geometric kernels then operate on the resulting API-surface graph.
 """
@@ -70,7 +70,7 @@ class WebIngest:
                         )
                         graph.add_edge(gate, endpoint, EdgeKind.AUTH)
 
-                declared_sinks = list(op.get("x-manifold-sinks") or [])
+                declared_sinks = list(op.get("x-valen-sinks") or [])
                 has_security = bool((op.get("security") or []))
 
                 # Missing authorization at the API-design level (CWE-862): an
@@ -96,7 +96,7 @@ class WebIngest:
                         )
                     )
 
-                # Declared sinks: x-manifold-sinks = ["paramName"].
+                # Declared sinks: x-valen-sinks = ["paramName"].
                 for name in declared_sinks:
                     seq += 1
                     sink = f"sink{seq}"

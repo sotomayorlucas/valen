@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from manifold.analysis.field import probability_field, vulnerability_field
-from manifold.analysis.math_core import core_binary, run_core
-from manifold.ingest.python import PythonIngest
+from valen.analysis.field import probability_field, vulnerability_field
+from valen.analysis.math_core import core_binary, run_core
+from valen.ingest.python import PythonIngest
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 
@@ -22,7 +22,7 @@ def binary_available() -> bool:
 
 def test_field_highlights_tainted_nodes(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     code = (EXAMPLES / "sqli.py").read_text()
     result = PythonIngest().analyze(code, path="sqli.py")
     math = run_core(result.graph)
@@ -37,7 +37,7 @@ def test_field_highlights_tainted_nodes(binary_available):
 
 def test_field_is_low_on_safe(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     code = (EXAMPLES / "safe.py").read_text()
     result = PythonIngest().analyze(code, path="safe.py")
     math = run_core(result.graph)

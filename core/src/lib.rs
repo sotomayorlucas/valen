@@ -1,6 +1,6 @@
-//! MANIFOLD numeric core.
+//! VALEN numeric core.
 //!
-//! This crate mirrors the Python IR (see `manifold/ir.py`) and hosts the
+//! This crate mirrors the Python IR (see `valen/ir.py`) and hosts the
 //! performance-critical kernels:
 //!
 //! * `graph`     — typed graph mirror (serde JSON, drops straight in from Python)

@@ -11,8 +11,8 @@ from pathlib import Path
 
 import pytest
 
-from manifold.analysis.math_core import core_binary, topology
-from manifold.ir import Graph
+from valen.analysis.math_core import core_binary, topology
+from valen.ir import Graph
 
 EX = Path(__file__).resolve().parent.parent / "examples" / "state_machine"
 
@@ -28,7 +28,7 @@ def binary_available() -> bool:
 
 def test_lock_cycle_glmy_directed_generator(binary_available):
     if not binary_available:
-        pytest.skip("manifold-core binary not built")
+        pytest.skip("valen-core binary not built")
     data = json.loads((EX / "lock_cycle.json").read_text())
     graph = Graph.from_dict(data)
     topo = topology(graph, kind="call")

@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from manifold.analysis.bola_verifier import bola_witness, ownership_predicate_present, verify_bola
+from valen.analysis.bola_verifier import bola_witness, ownership_predicate_present, verify_bola
 
 BOLA = Path(__file__).resolve().parent.parent / "examples" / "python" / "bola"
 

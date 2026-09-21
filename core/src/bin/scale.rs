@@ -4,7 +4,7 @@
 //! graphs. Dense kernels (spectral, directed Laplacian) are capped because they
 //! materialize an n x n matrix --- that cap is itself the finding.
 
-use manifold_core::{
+use valen_core::{
     directed_laplacian, fiedler, forman_ricci, graph::{Edge, EdgeKind, Graph, Node},
     homology, mapper, ollivier_ricci, ollivier_ricci_sinkhorn,
 };
@@ -22,7 +22,7 @@ fn gen_graph(n: usize, m: usize, seed: u64) -> Graph {
     let nodes: Vec<Node> = (0..n)
         .map(|i| Node {
             id: format!("{i}"),
-            kind: manifold_core::NodeKind::Function,
+            kind: valen_core::NodeKind::Function,
             label: format!("{i}"),
             file: String::new(),
             line: 0,

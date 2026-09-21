@@ -5,7 +5,7 @@ Consumes a JSON spec of identities (users, roles, services, resources) with
 carrying a ``relation`` (``assume``, ``access``, ``trust``). The graph encodes
 the *trust topology*; the same spectral (Fiedler cut) and discrete-curvature
 (Forman--Ricci) kernels then surface privilege bridges and lateral-movement
-chains --- see ``manifold.analysis.trust``.
+chains --- see ``valen.analysis.trust``.
 
 The adapter maps identity nodes to FUNCTION nodes (with a ``group`` attribute)
 and privilege/trust relations to ``call`` edges (with a ``relation`` attribute);

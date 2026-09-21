@@ -15,7 +15,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.oracle import (
+from valen.oracle import (
     SIGNALS,
     analyze_case,
     cost_curve,
@@ -26,7 +26,7 @@ from manifold.oracle import (
     reciprocal_ranks,
     signal_aucs,
 )
-from manifold.owasp import _TAINT_CATEGORIES, load_expected
+from valen.owasp import _TAINT_CATEGORIES, load_expected
 
 import pickle
 

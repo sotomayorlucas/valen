@@ -1,7 +1,7 @@
-//! `manifold-core` CLI: read the IR graph (JSON) on stdin and emit spectral +
+//! `valen-core` CLI: read the IR graph (JSON) on stdin and emit spectral +
 //! geometric results (JSON) on stdout.
 
-use manifold_core::{
+use valen_core::{
     directed_laplacian, fiedler, forman_ricci, graph::{EdgeKind, Graph}, homology, mapper,
     ollivier_ricci, ollivier_ricci_sinkhorn, path_homology, spectral_embedding,
 };

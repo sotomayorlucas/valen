@@ -1,6 +1,6 @@
 """Tests for the prioritization-oracle experiment."""
 
-from manifold.oracle import (
+from valen.oracle import (
     Candidate,
     analyze_case,
     cost_curve,

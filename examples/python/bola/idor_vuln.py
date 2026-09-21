@@ -2,7 +2,7 @@
 
 The selector is cast to ``int`` so *taint analysis is blind* (the data is clean),
 yet user A can read user B's row because the function performs a user-controlled
-resource lookup with NO authorization gate. MANIFOLD's structural signal is the
+resource lookup with NO authorization gate. VALEN's structural signal is the
 ungated source -> resource-sink pattern, not a taint flow.
 """
 

@@ -1,10 +1,10 @@
-"""Tests for the manifold visualization."""
+"""Tests for the valen visualization."""
 
 from pathlib import Path
 
-from agent.agent import ManifoldAgent
-from manifold.ingest.python import PythonIngest
-from manifold.viz import render_html, write_html
+from agent.agent import ValenAgent
+from valen.ingest.python import PythonIngest
+from valen.viz import render_html, write_html
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 
@@ -12,7 +12,7 @@ EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 def test_render_html_contains_graph_and_findings(tmp_path):
     code = (EXAMPLES / "sqli.py").read_text()
     result = PythonIngest().analyze(code, path="sqli.py")
-    report = ManifoldAgent().run(code, path="sqli.py")
+    report = ValenAgent().run(code, path="sqli.py")
 
     html = render_html(result.graph, report=report)
     assert html.startswith("<!doctype html>")
@@ -24,7 +24,7 @@ def test_render_html_contains_graph_and_findings(tmp_path):
 def test_write_html_creates_file(tmp_path):
     code = (EXAMPLES / "safe.py").read_text()
     result = PythonIngest().analyze(code, path="safe.py")
-    report = ManifoldAgent().run(code, path="safe.py")
+    report = ValenAgent().run(code, path="safe.py")
 
     out = tmp_path / "safe.html"
     write_html(result.graph, str(out), report=report)

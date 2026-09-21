@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from manifold.ingest.python import PythonIngest
+from valen.ingest.python import PythonIngest
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"
 

@@ -18,7 +18,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.analysis.api_bola import api_bola_candidates  # noqa: E402
+from valen.analysis.api_bola import api_bola_candidates  # noqa: E402
 
 SPEC = ROOT / "examples" / "api" / "crapi-openapi-spec.json"
 LABELS = ROOT / "examples" / "api" / "crapi_bola_labels.json"

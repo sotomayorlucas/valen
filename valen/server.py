@@ -1,6 +1,6 @@
-"""Web server for MANIFOLD (Python standard library only).
+"""Web server for VALEN (Python standard library only).
 
-    python -m manifold.server --port 8000
+    python -m valen.server --port 8000
     # open http://127.0.0.1:8000
 
 Endpoints:
@@ -111,9 +111,9 @@ def _analyze(payload: Dict[str, Any]) -> Dict[str, Any]:
 
     if payload.get("agent") and adapter == "python":
         try:
-            from agent.agent import ManifoldAgent
+            from agent.agent import ValenAgent
 
-            report = ManifoldAgent().run(code, path=path)
+            report = ValenAgent().run(code, path=path)
             out["agent"] = [e.to_dict() for e in report.entries]
         except Exception as exc:
             out["agent_error"] = str(exc)
@@ -180,7 +180,7 @@ def _results() -> Dict[str, Any]:
 
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
-    server_version = "manifold/0.1"
+    server_version = "valen/0.1"
 
     def log_message(self, *args):  # quieter
         pass
@@ -234,7 +234,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
     httpd = ThreadingHTTPServer((host, port), Handler)
-    print(f"MANIFOLD web UI  ->  http://{host}:{port}  (Ctrl+C to stop)")
+    print(f"VALEN web UI  ->  http://{host}:{port}  (Ctrl+C to stop)")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
@@ -244,7 +244,7 @@ def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="MANIFOLD web UI (stdlib server).")
+    ap = argparse.ArgumentParser(description="VALEN web UI (stdlib server).")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
     args = ap.parse_args()

@@ -1,8 +1,8 @@
-# Reproducible artifact for MANIFOLD.
+# Reproducible artifact for VALEN.
 #
-# Build:  docker build -t manifold .
-# Run:    docker run --rm -it manifold            # tests + toy demo
-#         docker run --rm -it manifold scripts/reproduce.sh --fetch-owasp
+# Build:  docker build -t valen .
+# Run:    docker run --rm -it valen            # tests + toy demo
+#         docker run --rm -it valen scripts/reproduce.sh --fetch-owasp
 FROM python:3.12-slim
 
 RUN apt-get update \
@@ -18,7 +18,7 @@ ENV PATH="/root/.cargo/bin:${PATH}"
 RUN curl -sL https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%400.17.0/tectonic-0.17.0-x86_64-unknown-linux-musl.tar.gz \
       | tar xz -C /usr/local/bin tectonic
 
-WORKDIR /manifold
+WORKDIR /valen
 COPY requirements.txt pyproject.toml ./
 RUN python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
 

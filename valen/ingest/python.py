@@ -2,9 +2,9 @@
 
 This adapter parses Python with tree-sitter and produces:
 
-* a typed :class:`~manifold.ir.Graph` with ``control`` / ``call`` / ``data`` /
+* a typed :class:`~valen.ir.Graph` with ``control`` / ``call`` / ``data`` /
   ``taint`` edges plus ``source`` / ``sink`` nodes, and
-* a list of :class:`~manifold.analysis.taint.Finding` produced by an
+* a list of :class:`~valen.analysis.taint.Finding` produced by an
   intraprocedural, path-insensitive taint pass.
 
 The control-flow graph emitted here is a *statement-sequence approximation*

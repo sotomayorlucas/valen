@@ -14,9 +14,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.benchmark import Metrics
-from manifold.corpus import load_juliet
-from manifold.ingest.java import JavaIngest
+from valen.benchmark import Metrics
+from valen.corpus import load_juliet
+from valen.ingest.java import JavaIngest
 
 
 def main() -> int:
@@ -28,7 +28,7 @@ def main() -> int:
     args = ap.parse_args()
 
     if args.interproc:
-        from manifold.ingest.java_interproc import JavaInterproceduralIngest
+        from valen.ingest.java_interproc import JavaInterproceduralIngest
 
         _base = JavaInterproceduralIngest()
 

@@ -13,8 +13,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from manifold.benchmark import evaluate_report
-from manifold.corpus import adapter_detector, load_corpus
+from valen.benchmark import evaluate_report
+from valen.corpus import adapter_detector, load_corpus
 
 
 def main() -> int:

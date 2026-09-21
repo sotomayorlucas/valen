@@ -1,11 +1,11 @@
-"""Self-contained HTML dashboard for MANIFOLD.
+"""Self-contained HTML dashboard for VALEN.
 
 Aggregates every experiment artifact into one page: the prioritization oracle
 (MRR / AUC / cost curve), the OWASP Benchmark table, the ablation, the per-kernel
-scalability curves, an interactive manifold explorer over the bundled examples,
+scalability curves, an interactive valen explorer over the bundled examples,
 and copy-paste usage recipes. No server or external JS is required.
 
-    python -m manifold.dashboard --out dashboard.html
+    python -m valen.dashboard --out dashboard.html
 """
 
 from __future__ import annotations
@@ -94,7 +94,7 @@ _TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>MANIFOLD — dashboard</title>
+<title>VALEN — dashboard</title>
 <style>
 :root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--text:#e6edf3;--muted:#8b949e;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922;--purple:#bc8cff;}
 *{box-sizing:border-box;}
@@ -128,8 +128,8 @@ select,button{background:var(--panel2);color:var(--text);border:1px solid var(--
 </head>
 <body>
 <header>
-  <h1>MANIFOLD — experiment dashboard</h1>
-  <p>Prioritization oracle &middot; OWASP Benchmark 1.2 &middot; ablation &middot; scalability &middot; manifold explorer</p>
+  <h1>VALEN — experiment dashboard</h1>
+  <p>Prioritization oracle &middot; OWASP Benchmark 1.2 &middot; ablation &middot; scalability &middot; valen explorer</p>
 </header>
 <main>
   <section id="summary"><h2>Summary</h2><div class="cards" id="cards"></div></section>
@@ -167,7 +167,7 @@ select,button{background:var(--panel2);color:var(--text);border:1px solid var(--
   <section id="scale"><h2>Scalability</h2><div class="chart"><svg id="scale" viewBox="0 0 900 340"></svg></div></section>
 
   <section id="explorer">
-    <h2>Manifold explorer</h2>
+    <h2>Valen explorer</h2>
     <div class="grid2" style="margin-bottom:8px">
       <select id="case"></select>
       <span class="badge" id="case-meta"></span>
@@ -401,7 +401,7 @@ function table(rows, cols){
   svg.innerHTML=s;
 })();
 
-// ---------- manifold explorer ----------
+// ---------- valen explorer ----------
 const COLORS={source:"#f85149",sink:"#d29922",function:"#58a6ff",gate:"#bc8cff",module:"#30363d",
   assign:"#a5d6ff",call:"#bc8cff",statement:"#8b949e",block:"#8b949e",variable:"#79c0ff",parameter:"#79c0ff"};
 const ECOL={taint:"#f85149",call:"#58a6ff",data:"#3fb950",control:"#6e7681",trust:"#bc8cff",auth:"#d2a8ff"};
@@ -442,12 +442,12 @@ $("#recipes").textContent = DATA.recipes;
 """
 
 _RECIPES = """# 1. Dashboard (this page)
-python -m manifold.dashboard --out dashboard.html
+python -m valen.dashboard --out dashboard.html
 
 # 2. Analyze any artifact (auto-detects the adapter)
-python -m manifold.cli examples/python/sqli.py --agent --viz /tmp/sqli.html
-python -m manifold.cli Foo.java --adapter java
-python -m manifold.cli /path/to/binary --adapter angr-binary
+python -m valen.cli examples/python/sqli.py --agent --viz /tmp/sqli.html
+python -m valen.cli Foo.java --adapter java
+python -m valen.cli /path/to/binary --adapter angr-binary
 
 # 3. OWASP Benchmark 1.2 (the corpus behind the numbers)
 python benchmarks/run_owasp.py \\
@@ -467,7 +467,7 @@ python benchmarks/run_juliet.py --root /path/to/juliet-test-suite
 python benchmarks/run_external.py <manifest.json | dir> --adapter python
 
 # 7. Your own code: point the CLI at it, or load a labeled corpus
-python -m manifold.cli your_project/file.py --agent --viz out.html
+python -m valen.cli your_project/file.py --agent --viz out.html
 #   manifest:  [{"file": "a.py", "vulnerable": true}, ...]
 #   directory: root/vulnerable/*  +  root/safe/*
 
@@ -486,7 +486,7 @@ def write_dashboard(path: str) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Generate or serve the MANIFOLD dashboard / web UI.")
+    ap = argparse.ArgumentParser(description="Generate or serve the VALEN dashboard / web UI.")
     ap.add_argument("--out", default="dashboard.html", help="write a static dashboard file (default)")
     ap.add_argument("--serve", action="store_true", help="serve the interactive web UI instead")
     ap.add_argument("--host", default="127.0.0.1")
