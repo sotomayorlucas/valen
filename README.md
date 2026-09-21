@@ -19,7 +19,7 @@ neuro-symbolic loop (LLM + Z3) act on the prioritized regions.
 > permutaciones); las señales espectral (AUC 0.496) y topológica
 > (0.500) están en el azar y la curvatura (0.376) por debajo. El campo
 > estructural solo ayuda en el extremo superior de una cola global (P@10 0.8 vs
-> 0.6, diferencia pequeña en absoluto). Las hipótesis H1/H2/H5 quedan **no
+> 0.6, diferencia pequeña en absoluto). Las hipótesis H1/H2/H3/H5 quedan **no
 > soportadas**.
 
 ## Idea central / Core idea

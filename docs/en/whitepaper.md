@@ -35,9 +35,9 @@ artifact → IR (typed graph) → mathematical layers → V(x) → LLM agent →
                      ↑__________________ re-embed __________________|
 ```
 
-A vulnerability is **not** a pattern; it is a *violation of a structural
-invariant* (a broken authorization invariant, a persistent cycle, a negative
-curvature chokepoint, a taint flow across a trust cut).
+We model vulnerability *candidates* as violations of program invariants rather
+than purely syntactic patterns (a broken authorization invariant, a persistent
+cycle, a negative curvature chokepoint, a taint flow across a trust cut).
 
 ## 3. The Intermediate Representation (IR)
 
@@ -69,7 +69,8 @@ and a Galois connection $(\alpha, \gamma)$. The **privilege-level function**
 $F: V \to \mathbb{N}$ assigns each point a level; an edge $(u,v)$ is an *auth edge*
 iff $F(u) < F(v)$. **Proposition (authorization-invariant violation):** a taint flow
 violates the invariant iff its path crosses an `auth` edge without a sanitizer —
-the operational rule H4/§8 (proof in the PDF, §4.6; mechanized in Lean 4). No
+the operational rule H4/§8 (proof in the PDF, §4.6; the no-auth part is
+mechanized in Lean 4). No
 category-theoretic natural transformation is claimed.
 
 ### 4.5 Formal
@@ -96,7 +97,7 @@ done by logistic regression over labeled data (§11.1).
 | H5 | persistence outlier | real vs. spurious |
 | H6 | $\mathrm{SAT}(\phi_{\text{bad}})$ | model witness (encoded semantics) |
 
-These are *falsifiable hypotheses*, not laws; H1/H2/H5 are not supported on the
+These are *falsifiable hypotheses*, not laws; H1/H2/H3/H5 are not supported on the
 evaluated corpora.
 
 ## 7. The autonomous LLM agent

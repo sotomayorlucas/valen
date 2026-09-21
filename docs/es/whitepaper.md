@@ -36,9 +36,10 @@ artefacto → IR (grafo tipado) → capas matemáticas → V(x) → agente LLM �
                      ↑__________________ re-embebe __________________|
 ```
 
-Una vulnerabilidad **no** es un patrón; es la *violación de una invariante
-estructural* (invariante de autorización rota, ciclo persistente, cuello de botella de curvatura
-negativa, flujo de taint que cruza un corte de confianza).
+Modelamos a los *candidatos* a vulnerabilidad como violaciones de invariantes de
+programa en vez de patrones puramente sintácticos (invariante de autorización
+rota, ciclo persistente, cuello de botella de curvatura negativa, flujo de taint
+que cruza un corte de confianza).
 
 ## 3. La Representación Intermedia (IR)
 
@@ -71,7 +72,8 @@ $F: V \to \mathbb{N}$ asigna un nivel a cada punto; una arista $(u,v)$ es *arist
 auth* si y solo si $F(u) < F(v)$. **Proposición (violación de la invariante de
 autorización):** un flujo de taint viola la invariante si y solo si su camino cruza
 una arista `auth` sin un sanitizador — la regla operacional H4/§8 (prueba en el PDF,
-§4.6; mecanizada en Lean 4). No se reclama ninguna transformación natural
+§4.6; la parte de no-escalada está mecanizada en Lean 4). No se reclama ninguna
+transformación natural
 categórica.
 
 ### 4.5 Formal
@@ -98,7 +100,7 @@ se hace por regresión logística sobre datos etiquetados (§11.1).
 | H5 | outlier de persistencia | real vs. espurio |
 | H6 | $\mathrm{SAT}(\phi_{\text{malo}})$ | witness (semántica codificada) |
 
-Son *hipótesis falsables*, no leyes; H1/H2/H5 no se sostienen en los corpus
+Son *hipótesis falsables*, no leyes; H1/H2/H3/H5 no se sostienen en los corpus
 evaluados.
 
 ## 7. El agente LLM autónomo

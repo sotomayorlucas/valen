@@ -45,15 +45,17 @@ $p=5\times10^{-5}$ (paired permutation, add-one over 20000 draws); \emph{spectra
 ($0.500$) signals are at chance and \emph{Forman--Ricci curvature} is
 \emph{below} chance ($0.376$). On a global pool of all candidates the structural
 field helps only at the extreme top ($P@10=0.8$ vs.\ $0.6$) but loses on average
-precision. The hypotheses H1/H2/H5 are therefore \emph{not supported}. We
+precision. The hypotheses H1/H2/H3/H5 are therefore \emph{not supported}. We
 contribute: (1) a prioritization-oracle harness (MRR, R@1, NDCG@$k$, global
 AP/P@$k$/R@$k$, queries-to-90\%-recall, paired permutation tests); (2) a
 reproducible end-to-end Java pipeline (SAST + Z3 verifier producing
 \emph{machine-checkable witnesses under the modeled semantics}); (3) external
-validation on the Juliet suite and real CVE fix commits, which locates the true
-bottleneck in \emph{interprocedural} taint rather than in more geometry; and (4)
-a Lean~4 mechanization of the taint-abstraction soundness and the authorization
-invariant.
+validation on the Juliet suite and real CVE fix commits, which locates the dominant
+bottlenecks in semantic modeling --- interprocedural flows, library/framework
+summaries and return precision --- rather than in additional geometric features;
+and (4)
+a Lean~4 mechanization of the taint-abstraction soundness and the no-auth
+boundedness part of the authorization invariant.
 \end{abstract}
 
 \section{Motivation}
@@ -63,9 +65,9 @@ capabilities are missing:
 \begin{enumerate}[label=(\arabic*)]
   \item A \emph{unified, quantitative representation} of ``program structure''
         onto which many \emph{independent} signals can be projected and fused.
-  \item A \emph{reasoning loop} that converts ``suspicious region'' into
-        ``proven vulnerability'' --- the LLM supplies the intuition, mathematics
-        supplies the proof.
+  \item A \emph{reasoning loop} that converts a ``suspicious region'' into a
+        ``verified finding under the encoded semantics'' --- the LLM supplies the
+        intuition, mathematics supplies the verification.
 \end{enumerate}
 MANIFOLD provides both.
 
@@ -97,9 +99,10 @@ agent navigates; a formal verifier confirms or refutes each hypothesis and the
 result re-embeds into the manifold.}
 \end{figure}
 
-A vulnerability is \emph{not} a pattern; it is a \emph{violation of a structural
-invariant} (a broken authorization invariant, a persistent cycle, a negative
-curvature chokepoint, a taint flow across a spectral trust cut). Each layer
+We model vulnerability \emph{candidates} as violations of program invariants
+rather than purely syntactic patterns (a broken authorization invariant, a
+persistent cycle, a negative curvature chokepoint, a taint flow across a spectral
+trust cut). Each layer
 detects a different \emph{kind} of invariant violation, and the fused field
 $V(x)$ ranks regions for the agent to inspect.
 
@@ -194,12 +197,13 @@ $F(u) < F(v)$ (a strict escalation), and $E_A$ is the set of auth edges. A
 \emph{sanitizer} at a point maps every tag to clean. \textbf{Authorization
 invariant:} a taint flow reaching a sink is a \emph{violation} when its path
 crosses an auth edge and no sanitizer on the crossing segment restores the
-invariant. This is stated precisely and mechanized in \S4.6.
+invariant. This is stated precisely in \S4.6 (the no-auth boundedness part is
+mechanized).
 
 \subsection{Formal layer (symbolic execution \& model checking)}
 Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
-an SMT solver checks $\mathrm{SAT}(\phi_{\text{bad}})$, whose model is a
-a model witness under the encoded semantics. Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
+an SMT solver checks $\mathrm{SAT}(\phi_{\text{bad}})$, whose model is
+a witness under the encoded semantics (not an end-to-end exploit). Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
 taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
 
@@ -233,26 +237,31 @@ $F : V \to \mathbb{N}$ be the privilege-level function, and let
 $p = e_1 \circ \dots \circ e_n : s \to k$ be a path. Write $\mathrm{Auth}(p)$ for
 the auth edges on $p$ and $\mathrm{San}(p)$ for the sanitizers on $p$. Then:
 (i) if $\mathrm{Auth}(p) = \emptyset$ then $F(k) \le F(s)$ (no privilege
-escalation); (ii) if $\mathrm{Auth}(p) \neq \emptyset$ and no sanitizer covers the
-crossing segment, the flow witnesses a privilege-escalating, attacker-controlled
-reach to $k$ --- an authorization violation.}
+escalation); (ii) if an auth edge $e_i = (v_i, v_{i+1})$ lies on $p$ and no
+sanitizer neutralizes the tag before that crossing, then the execution contains an
+attacker-controlled privilege-boundary crossing.}
 
 \noindent\emph{Proof.} (i) Each non-auth edge satisfies $\neg(F(u) < F(v))$, i.e.\
 $F(v) \le F(u)$, so $F$ is non-increasing along $p$; transitivity gives
 $F(k) \le F(s)$. This is the mechanized \texttt{no\_auth\_bounded} (\S4.6). (ii) An
-auth edge strictly raises $F$; absent a sanitizer on the crossing
-segment, the tag survives, so the composed reach does not preserve the policy.
-(A formula of the form $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ appeared in an
+auth edge strictly raises $F$ at the crossing; absent a sanitizer before it, the
+tag survives, so the boundary is crossed under attacker control. The statement is
+\emph{local} to the crossing: mere presence of an auth edge on $p$ does not imply
+$F(k) > F(s)$ --- e.g.\ $0 \to 1 \to 0$ crosses an auth edge yet returns to the
+same level. Bounding $F(k)$ (or placing $k$ inside the protected region) needs the
+additional assumption $F(k) > F(s)$. (A formula of the
+form $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ appeared in an
 earlier draft; it was under-typed and is withdrawn --- no natural transformation is
 claimed here.) $\square$
 
 \noindent The invariant (ii) is exactly the operational rule H4 (§8/C4): a taint
-finding inside an auth-gated function is an authorization violation. Both
-propositions are \emph{mechanized} in Lean~4 (core only, no Mathlib) in
-\texttt{formal/Manifold.lean}: \texttt{prop1\_soundness} proves the boolean taint
-abstraction sound against the tag-collecting semantics (\S3 there), and
-\texttt{no\_auth\_bounded} proves the path-level authorization invariant (\S4
-there). The proof checking is part of the reproducibility artifact
+finding inside an auth-gated function is an authorization violation. Proposition 1
+and the no-auth boundedness part (i) of Proposition 2 are \emph{mechanized} in
+Lean~4 (core only, no Mathlib) in \texttt{formal/Manifold.lean}:
+\texttt{prop1\_soundness} proves the boolean taint abstraction sound against the
+tag-collecting semantics (\S3 there), and \texttt{no\_auth\_bounded} proves (i)
+(\S4 there). The crossing part (ii) is a semantic definition, not separately
+mechanized. The proof checking is part of the reproducibility artifact
 (\texttt{scripts/check\_formal.sh}).
 
 \section{The vulnerability scalar field}
@@ -307,7 +316,7 @@ future work.
 H1 & Chokepoint ($\kappa \ll 0$) & privilege escalation, auth bypass \\
 H2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
 H3 & Trust cut (Fiedler cut) & injection across trust boundary \\
-H4 & Naturality break & arbitrary taint violation \\
+H4 & Authorization-invariant violation & arbitrary taint violation \\
 H5 & Persistence outlier & real vs.\ spurious features \\
 H6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & model witness (encoded semantics) \\
 \bottomrule
@@ -326,7 +335,7 @@ The pipeline produces: (i) an IR with a \texttt{source} node
 (\texttt{param:query\_param}), a \texttt{sink} node (\texttt{cursor.execute},
 category \texttt{sql}) and a \texttt{taint} edge between them; (ii) the field
 $V(x)$ spikes at the sink (taint + formal signals active); (iii) the Z3 symbolic
-verifier returns \texttt{SAT} with a concrete witness (e.g.\
+verifier returns \texttt{SAT} with a model witness under the encoded semantics (e.g.\
 \texttt{"x' OR '1'='1"}), proving the sink's argument depends on
 the attacker-controlled symbol. The parameterized variant
 \texttt{execute(query, (param,))} is correctly \emph{not} flagged, and a
@@ -441,9 +450,10 @@ being generalized.
 Validation is two-stage. Stage 1 (complete) runs the toy micro-benchmarks of
 F1--F7 against known ground truth: every seeded vulnerability is confirmed and
 every sanitizer / parameterized-query / argv-form false positive is excluded.
-Stage 2 (ongoing) measures precision/recall of the fused field versus raw taint
-over labeled corpora (OWASP Benchmark, SARD); this is experimental validation at
-scale, distinct from the completed prototype. The harness is implemented: a
+Stage 2 is complete for the Java/OWASP evaluation and ongoing for SARD, binaries
+and additional domains; it measures precision/recall of the fused field versus raw
+taint over labeled corpora --- experimental validation at scale, distinct from the
+completed prototype. The harness is implemented: a
 labeled toy benchmark reports precision/recall/F1 for the raw taint pass, the
 Z3-verified pass and a \emph{calibrated} field whose weights $\alpha_i$ are
 learned by leave-one-out logistic regression over the cheap signals --- on the
@@ -503,12 +513,17 @@ geometric (Forman $\kappa$) & 0.376 [0.360, 0.394] \\
 
 The spectral and topological signals are \emph{indistinguishable from chance},
 and the curvature signal is \emph{worse than chance} (negative curvature flags
-high-degree hubs, which are \emph{not} the target sinks). Per the mapping-laws
-program (§4/§6), this is a publishable \emph{negative} result: on OWASP
-Benchmark, \textbf{the geometric and topological priors do not survive beyond
-taint}, which is why MANIFOLD's value lies in the formal layer (verification),
-not in the geometric prior. H1, H2 and H5 are therefore reported as \emph{not
-supported} on this corpus.
+high-degree hubs, which are \emph{not} the target sinks). Per the
+mapping-hypotheses program (§4/§6), this is a publishable \emph{negative} result:
+on OWASP Benchmark, \textbf{the geometric and topological priors do not survive
+beyond taint}. The structural prior does not improve average prioritization;
+MANIFOLD's remaining value lies in formal witnesses, the unified experimental
+substrate, and the diagnosis of semantic-analysis bottlenecks. H1, H2, H3 and H5
+are therefore reported as \emph{not supported} on this corpus. For H3 this rests
+on the spectral (Fiedler) signal being at chance ($0.496$); note that the
+evaluated spectral score aggregates low-rank reconstruction error with Fiedler-cut
+distance, so it is a proxy for the trust-cut predicate rather than an isolated
+test of it.
 
 \noindent\textbf{Paired test and global pool.} The difference taint\,$-$\,field is
 $+0.0225$ (MRR), 95\% bootstrap CI $[+0.0157,+0.0294]$, permutation $p=5\times10^{-5}$ (add-one estimator over 20000 permutations, 2000 bootstrap):
@@ -537,7 +552,7 @@ correct items in the top ten --- so we do not read it as a robust advantage; it 
 consistent with tie-breaking noise and we report it without a significance claim.
 The overall verdict remains negative: the geometric/topological priors help only
 marginally at very small budgets and hurt on average --- a sharper, still
-negative, version of the H1/H2/H5 verdict.
+negative, version of the H1/H2/H3/H5 verdict.
 
 \input{figs/oracle}
 
@@ -644,7 +659,7 @@ cross-category distractor flows --- the gap the neuro-symbolic rows target.
 \subsection{Closing the Z3 row (Java verification)}
 We implemented a Z3-backed Java symbolic verifier (bounded, branch-merging,
 string semantics; sanitizers as contracts) that confirms or refutes each taint
-flow and emits a concrete \emph{witness}. Measured on the seven taint categories
+flow and emits a machine-checkable \emph{witness} under the modeled semantics. Measured on the seven taint categories
 (1698 cases) it reproduces the adapter exactly ($P=0.549$, $R=0.834$,
 $\mathrm{F1}=0.662$, $J=+0.057$) while adding per-finding witnesses. The honest
 conclusion: \textbf{the formal layer adds machine-checkable witnesses under the

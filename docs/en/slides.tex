@@ -31,7 +31,7 @@
 
 \begin{frame}{The problem: prioritize, don't detect}
   \begin{itemize}
-    \item Classic SAST enumerates \emph{patterns}: the real bottleneck is not
+    \item Rule-based and semantic static analysis: the real bottleneck is not
           \emph{detecting} sinks but \emph{deciding which one to verify}.
     \item On OWASP Benchmark~1.2 the Youden index $J=\mathrm{TPR}-\mathrm{FPR}$ collapses:
           SonarQube $J\approx+0.01$, CodeQL $J\approx+0.22$.
@@ -66,8 +66,9 @@
     \item Spectral/topological: \emph{indistinguishable from chance}; curvature: \emph{worse than chance}.
     \item \textbf{Publishable (negative) finding:} on OWASP Benchmark the geometric
           and topological priors \emph{do not survive beyond taint}.
-    \item $\Rightarrow$ MANIFOLD's value is in the \emph{formal} layer
-          (verification), not the geometric prior. L1/L2/L5: \emph{not supported}.
+    \item $\Rightarrow$ Remaining value: \emph{formal witnesses}, the unified
+          substrate, and the diagnosis of semantic-analysis bottlenecks.
+          H1/H2/H3/H5: \emph{not supported}.
   \end{itemize}
 \end{frame}
 
@@ -94,7 +95,7 @@
   \end{tikzpicture}
   \end{center}
   \begin{itemize}
-    \item A vulnerability is \emph{not} a pattern: it is the \emph{violation of a structural invariant}.
+    \item We model vulnerability candidates as \emph{violations of structural invariants}, not purely syntactic patterns.
   \end{itemize}
 \end{frame}
 
@@ -158,7 +159,7 @@
   \end{tabular}
   \end{center}
   \vspace{2mm}
-  \footnotesize These are \emph{falsifiable hypotheses}, not laws; H1/H2/H5 are
+  \footnotesize These are \emph{falsifiable hypotheses}, not laws; H1/H2/H3/H5 are
   \emph{not supported} on the evaluated corpora (see results).
 \end{frame}
 
@@ -166,7 +167,7 @@
   \begin{enumerate}
     \item \textbf{Map}: IR $+$ signals $V(x)$, persistence, curvature.
     \item \textbf{Hypothesize}: the LLM proposes over prioritized regions.
-    \item \textbf{Verify}: Z3 / taint / topology proves or refutes.
+    \item \textbf{Verify}: Z3 and semantic checks confirm/refute the structured hypothesis under the model.
     \item \textbf{Refine} and \textbf{report} (concrete witness).
   \end{enumerate}
   \vspace{2mm}

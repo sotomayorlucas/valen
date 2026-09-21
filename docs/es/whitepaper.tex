@@ -46,15 +46,17 @@ al campo fusionado con $p=5\times10^{-5}$ (permutación pareada, estimador add-o
 \emph{curvatura de Forman--Ricci} está \emph{por debajo} ($0.376$). En una cola
 global de todos los candidatos, el campo estructural ayuda solo en el extremo
 superior ($P@10=0.8$ vs.\ $0.6$) pero pierde en precisión media. Las hipótesis
-H1/H2/H5 quedan por tanto \emph{no soportadas}. Contribuimos: (1) un arnés de
+H1/H2/H3/H5 quedan por tanto \emph{no soportadas}. Contribuimos: (1) un arnés de
 oráculo de priorización (MRR, R@1, NDCG@$k$, AP/P@$k$/R@$k$ global,
 consultas-para-90\%-recall, test de permutación pareada); (2) un pipeline Java
 end-to-end reproducible (SAST + verificador Z3 que produce \emph{witnesses
 verificables por máquina bajo la semántica modelada}); (3) validación externa en
 la suite Juliet y en commits de fix de CVEs reales, que localiza el cuello de
-botella real en el taint \emph{interprocedural} y no en más geometría; y (4) una
-mecanización en Lean~4 de la solidez de la abstracción de taint y de la
-invariante de autorización.
+botella dominantes del modelado semántico --- flujos interprocedurales, summaries
+de librerías/frameworks y precisión de retornos --- y no en más features
+geométricos; y (4) una
+mecanización en Lean~4 de la solidez de la abstracción de taint y de la parte
+de no-escalada de la invariante de autorización.
 \end{abstract}
 
 \section{Motivación}
@@ -67,8 +69,8 @@ y gaps de modelado. Faltan dos capacidades:
         programa'' sobre la cual proyectar y fusionar muchas señales
         \emph{independientes}.
   \item Un \emph{ciclo de razonamiento} que convierta ``región sospechosa'' en
-        ``vulnerabilidad probada'' --- el LLM aporta la intuición, la matemática
-        aporta la prueba.
+        ``hallazgo verificado bajo la semántica codificada'' --- el LLM aporta la
+        intuición, la matemática aporta la verificación.
 \end{enumerate}
 MANIFOLD proporciona ambas.
 
@@ -100,10 +102,10 @@ agente LLM navega; un verificador formal confirma o refuta cada hipótesis y el
 resultado se re-embebe en el manifold.}
 \end{figure}
 
-Una vulnerabilidad \emph{no} es un patrón; es una \emph{violación de una
-invariante estructural} (una invariante de autorización rota, un ciclo
-persistente, un cuello de botella de curvatura negativa, un flujo de taint que
-cruza un corte espectral de confianza). Cada capa detecta un \emph{tipo} distinto
+Modelamos a los candidatos a vulnerabilidad como \emph{violaciones de invariantes
+estructurales}, no como patrones puramente sintácticos (una invariante de
+autorización rota, un ciclo persistente, un cuello de botella de curvatura
+negativa, un flujo de taint que cruza un corte espectral de confianza). Cada capa detecta un \emph{tipo} distinto
 de violación de invariante, y el campo fusionado $V(x)$ ordena las regiones para
 que el agente las inspeccione.
 
@@ -202,7 +204,7 @@ el conjunto de aristas auth. Un \emph{sanitizador} en un punto mapea toda etique
 a limpio. \textbf{Invariante de autorización:} un flujo de taint que alcanza un
 sink es una \emph{violación} cuando su camino cruza una arista auth y ningún
 sanitizador del segmento de cruce restaura la invariante. Esto se enuncia con
-precisión y se mecaniza en \S4.6.
+precisión en \S4.6 (la parte de no-escalada está mecanizada).
 
 \subsection{Capa formal (ejecución simbólica y model checking)}
 La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
@@ -245,28 +247,34 @@ completo de etiquetas es directo pero se asume aquí.
 $p = e_1 \circ \dots \circ e_n : s \to k$ un camino. Denotemos $\mathrm{Auth}(p)$
 las aristas auth de $p$ y $\mathrm{San}(p)$ los sanitizadores en $p$. Entonces:
 (i) si $\mathrm{Auth}(p) = \emptyset$ entonces $F(k) \le F(s)$ (sin escalada de
-privilegio); (ii) si $\mathrm{Auth}(p) \neq \emptyset$ y ningún sanitizador cubre
-el segmento de cruce, el flujo atestigua un alcance a $k$ con privilegio escalado
-y controlado por el atacante --- una violación de autorización.}
+privilegio); (ii) si una arista auth $e_i = (v_i, v_{i+1})$ yace en $p$ y ningún
+sanitizador neutraliza la etiqueta antes de ese cruce, entonces la ejecución
+contiene un cruce de frontera de privilegio controlado por el atacante.}
 
 \noindent\emph{Demostración.} (i) Cada arista no-auth cumple
 $\neg(F(u) < F(v))$, es decir $F(v) \le F(u)$, así que $F$ no crece a lo largo de
 $p$; por transitividad $F(k) \le F(s)$. Este es el enunciado mecanizado
-\texttt{no\_auth\_bounded} (\S4.6). (ii) Una arista auth eleva estrictamente $F$;
-sin un sanitizador en el segmento de cruce, la etiqueta
-sobrevive, así que el alcance compuesto no preserva la política. (Una expresión de
+\texttt{no\_auth\_bounded} (\S4.6). (ii) Una arista auth eleva estrictamente $F$ en
+el cruce; sin un sanitizador antes de él, la etiqueta sobrevive, así que la
+frontera se cruza bajo control del atacante. El enunciado es \emph{local} al
+cruce: la mera presencia de una arista auth en $p$ no implica $F(k) > F(s)$ ---
+p.~ej.\ $0 \to 1 \to 0$ cruza una arista auth pero vuelve al mismo nivel. Acotar
+$F(k)$ (o situar $k$ dentro de la región protegida) requiere la hipótesis adicional
+$F(k) > F(s)$. (Una expresión de
 la forma $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ apareció en un borrador previo;
 estaba mal tipada y se retira --- aquí no se reclama ninguna transformación
 natural.) $\square$
 
 \noindent La invariante (ii) es exactamente la regla operacional implementada como
 H4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
-violación de autorización. Ambas proposiciones están \emph{mecanizadas} en Lean~4
+violación de autorización. La Proposición 1 y la parte de no-escalada (i) de la
+Proposición 2 están \emph{mecanizadas} en Lean~4
 (solo core, sin Mathlib) en \texttt{formal/Manifold.lean}:
 \texttt{prop1\_soundness} prueba la solidez de la abstracción booleana de taint
 frente a la semántica recolectora de etiquetas (\S3 allí), y
-\texttt{no\_auth\_bounded} prueba la invariante de autorización a nivel de camino
-(\S4 allí). La verificación de pruebas es parte del artefacto de reproducibilidad
+\texttt{no\_auth\_bounded} prueba (i)
+(\S4 allí). La parte de cruce (ii) es una definición semántica, no mecanizada por
+separado. La verificación de pruebas es parte del artefacto de reproducibilidad
 (\texttt{scripts/check\_formal.sh}).
 
 \section{El campo escalar de vulnerabilidad}
@@ -343,7 +351,7 @@ El pipeline produce: (i) una IR con un nodo \texttt{source}
 (\texttt{param:query\_param}), un nodo \texttt{sink} (\texttt{cursor.execute},
 categoría \texttt{sql}) y una arista \texttt{taint} entre ambos; (ii) el campo
 $V(x)$ se dispara en el sink (señales de taint y formal activas); (iii) el
-verificador simbólico Z3 devuelve \texttt{SAT} con un witness concreto (p.~ej.\
+verificador simbólico Z3 devuelve \texttt{SAT} con un witness bajo la semántica codificada (p.~ej.\
 \texttt{"x' OR '1'='1"}), demostrando que el argumento del sink
 depende del símbolo controlado por el atacante. La variante parametrizada
 \texttt{execute(query, (param,))} se excluye correctamente, y un decorador
@@ -465,10 +473,10 @@ interprocedurales sensibles al camino y sobre CVEs reales antes de generalizarlo
 La validación es de dos etapas. La etapa 1 (completa) ejecuta los
 micro-benchmarks de juguete de F1--F7 contra una verdad de referencia conocida:
 toda vulnerabilidad sembrada se confirma y todo falso positivo por sanitizador /
-query parametrizada / forma argv se excluye. La etapa 2 (en curso) mide la
-precisión/recall del campo fusionado frente al taint crudo sobre corpus
-etiquetados (OWASP Benchmark, SARD); esta es la validación experimental a gran
-escala, distinta del prototipo ya completado. El arnés está implementado: un
+query parametrizada / forma argv se excluye. La etapa 2 está completa para la evaluación Java/OWASP y en curso para SARD,
+binarios y otros dominios; mide la precisión/recall del campo fusionado frente al
+taint crudo sobre corpus etiquetados --- validación experimental a gran escala,
+distinta del prototipo ya completado. El arnés está implementado: un
 benchmark etiquetado de juguete reporta precisión/recall/F1 para el pase de
 taint crudo, el pase verificado con Z3 y un campo \emph{calibrado} cuyos pesos
 $\alpha_i$ se aprenden por regresión logística leave-one-out sobre las señales
@@ -530,12 +538,17 @@ geométrica (Forman $\kappa$) & 0.376 [0.360, 0.394] \\
 
 Las señales espectral y topológica son \emph{indistinguibles del azar}, y la de
 curvatura es \emph{peor que el azar} (la curvatura negativa marca hubs de alto
-grado, que \emph{no} son los sinks objetivo). Según el programa de leyes de
+grado, que \emph{no} son los sinks objetivo). Según el programa de hipótesis de
 mapeo (§4/§6), este es un resultado \emph{negativo} publicable: sobre OWASP
 Benchmark, \textbf{los priors geométrico y topológico no sobreviven más allá del
-taint}, por lo que el valor de MANIFOLD está en la capa formal (verificación),
-no en el prior geométrico. H1, H2 y H5 se reportan por tanto como \emph{no
-soportadas} en este corpus.
+taint}. El prior estructural no mejora la priorización media; el valor restante de
+MANIFOLD son los witnesses formales, el sustrato experimental unificado y el
+diagnóstico de los cuellos de botella del análisis semántico. H1, H2, H3 y H5 se
+reportan por tanto como \emph{no soportadas} en este corpus. Para H3 esto se
+apoya en que la señal espectral (Fiedler) está en el azar ($0.496$); el score
+espectral evaluado agrega error de reconstrucción de bajo rango con distancia al
+corte de Fiedler, así que es un proxy del predicado de corte de confianza y no un
+test aislado del mismo.
 
 \noindent\textbf{Test pareado y cola global.} La diferencia taint\,$-$\,campo es
 $+0.0225$ (MRR), IC bootstrap 95\% $[+0.0157,+0.0294]$, permutación $p=5\times10^{-5}$ (estimador add-one sobre 20000 permutaciones, 2000 bootstrap):
@@ -566,7 +579,7 @@ como una ventaja robusta; es compatible con ruido de desempate y la reportamos s
 afirmar significancia. El veredicto global sigue siendo negativo: los priors
 geométrico/topológico ayudan
 solo marginalmente con presupuestos muy pequeños y perjudican en promedio --- una
-versión más fina, y aún negativa, del veredicto H1/H2/H5.
+versión más fina, y aún negativa, del veredicto H1/H2/H3/H5.
 
 \input{figs/oracle}
 
@@ -678,7 +691,7 @@ neuro-simbólicas.
 \subsection{Cerrar la fila Z3 (verificación Java)}
 Implementamos un verificador simbólico Java con Z3 (acotado, con merge de ramas,
 semántica de strings; sanitizadores como contratos) que confirma o refuta cada
-flujo de taint y emite un \emph{witness} concreto. Medido sobre las siete
+flujo de taint y emite un \emph{witness} verificable por máquina bajo la semántica modelada. Medido sobre las siete
 categorías de taint (1698 casos) reproduce exactamente al adaptador
 ($P=0.549$, $R=0.834$, $\mathrm{F1}=0.662$, $J=+0.057$), añadiendo witnesses por
 hallazgo. Conclusión honesta: \textbf{la capa formal aporta witnesses
