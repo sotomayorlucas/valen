@@ -1,0 +1,158 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usetheme{Madrid}
+\usecolortheme{default}
+\usepackage{lmodern}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning}
+\usepackage{xcolor}
+
+\definecolor{manifold}{RGB}{30,90,170}
+\setbeamercolor{structure}{fg=manifold}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+
+\newcommand{\N}{\mathbb{N}}
+
+\title[MANIFOLD]{Más allá del taint}
+\subtitle{Invariantes estructurales y witnesses verificables por máquina para fallas
+de autorización, ciclos de estado y topologías de confianza}
+\author{Proyecto MANIFOLD}
+\institute{IR tipada $\cdot$ Lean 4 $\cdot$ GLMY $\cdot$ witnesses Z3}
+\date{2026}
+
+\begin{document}
+
+\begin{frame}
+  \titlepage
+\end{frame}
+
+\begin{frame}{Cinco contribuciones}
+  \begin{enumerate}
+    \item Una \textbf{frontera medida} sobre los priors geométricos en SAST de inyección.
+    \item Una \textbf{invariante de autorización}, mecanizada en Lean~4 y hecha
+          operacional (detector BOLA/IDOR + witness de ownership en Z3).
+    \item Evidencia de que la \textbf{homología de caminos dirigida} supera a la
+          simetrizada para detectar ciclos destructivos.
+    \item Una \textbf{frontera de arbitraje neuro-simbólico} medida.
+    \item Un \textbf{análisis de topología de confianza} para IAM / movimiento lateral.
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Sistema: una IR tipada, cinco capas}
+  \begin{center}
+  \begin{tabular}{lll}
+  \toprule
+  \textbf{Capa} & \textbf{Estructura} & \textbf{Contribución} \\
+  \midrule
+  Algebraica & función de privilegio $F:V\to\N$ + aristas auth & invariante de autorización \\
+  Espectral & corte de Fiedler & fronteras de confianza \\
+  Topológica & $H_1$ dirigida GLMY & ciclos de estado \\
+  Geométrica & Forman--Ricci $\kappa_F$ & puentes de privilegio \\
+  Formal & Z3 + Lean 4 & witnesses verificables por máquina \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+  Seis adaptadores (Python, Java, binario, OpenAPI, IAM, llm-agent) $\to$ un grafo,
+  compartido Python $\leftrightarrow$ Rust.
+\end{frame}
+
+\begin{frame}{C1 --- La frontera sobre los priors geométricos}
+  \begin{itemize}
+    \item \textbf{Pregunta:} ¿aportan las invariantes espectrales/topológicas/
+          geométricas información sobre el taint para priorizar inyecciones?
+    \item \textbf{Medido en OWASP Benchmark 1.2 (2740 casos):} no.
+    \item taint MRR $0.894$ vs.\ campo fusionado $0.872$ ($p=5\times10^{-5}$);
+          espectral $0.496$, topológica $0.500$ (azar), curvatura $0.376$.
+    \item Un servlet plano no tiene esa estructura; el taint ya es casi óptimo allí.
+    \item \textbf{Contribución:} una respuesta rigurosa y falsable que redirige el
+          esfuerzo a donde la estructura \emph{sí} es la señal.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C2 --- Autorización, mecanizada y operacional}
+  \begin{itemize}
+    \item $F:V\to\N$, aristas auth $E_A=\{(u,v):F(u)<F(v)\}$; \texttt{no\_auth\_bounded}
+          mecanizado en Lean~4.
+    \item Detector BOLA/IDOR: acceso a recurso controlado por el usuario sin puerta.
+    \item \textbf{Witness de ownership en Z3}: $\mathrm{SAT}(\mathrm{owner}(id)\neq session)$.
+    \item \texttt{login\_required} (autenticación) \emph{no} bloquea BOLA --- solo
+          un predicado \texttt{owner} a nivel de objeto lo hace.
+    \item \textbf{Datos reales (crAPI):} $9/9$ BOLA/BFLA recuperados, recall $1.0$,
+          precisión $0.90$; el chequeo de auth-ausente puntúa $0$ (todos están autenticados).
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C3 --- Homología de caminos dirigida}
+  \begin{itemize}
+    \item Simetrizar es pérdida en ambos sentidos: un 2-ciclo colapsa (se pierde),
+          un triángulo relleno se vuelve un ciclo falso.
+    \item GLMY recupera el generador $\beta_1$ concreto.
+    \item \textbf{Medido (12 grafos de estado):} recall $1.0$ / precisión $0.75$
+          vs.\ no dirigida $0.5$ / $0.5$.
+    \item $H_1$ de GLMY = huecos de path-space $\supset$ ciclos de feedback:
+          alto recall, necesaria-no-suficiente.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C4 --- La frontera de arbitraje neuro-simbólico}
+  \begin{itemize}
+    \item El LLM \emph{propone} una spec estructurada; Z3 \emph{decide}.
+    \item \textbf{Medido (38 archivos, 29 hallazgos):} acuerdo detección/ranking
+          $0.974$ (independiente del LLM); CWE cambia $28\%$ (interpretación).
+    \item Spec-mining (8 fragmentos): $0.5$ recall de tokens, $0$ alucinación.
+    \item \textbf{Contribución:} una arquitectura + su medición, no una afirmación.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{C5 --- Análisis de topología de confianza}
+  \begin{itemize}
+    \item Grafo de identidades y permisos: usuarios, roles, políticas de confianza, servicios.
+    \item \textbf{Corte de Fiedler} saca los cruces de frontera de confianza.
+    \item \textbf{Forman--Ricci} aísla el puente de privilegio (el pivote del atacante).
+    \item Z3 resuelve la combinatoria de asunción de roles.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Resultados medidos de un vistazo}
+  \begin{center}
+  \begin{tabular}{ll}
+  \toprule
+  \textbf{Contribución} & \textbf{Resultado} \\
+  \midrule
+  C1 frontera & taint $0.894$ vs.\ campo $0.872$ ($p=5\times10^{-5}$) \\
+  C2 autorización & crAPI recall $1.0$, precisión $0.90$, F1 $0.947$ \\
+  C3 homología dirigida & $0.75$/$1.0$ vs.\ no dirigida $0.5$/$0.5$ \\
+  C4 arbitraje & detección/ranking $0.974$; CWE $28\%$ \\
+  C5 topología de confianza & puente de privilegio $\kappa_F=-1$ \\
+  \bottomrule
+  \end{tabular}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Limitaciones (reportadas, no ocultas)}
+  \begin{itemize}
+    \item BOLA/IDOR: una API real + un corpus curado, no un benchmark.
+    \item El detector estructural sobre-aproxima (sanitizado/parametrizado).
+    \item Los witnesses de Z3 valen bajo la semántica \emph{modelada}, no end-to-end.
+    \item El $H_1$ de GLMY es necesario, no suficiente.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusión}
+  \begin{itemize}
+    \item El rol productivo de las invariantes estructurales en seguridad es la
+          \emph{verificación} de propiedades de autorización, estado y confianza ---
+          no la priorización de sinks de inyección.
+    \item Todo sobre una IR tipada, emitiendo witnesses verificables por máquina.
+  \end{itemize}
+  \vspace{2mm}
+  \centering
+  \Large\color{manifold}\textbf{Mapa el artefacto como un espacio --- verifica la invariante.}
+\end{frame}
+
+\end{document}

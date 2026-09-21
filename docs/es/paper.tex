@@ -1,0 +1,199 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{upquote}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.17}
+\definecolor{codegray}{gray}{0.4}
+\definecolor{manifold}{RGB}{30,90,170}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false,language=Python}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+\setlength{\emergencystretch}{3em}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+
+\title{\bfseries Más allá del taint: invariantes estructurales y witnesses
+verificables por máquina\\ para fallas de autorización, ciclos de estado y
+topologías de confianza}
+\author{Proyecto MANIFOLD}
+\date{Contribuciones de investigación --- método, resultados medidos y limitaciones}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent Presentamos MANIFOLD, un sistema para verificar invariantes de seguridad
+\emph{estructurales} --- propiedades de autorización, de transición de estado y de
+topología de confianza --- donde el análisis de taint clásico es demostrablemente
+ciego porque el dato infractor es legítimo. Hacemos cinco contribuciones medidas.
+(1) Un \emph{resultado de frontera} riguroso: sobre OWASP Benchmark~1.2 (2740
+casos), las invariantes espectrales, topológicas y geométricas no aportan
+información más allá del taint para priorizar inyecciones (taint MRR $0.894$, AUC
+$0.895$; permutación pareada $p=5\times10^{-5}$), lo que zanja la cuestión de si
+los priors de geometría de grafos ayudan al SAST de inyección lineal. (2) Una
+invariante de autorización por niveles de privilegio mecanizada en Lean~4, más un
+detector estructural y un witness de ownership en Z3 para autorización a nivel de
+objeto (BOLA/IDOR/BFLA) que separa la autorización de objeto de la mera
+autenticación y recupera todos los endpoints BOLA/BFLA documentados de OWASP
+crAPI (recall $1.0$, precisión $0.90$). (3) Evidencia de que la homología de
+caminos dirigida GLMY es estrictamente mejor que la homología simetrizada para
+detectar ciclos destructivos (recall $1.0$ / precisión $0.75$ vs.\ $0.5$ /
+$0.5$). (4) Una frontera de arbitraje neuro-simbólico medida: el LLM cambia la
+interpretación ($28\%$ de CWE), no la detección ni el ranking (acuerdo $0.974$).
+(5) Un análisis de topología de confianza (corte de Fiedler + Forman--Ricci) que
+aisla puentes de privilegio en grafos de identidades y permisos.
+\end{abstract}
+
+\section{Introducción y contribuciones}
+Los defectos de mayor impacto del software moderno son \emph{estructurales}: un
+BOLA/IDOR lee el registro de otro usuario con un id entero limpio; una
+reentrancia es un ciclo destructivo en el grafo de estados; una brecha en la nube
+es un puente en la topología de confianza; un confused-deputy en un agente es una
+entrada no confiable que alcanza una herramienta privilegiada sin puerta. En cada
+caso, el código parece legítimo línea por línea, de modo que el análisis de taint
+--- que rastrea datos ``sucios'' --- es ciego, y los buscadores de patrones no
+tienen nada que decir. Nuestras contribuciones son:
+
+\begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=3em]
+\item \textbf{Una frontera medida sobre los priors geométricos en SAST de
+inyección.} Respondemos, con rigor estadístico, si las invariantes
+espectrales/topológicas/geométricas de los grafos de programa aportan información
+sobre el taint en fallas de inyección lineal: no aportan. Es un resultado negativo
+publicable que redirige el esfuerzo lejos de la geometría-sobre-servlets y hacia
+los dominios donde la estructura es la señal.
+
+\item \textbf{Una invariante de autorización, mecanizada y hecha operacional.} Una
+función de nivel de privilegio $F:V\to\N$ con aristas auth
+$E_A=\{(u,v):F(u)<F(v)\}$ y el teorema \texttt{no\_auth\_bounded} --- un camino
+sin arista auth no puede escalar privilegio --- mecanizado en Lean~4.
+Operacionalmente: un detector estructural de acceso a recurso controlado por el
+usuario sin puerta, y un witness en Z3 que demuestra
+$\mathrm{SAT}(\mathrm{owner}(id)\neq session)$, separando la autorización a nivel
+de objeto de la mera autenticación.
+
+\item \textbf{La homología de caminos dirigida como la señal de ciclo correcta.}
+La homología dirigida GLMY recupera el generador concreto $\beta_1$ de un ciclo
+destructivo y, medida sobre 12 grafos de estado, domina a la homología
+simetrizada --- que a la vez pierde 2-ciclos y emite ciclos falsos en triángulos
+rellenos.
+
+\item \textbf{Una frontera de arbitraje neuro-simbólico medida.} El LLM propone,
+los métodos formales deciden: la detección y el ranking son independientes del LLM
+(acuerdo $0.974$), mientras el LLM cambia la interpretación (CWE, títulos) en el
+$28\%$ de los hallazgos.
+
+\item \textbf{Análisis de topología de confianza.} El corte de Fiedler y la
+curvatura de Forman--Ricci, aplicados a grafos de identidades y permisos, aíslan
+puentes de privilegio y rupturas de segmentación de confianza para el análisis de
+movimiento lateral e IAM.
+\end{enumerate}
+
+\section{Sistema}
+Una única IR de grafo tipado es el sustrato: seis adaptadores (Python, Java con
+taint interprocedural/context-sensitive, binario vía \texttt{objdump}/\texttt{angr},
+OpenAPI, IAM, llm-agent) emiten el mismo grafo determinista y serializable en
+JSON, compartido literalmente entre las capas de Python y Rust. Cinco señales se
+fusionan sobre él: algebraica (retículo de taint + niveles de privilegio),
+espectral (Fiedler), topológica (homología persistente y GLMY dirigida),
+geométrica (Forman--Ricci / Ollivier--Ricci) y formal (Z3 + Lean~4). Un ciclo
+neuro-simbólico extrae specs estructuradas y las descarga, emitiendo solo
+witnesses verificables por máquina.
+
+\section{Contribución 1: la frontera sobre los priors geométricos}
+\textbf{Configuración.} OWASP Benchmark~1.2 provee 2740 casos con verdad de
+referencia conocida; preguntamos si cada señal ordena el sink vulnerable por
+encima de los demás. \textbf{Método.} Un oráculo de priorización calcula MRR, R@1,
+NDCG@$k$, una cola global sobre \emph{todos} los candidatos (seguros y
+vulnerables), curvas de costo, un test de permutación pareada e intervalos de
+confianza bootstrap. \textbf{Resultado.} El taint crudo domina: MRR $0.894$ frente
+a $0.872$ del campo fusionado ($p=5\times10^{-5}$, add-one sobre 20000
+permutaciones, IC 95\% $[+0.0157,+0.0294]$); el AUC espectral ($0.496$) y
+topológico ($0.500$) está en el azar y la curvatura por debajo ($0.376$).
+\textbf{Interpretación.} Un servlet plano y casi acíclico no tiene curvatura ni
+topología persistente que explotar, y el taint ya es casi óptimo allí; el
+resultado es una respuesta falsable y reproducible, no una limitación de la
+maquinaria.
+
+\section{Contribución 2: autorización, mecanizada y operacional}
+\textbf{Invariante.} Sea $F:V\to\N$ un nivel de privilegio; una arista $e=(u,v)$
+es una \emph{arista auth} si y solo si $F(u)<F(v)$. Entonces (i) un camino sin
+aristas auth satisface $F(k)\le F(s)$ --- sin escalada de privilegio --- y (ii) un
+flujo de taint que cruza una arista auth sin sanitizador es un cruce de frontera
+de privilegio controlado por el atacante. (i) está mecanizado en Lean~4
+(\texttt{no\_auth\_bounded}); la solidez de la abstracción booleana de taint está
+mecanizada como \texttt{prop1\_soundness}. \textbf{Detector.} El detector de
+autorización-ausente/BOLA marca una función con fuente HTTP y sink de recurso pero
+sin puerta auth. Sobre un corpus curado de 39 casos alcanza recall $1.0$ /
+precisión $0.72$ (F1 $0.837$) donde el taint puntúa $0$; una escalera de baselines
+muestra que cada requisito rinde ($0.46\to0.72$). \textbf{Witness.} El verificador
+Z3 comprueba $\mathrm{SAT}(\mathrm{owner}(object\_id)\neq session\_user\_id)$: un
+endpoint vulnerable produce la sesión del atacante y el objeto de la víctima; un
+endpoint con \texttt{owner} acotado es UNSAT. Hace preciso que
+\texttt{login\_required} (autenticación) \emph{no} bloquea BOLA --- solo un
+predicado \texttt{owner} lo hace. \textbf{Datos reales.} Sobre OWASP crAPI (44
+operaciones, 9 endpoints BOLA/BFLA documentados), una señal de referencia a
+objeto a nivel de API recupera los 9 (recall $1.0$, precisión $0.90$) mientras el
+chequeo de auth-ausente puntúa $0$, porque todo endpoint BOLA \emph{está}
+autenticado.
+
+\section{Contribución 3: homología de caminos dirigida}
+Simetrizar un grafo dirigido es pérdida en ambos sentidos: un 2-ciclo
+$A\to B\to A$ colapsa a una sola arista no dirigida (una reentrancia
+\emph{perdida}), y un triángulo relleno se vuelve un ciclo no dirigido falso. La
+homología de caminos dirigida GLMY resuelve ambos: sobre un corpus etiquetado de
+12 grafos alcanza recall $1.0$ / precisión $0.75$ frente al $0.5$ / $0.5$ del
+baseline simetrizado, y devuelve el generador $\beta_1$ concreto (las aristas del
+ciclo) como evidencia. Sus dos falsos positivos son ``diamantes'' (huecos de
+path-space: control que converge), no ciclos de realimentación --- el $H_1$ de
+GLMY es un superconjunto de los ciclos destructivos y, por tanto, una señal de
+alto recall, necesaria-pero-no-suficiente.
+
+\section{Contribución 4: la frontera de arbitraje neuro-simbólico}
+Sobre un corpus de 38 archivos (29 hallazgos confirmados), la heurística offline y
+el agente con LiteLLM coinciden en detección y ranking en $37/38$ archivos
+(acuerdo $0.974$; la única excepción es una hipótesis no determinista de
+\texttt{compile}), mientras el LLM cambia el CWE en el $28\%$ de los hallazgos y
+produce títulos más concisos. Una sonda de minería de specs (8 fragmentos)
+muestra que el LLM mina una precondición plausible en todos los casos
+(alucinación $0$) con $0.5$ de recall de tokens. La contribución es una
+arquitectura --- el LLM propone, Z3 decide --- más su medición.
+
+\section{Contribución 5: análisis de topología de confianza}
+Un grafo de identidades y permisos (usuarios, roles, políticas de confianza,
+servicios) es ingerido por el adaptador IAM y analizado con el corte de Fiedler y
+la curvatura de Forman--Ricci: el corte saca a la superficie los cruces de
+frontera de confianza, y una arista con $\kappa_F$ fuertemente negativa aísla el
+puente de privilegio --- el único conector entre dos subredes de confianza. Sobre
+un grafo de demostración, el \texttt{assume} app$\to$data se marca como el puente
+más negativo ($\kappa_F=-1$) y el bucket de secretos aparece en la frontera de
+Fiedler; Z3 resuelve entonces la combinatoria de asunción de roles.
+
+\section{Limitaciones}
+La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un
+benchmark; el detector estructural sobre-aproxima (casos sanitizados/
+parametrizados); el witness de Z3 vale bajo la semántica \emph{modelada}, no
+frente a la explotabilidad end-to-end; y la señal GLMY es necesaria pero no
+suficiente. Cada una se reporta, no se oculta.
+
+\section{Conclusión}
+MANIFOLD contribuye un resultado de frontera falsable, una invariante de
+autorización mecanizada y operacional, evidencia de que la homología dirigida es
+la señal de ciclo correcta, una frontera de arbitraje neuro-simbólico medida y un
+análisis de topología de confianza --- todo sobre una única IR de grafo tipado, y
+todo emitiendo witnesses verificables por máquina. En conjunto argumentan que el
+rol productivo de las invariantes estructurales en seguridad es la
+\emph{verificación} de propiedades de autorización, estado y confianza, no la
+priorización de sinks de inyección.
+
+\end{document}
