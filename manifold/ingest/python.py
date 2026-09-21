@@ -134,6 +134,17 @@ def _expr_taint(node: Node, engine: TaintEngine) -> Set[str]:
     if t in _LITERAL_TYPES:
         return set()
 
+    # Framework summaries: attribute-style taint sources (e.g. `request.GET`,
+    # `request.args`, `self.request.POST`).
+    if t == "attribute":
+        tags: Set[str] = set()
+        name = _dotted_name(node)
+        if engine.is_source(name):
+            tags.add(name)
+        for child in node.named_children:
+            tags |= _expr_taint(child, engine)
+        return tags
+
     # Default: union taint over named children (binary ops, subscripts, lists,
     # tuples, dicts, f-string interpolations, boolean/conditional exprs, ...).
     tags = set()
@@ -588,8 +599,9 @@ class PythonIngest:
         """Return the arguments of a sink whose taint actually matters."""
         if not args:
             return args
-        if category == "sql":
-            # Only the query string matters; later args are bound parameters.
+        if category in ("sql", "code_execution"):
+            # Only the code / query string matters (arg 0); later args are bound
+            # parameters or template variables.
             return args[:1]
         if category == "command_execution":
             if _has_shell_true(arguments):

@@ -684,6 +684,19 @@ taints a clean caller's call), yet it leaves OWASP and Juliet \emph{unchanged}
 (a) framework/library summaries and (b) fine-grained return precision --- not more
 geometry.
 
+\subsection{Framework summaries}
+Guided by the CVE evidence, we added an explicit framework/library summary layer:
+\emph{attribute-style sources} (\texttt{request.GET}, \texttt{request.POST},
+\texttt{request.args}, \texttt{request.form}, \texttt{self.request.POST}) and
+\emph{ORM/template sinks} (\texttt{RawSQL}, \texttt{raw}, \texttt{extra},
+\texttt{text}, \texttt{render\_template\_string}, JPA \texttt{createQuery}). With
+\emph{positional} sink summaries (only arg~0 of a query/code call is dangerous),
+the analyzer now sees application-level flows it previously missed --- Django
+query-parameter SQL injection, Flask SSTI, JPA injection --- while keeping
+parameterized queries and literal templates safe. This is the concrete lever the
+CVEs pointed to; it does not move the OWASP/Juliet aggregates because those
+failures are framework-\emph{internal} rather than application-level.
+
 \subsection{Scalability of each kernel}
 We timed every kernel on synthetic graphs (log--log, Fig.~\ref{fig:scale}).
 \textbf{Forman--Ricci} ($0.6$\,ms @ $10^3$ edges $\to 55$\,ms @ $10^5$) and

@@ -717,6 +717,20 @@ deja OWASP y Juliet \emph{sin cambios} (F1 $0.656$ y $0.490$). Las palancas real
 no son el contexto sino (a) los summaries de frameworks/librerías y (b) la
 precisión fina del retorno --- no más geometría.
 
+\subsection{Summaries de frameworks}
+Guiados por la evidencia de los CVEs, añadimos una capa explícita de
+summaries de frameworks/librerías: \emph{fuentes por atributo}
+(\texttt{request.GET}, \texttt{request.POST}, \texttt{request.args},
+\texttt{request.form}, \texttt{self.request.POST}) y \emph{sinks de ORM/plantillas}
+(\texttt{RawSQL}, \texttt{raw}, \texttt{extra}, \texttt{text},
+\texttt{render\_template\_string}, JPA \texttt{createQuery}). Con summaries de sinks
+\emph{posicionales} (solo el arg~0 de una llamada de query/código es peligroso), el
+analizador ahora ve flujos a nivel aplicación que antes se le escapaban --- SQL
+injection por query-params de Django, SSTI de Flask, inyección JPA --- manteniendo
+seguras las queries parametrizadas y las plantillas literales. Esta es la palanca
+concreta que apuntaban los CVEs; no mueve los agregados de OWASP/Juliet porque
+esos fallos son \emph{internos} a frameworks y no a nivel aplicación.
+
 \subsection{Escalabilidad de cada kernel}
 Cronometramos cada kernel sobre grafos sintéticos (log--log,
 Fig.~\ref{fig:scale}). \textbf{Forman--Ricci} ($0.6$\,ms @ $10^3$ aristas

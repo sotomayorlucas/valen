@@ -33,6 +33,9 @@ _SINKS: Dict[str, str] = {
     "execute": "sqli", "executeQuery": "sqli", "executeUpdate": "sqli",
     "executeLargeUpdate": "sqli", "prepareStatement": "sqli",
     "prepareCall": "sqli", "addBatch": "sqli",
+    # ORM / JPA framework summaries
+    "createQuery": "sqli", "createNativeQuery": "sqli", "createSQLQuery": "sqli",
+    "executeNativeUpdate": "sqli",
     "exec": "cmdi", "start": "cmdi", "loadLibrary": "cmdi", "eval": "cmdi",
     "write": "xss", "println": "xss", "print": "xss", "append": "xss",
     "printf": "xss", "format": "xss", "sendError": "xss",

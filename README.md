@@ -236,7 +236,7 @@ call site le pasa taint; llamada manchada si el callee devuelve taint). En
 **Juliet**: R 0.562→0.750, F1 0.419→0.490 (CWE78/CWE90 de 0.000→0.750). En
 **OWASP** empeora levemente (F1 de taint 0.662→0.637) por insensibilidad al
 contexto → necesario pero no suficiente; el siguiente paso son summaries
-sensibles al contexto; **CS** (contexto de llamador + retorno por contexto) poda un FP sintético pero no cambia OWASP/Juliet.
+sensibles al contexto. **Summaries de frameworks**: fuentes por atributo (`request.GET`/`request.args`) y sinks de ORM/SSTI (Django `raw`/`RawSQL`, Flask `render_template_string`, JPA `createQuery`) que capturan flujos a nivel aplicación.
 
 **Escalabilidad** (`core/src/bin/scale.rs`, `benchmarks/scale_results.csv`):
 Forman–Ricci y Mapper casi lineales ($10^3\to10^5$ aristas en $<0.2$ s);
