@@ -26,6 +26,7 @@ from urllib.parse import parse_qs, urlparse
 
 from .analysis.field import vulnerability_field
 from .analysis.math_core import run_core
+from .console import build_console
 from .ingest import analyze, infer_adapter
 from .viz import _edge_data, _node_data
 from .webui import PAGE
@@ -178,6 +179,45 @@ def _results() -> Dict[str, Any]:
     }
 
 
+def _redteam() -> Dict[str, Any]:
+    from .console import collect
+
+    return collect()
+
+
+def _validate(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Replay a BOLA/IDOR plan against a live target (authorized engagements)."""
+    from .redteam.live import LiveValidator
+
+    base_url = payload.get("base_url", "")
+    if not base_url:
+        return {"error": "base_url required"}
+    v = LiveValidator(base_url, timeout=float(payload.get("timeout", 5.0)))
+    return v.check(
+        payload.get("method", "GET"),
+        payload.get("path", ""),
+        payload.get("id_params", []),
+        payload.get("victim_id", ""),
+        payload.get("token", ""),
+        payload.get("leak_hint", ""),
+    )
+
+
+def _recon(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build stealth tool commands (does NOT execute; the operator runs them)."""
+    from .redteam.stealth import PRESETS, StealthProfile, build_masscan_args, build_nmap_args
+
+    targets = payload.get("targets") or ["<scope>"]
+    ports = payload.get("ports") or "1-1000"
+    profile = PRESETS.get(payload.get("profile", "sneaky"), PRESETS["sneaky"])
+    return {
+        "profile": profile.name,
+        "nmap": build_nmap_args(profile, targets, ports, payload.get("extra")),
+        "masscan": build_masscan_args(profile, targets, ports),
+        "note": "run these against an authorized scope, then feed the output to /api/recon ingestion",
+    }
+
+
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     server_version = "valen/0.1"
@@ -213,11 +253,15 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/cves":
             p = BENCH / "cve_pairs.json"
             return self._json(json.loads(p.read_text()) if p.exists() else [])
+        if u.path == "/console":
+            return self._send(200, build_console(), "text/html; charset=utf-8")
+        if u.path == "/api/redteam":
+            return self._json(_redteam())
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self) -> None:  # noqa: N802
         u = urlparse(self.path)
-        if u.path not in ("/api/analyze", "/api/compare"):
+        if u.path not in ("/api/analyze", "/api/compare", "/api/validate", "/api/recon"):
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
         try:
@@ -227,6 +271,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             if u.path == "/api/compare":
                 return self._json(_compare(payload))
+            if u.path == "/api/validate":
+                return self._json(_validate(payload))
+            if u.path == "/api/recon":
+                return self._json(_recon(payload))
             return self._json(_analyze(payload))
         except Exception as exc:
             return self._json({"error": str(exc)}, 500)

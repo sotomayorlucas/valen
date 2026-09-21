@@ -112,6 +112,23 @@ pestañas:
 
 La API es estática (tree-sitter + Z3 + el núcleo Rust); **nunca ejecuta tu código**.
 
+## Consola red-team + bootstrap de herramientas
+
+```bash
+.venv/bin/python -m valen.console            # escribe valen_console.html (consola autocontenida)
+.venv/bin/python -m valen.console --bootstrap  # imprime el apt install de las tools faltantes
+.venv/bin/python -m valen.server --port 8000
+# abrir http://127.0.0.1:8000/console   y   GET /api/redteam
+```
+
+La consola integra el flujo red-team: **estado del toolkit** (nmap/masscan/...),
+**recon** de Kali (`-oX`/`-oJ` → IR, hipótesis CVE, perfil de sigilo `-T0..-T2`),
+**plan de ataque kill-chain** (MITRE + cadenas IAM con confirmación Z3), **PoCs
+BOLA/IDOR** (witness → `requests`) y resultados medidos (crAPI, neuro-simbólico).
+`POST /api/recon` construye los comandos sigilosos (no los ejecuta); `POST
+/api/validate` replayea un PoC contra un target vivo. Solo para engagements
+autorizados.
+
 ## Uso rápido / Quick start
 
 ```bash
