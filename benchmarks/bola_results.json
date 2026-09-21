@@ -1,29 +1,177 @@
 {
-  "precision": 1.0,
+  "corpus": "large",
+  "precision": 0.72,
   "recall": 1.0,
-  "f1": 1.0,
-  "tp": 2,
-  "fp": 0,
+  "f1": 0.8372093023255813,
+  "tp": 18,
+  "fp": 7,
   "fn": 0,
-  "tn": 4,
-  "n": 6,
+  "tn": 14,
+  "n": 39,
   "rows": [
     {
-      "file": "benign.py",
+      "file": "s_adv_gated_param.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
       "categories": []
     },
     {
-      "file": "cwe862_fixed.py",
+      "file": "s_adv_json_param.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "s_adv_logging.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "s_adv_open_literal.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "s_adv_owner_no_gate.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "s_adv_param_query.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "s_adv_sanitized_cmd.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "s_adv_two_src_gated.py",
       "vulnerable": false,
       "predicted": false,
       "n_candidates": 0,
       "categories": []
     },
     {
-      "file": "cwe862_vuln.py",
+      "file": "s_adv_unused_source.py",
+      "vulnerable": false,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "s_benign_health.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_cross_function.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_fixed_owner.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_gated_command.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_gated_delete.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_gated_path.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_gated_perm_export.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_gated_sql.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_param_not_http.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_sink_no_source.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_source_no_sink.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "s_static_query.py",
+      "vulnerable": false,
+      "predicted": false,
+      "n_candidates": 0,
+      "categories": []
+    },
+    {
+      "file": "v_bfla_export.py",
       "vulnerable": true,
       "predicted": true,
       "n_candidates": 1,
@@ -32,21 +180,151 @@
       ]
     },
     {
-      "file": "idor_fixed_gate.py",
-      "vulnerable": false,
-      "predicted": false,
-      "n_candidates": 0,
-      "categories": []
+      "file": "v_command.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
     },
     {
-      "file": "idor_fixed_ownership.py",
-      "vulnerable": false,
-      "predicted": false,
-      "n_candidates": 0,
-      "categories": []
+      "file": "v_command_popen.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
     },
     {
-      "file": "idor_vuln.py",
+      "file": "v_cwe862_delete.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_cwe862_setrole.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_deser.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "v_file_body.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "v_file_write.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "v_idor_cast_missing_owner.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_idor_values.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_path_rm.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "missing_authorization"
+      ]
+    },
+    {
+      "file": "v_sql_cast_int.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_cookies.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_form.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_json.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_no_cast_get.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_self_request.py",
+      "vulnerable": true,
+      "predicted": true,
+      "n_candidates": 1,
+      "categories": [
+        "idor"
+      ]
+    },
+    {
+      "file": "v_sql_subquery_param.py",
       "vulnerable": true,
       "predicted": true,
       "n_candidates": 1,

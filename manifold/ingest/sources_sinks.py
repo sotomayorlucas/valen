@@ -73,6 +73,15 @@ PYTHON = LanguageProfile(
         "request.META": "Django request metadata (attribute source)",
         "self.request.GET": "Django query parameters (attribute source)",
         "self.request.POST": "Django POST data (attribute source)",
+        # web frameworks -- .get()/method-style accessor variants
+        "request.GET.get": "HTTP query parameter",
+        "request.POST.get": "HTTP form field",
+        "request.COOKIES.get": "HTTP cookie",
+        "request.FILES.get": "HTTP uploaded file",
+        "request.values.get": "HTTP combined parameter",
+        "request.META.get": "HTTP request metadata",
+        "self.request.GET.get": "HTTP query parameter",
+        "self.request.POST.get": "HTTP form field",
         # filesystem
         "open": "file contents (untrusted path)",
         "pathlib.Path.read_text": "file contents",

@@ -52,9 +52,10 @@ and destructive state cycles (reentrancy, deadlocks) --- which are
 \emph{structural}: the offending data is legitimate, so classic taint is blind
 to them, and only the privilege-boundary and state-transition \emph{shape} of the
 program gives them away. There the same machinery is the only signal: on a
-curated BOLA/IDOR micro-corpus the structural \emph{missing-authorization}
-detector recovers cases taint misses entirely ($0$ taint findings) at
-precision/recall $1.0$ ($n=6$); and GLMY directed path homology extracts the
+curated 39-case BOLA/IDOR corpus the structural \emph{missing-authorization}
+detector reaches recall $1.0$ / precision $0.72$ / F1 $0.837$ while taint scores
+$0$ (its $7$ false positives are the documented over-approximation limit); and
+GLMY directed path homology extracts the
 concrete $\beta_1$ generator of a state cycle that symmetrization erases. The
 result is a single account --- the same typed graph, privilege algebra, directed
 homology and Z3 verifier --- of \emph{which} program relations make structural
@@ -774,18 +775,25 @@ innocuous: the directed invariant is a genuinely different, and sometimes
 opposite, signal.
 
 \subsection{LLM ablation}
-We ran the agent twice over the seven Python examples: offline (heuristic
-hypothesizer) and online through the local \textbf{LiteLLM} proxy (DeepSeek
-\texttt{flash}, OpenAI-compatible \texttt{/v1}). The \textbf{confirmed findings
-are identical} in both modes --- the SMT verifier is the arbiter, exactly as the
-architecture prescribes --- while the LLM changes the \emph{interpretation}:
-richer CWE labels and titles (e.g.\ CWE-674 ``Uncontrolled Recursion'' for the
-reentrancy cycle vs.\ the heuristic's generic label). Across repeated runs the
-set of confirmed findings is stable; only the LLM's phrasing varies. This small
-controlled ablation (seven Python examples) confirms the intended arbitration
-boundary: \emph{on these examples the LLM adds interpretability, not detection}
---- the neuro-symbolic split holds. A larger ablation over OWASP (ranking,
-interpretation and reporting, with and without the LLM) is left to future work.
+We ran the agent twice over a varied corpus of 38 Python files (29 with a
+confirmed finding, spanning command / code-exec / SQL / deserialization /
+path-traversal / file-write / logging / SSTI, plus safe and gated variants):
+offline (heuristic hypothesizer) and online through the local \textbf{LiteLLM}
+proxy (DeepSeek \texttt{flash}, OpenAI-compatible \texttt{/v1}). The
+\emph{detection} and \emph{ranking} axes are invariant: the confirmed finding
+sets and their confidence ordering agree on $37/38$ files (agreement $0.974$),
+because the SMT verifier --- not the LLM --- is the arbiter. The single mismatch
+is a \texttt{compile} code-exec case where the LLM's hypothesis is itself
+nondeterministic (sometimes empty), so it occasionally fails to re-propose the
+finding rather than changing it. The \emph{interpretation} axis changes: on $8$
+of the $29$ confirmed findings ($28\%$) the LLM assigns a different, usually
+more specific CWE (e.g.\ CWE-674 ``Uncontrolled Recursion'' for the reentrancy
+cycle vs.\ the heuristic's generic label), and produces more concise titles.
+This larger controlled ablation (38 files,
+\texttt{benchmarks/run\_llm\_ablation.py}) confirms the arbitration boundary at
+scale: \emph{the LLM adds interpretability and reporting, not detection or
+ranking} --- the neuro-symbolic split holds with a small, measured nondeterminism
+leak. A Java/OWASP-side ablation is future work.
 
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:
@@ -826,11 +834,15 @@ edge where one is required. MANIFOLD implements this as the
 (\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), and Z3 then
 proves whether a session assignment (\texttt{session.user\_id} $\neq$
 \texttt{resource.owner\_id}) reaches the resource --- a \emph{mathematical BOLA
-witness}. On a curated micro-corpus (6 cases, \texttt{examples/python/bola/},
-evaluated by \texttt{benchmarks/run\_bola.py}) taint reports \emph{zero}
-findings on the vulnerable cases while the structural detector reaches
-precision $=$ recall $= 1.0$ --- a small, honest feasibility signal (not a
-production benchmark), but a regime where taint provably scores $0$.
+witness}. On a curated corpus of 39 cases (\texttt{examples/python/bola/},
+\texttt{examples/python/bola\_corpus/}, evaluated by
+\texttt{benchmarks/run\_bola.py}) taint reports \emph{zero} findings on the
+vulnerable cases while the structural detector reaches \textbf{recall $1.0$} at
+\textbf{precision $0.72$} (F1 $0.837$): a feasibility signal with an honest
+precision limit, because the structural heuristic over-approximates
+(parameterized/sanitized/unused-source cases are the 7 documented false
+positives). It is precisely the regime where taint provably scores $0$ and
+structure is the only signal.
 
 \subsection{State machines, concurrency and protocols: directed homology}
 In a servlet there are no state cycles; in smart contracts, lock-acquisition

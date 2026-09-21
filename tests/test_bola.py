@@ -60,10 +60,28 @@ def test_bola_corpus_precision_recall():
     import sys
     root = BOLA.parent.parent.parent
     proc = subprocess.run(
-        [sys.executable, str(root / "benchmarks" / "run_bola.py")],
+        [sys.executable, str(root / "benchmarks" / "run_bola.py"), "--corpus", "small"],
         capture_output=True, text=True, check=True,
     )
     data = json.loads((root / "benchmarks" / "bola_results.json").read_text())
     assert data["recall"] == 1.0
     assert data["precision"] == 1.0
     assert data["n"] == 6
+
+
+def test_bola_large_corpus_metrics():
+    import json
+    import subprocess
+    import sys
+    root = BOLA.parent.parent.parent
+    subprocess.run(
+        [sys.executable, str(root / "benchmarks" / "run_bola.py"), "--corpus", "large"],
+        capture_output=True, text=True, check=True,
+    )
+    data = json.loads((root / "benchmarks" / "bola_results.json").read_text())
+    assert data["n"] == 39
+    assert data["recall"] == 1.0
+    assert 0.6 <= data["precision"] <= 0.8
+    # the false positives are the *documented* over-approximation limits
+    assert data["fp"] == 7
+    assert data["fn"] == 0

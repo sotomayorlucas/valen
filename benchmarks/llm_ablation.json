@@ -1,0 +1,742 @@
+{
+  "summary": {
+    "live": true,
+    "n_files": 38,
+    "n_confirmed": 29,
+    "detection_agreement": 0.9736842105263158,
+    "ranking_agreement": 0.9736842105263158,
+    "runs_stable": 0.9736842105263158,
+    "cwe_change_rate": 0.27586206896551724,
+    "cwe_changed_total": 8,
+    "title_len_offline": 2182,
+    "title_len_online": 1553,
+    "desc_present_offline": 29,
+    "desc_present_online": 28
+  },
+  "rows": [
+    {
+      "file": "cmd_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 77,
+      "title_len_on": 64,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "cmd_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 89,
+      "title_len_on": 56,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "cmd_03.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 75,
+      "title_len_on": 42,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "cmd_04.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 77,
+      "title_len_on": 55,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "cmd_05.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 87,
+      "title_len_on": 64,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "code_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          2
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [
+        "CWE-95"
+      ],
+      "title_len_off": 61,
+      "title_len_on": 67,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "code_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [
+        "CWE-94"
+      ],
+      "title_len_off": 61,
+      "title_len_on": 53,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "code_03.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          2
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [
+        "CWE-470"
+      ],
+      "title_len_off": 73,
+      "title_len_on": 37,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "code_04.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 0,
+      "detection_same": false,
+      "ranking_same": false,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [],
+      "title_len_off": 67,
+      "title_len_on": 0,
+      "desc_present_off": 1,
+      "desc_present_on": 0,
+      "runs_stable": false
+    },
+    {
+      "file": "deser_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-502"
+      ],
+      "online_cwe": [
+        "CWE-502"
+      ],
+      "title_len_off": 87,
+      "title_len_on": 67,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "deser_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-502"
+      ],
+      "online_cwe": [
+        "CWE-502"
+      ],
+      "title_len_off": 81,
+      "title_len_on": 54,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "deser_03.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-502"
+      ],
+      "online_cwe": [
+        "CWE-502"
+      ],
+      "title_len_off": 85,
+      "title_len_on": 58,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "file_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          2
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-73"
+      ],
+      "online_cwe": [
+        "CWE-22"
+      ],
+      "title_len_off": 67,
+      "title_len_on": 52,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "file_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          2
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-73"
+      ],
+      "online_cwe": [
+        "CWE-22"
+      ],
+      "title_len_off": 67,
+      "title_len_on": 51,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "gated_cmd.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-78"
+      ],
+      "online_cwe": [
+        "CWE-78"
+      ],
+      "title_len_off": 77,
+      "title_len_on": 55,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "gated_code.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          8
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [
+        "CWE-95"
+      ],
+      "title_len_off": 61,
+      "title_len_on": 36,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "gated_sql.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 52,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "log_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          3
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-532"
+      ],
+      "online_cwe": [
+        "CWE-117"
+      ],
+      "title_len_off": 87,
+      "title_len_on": 47,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "log_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          3
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-532"
+      ],
+      "online_cwe": [
+        "CWE-117"
+      ],
+      "title_len_off": 91,
+      "title_len_on": 47,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "path_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-22"
+      ],
+      "online_cwe": [
+        "CWE-22"
+      ],
+      "title_len_off": 71,
+      "title_len_on": 58,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "path_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-22"
+      ],
+      "online_cwe": [
+        "CWE-22"
+      ],
+      "title_len_off": 69,
+      "title_len_on": 67,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "path_03.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-22"
+      ],
+      "online_cwe": [
+        "CWE-22"
+      ],
+      "title_len_off": 71,
+      "title_len_on": 65,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "reentrancy_a.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_benign.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_cast_sql.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_escape.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_int_param.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_param_sql.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_re_escape.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "safe_shell_quote.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 57,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_02.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 52,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_03.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 52,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_04.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 60,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_05.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 67,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "sql_06.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [
+        "CWE-89"
+      ],
+      "online_cwe": [
+        "CWE-89"
+      ],
+      "title_len_off": 72,
+      "title_len_on": 48,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "ssti_01.py",
+      "n_conf_offline": 1,
+      "n_conf_online": 1,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [
+        [
+          "run",
+          4
+        ]
+      ],
+      "offline_cwe": [
+        "CWE-94"
+      ],
+      "online_cwe": [
+        "CWE-1336"
+      ],
+      "title_len_off": 97,
+      "title_len_on": 70,
+      "desc_present_off": 1,
+      "desc_present_on": 1,
+      "runs_stable": true
+    },
+    {
+      "file": "ssti_02.py",
+      "n_conf_offline": 0,
+      "n_conf_online": 0,
+      "detection_same": true,
+      "ranking_same": true,
+      "cwe_changed": [],
+      "offline_cwe": [],
+      "online_cwe": [],
+      "title_len_off": 0,
+      "title_len_on": 0,
+      "desc_present_off": 0,
+      "desc_present_on": 0,
+      "runs_stable": true
+    }
+  ]
+}

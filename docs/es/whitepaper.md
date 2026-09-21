@@ -26,8 +26,8 @@ y topológica (0.500) están en el azar y la curvatura por debajo (0.376); H1/H2
 quedan **no soportadas** — porque un servlet plano y casi acíclico no tiene esa
 estructura. La misma maquinaria rinde donde la estructura *sí* es la señal: un
 detector estructural de autorización ausente/BOLA recupera casos que el taint
-omite por completo (0 hallazgos de taint) con precisión/recall 1.0 en un
-micro-corpus curado, y la homología dirigida GLMY extrae el generador β₁ concreto
+omite por completo (0 hallazgos de taint) con recall 1.0 / precisión 0.72 / F1 0.837 en un
+corpus curado de 39 casos, y la homología dirigida GLMY extrae el generador β₁ concreto
 de un ciclo de estado que la simetrización borra.
 
 ## 1. Motivación
@@ -237,7 +237,7 @@ donde el análisis estático convencional es ciego:
 
 Sustrato ya en el repo: el **detector BOLA/IDOR**
 (`manifold.analysis.authorization.bola_idor_candidates`, corpus
-`examples/python/bola/`, eval `benchmarks/run_bola.py`, precisión/recall 1.0 con
+`examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precisión 0.72 / F1 0.837 con
 **0 hallazgos de taint** en los casos vulnerables); el **adaptador OpenAPI**
 (`manifold.ingest.web`) que emite aristas `auth` desde esquemas de seguridad; la
 **homología dirigida GLMY** (`core/src/path_homology.rs`, ciclo de estado

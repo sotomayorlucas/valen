@@ -32,12 +32,17 @@ are the only signal, because there the data is legitimate and taint is blind.
 > porque un servlet plano y casi acíclico no tiene esa estructura, y el taint ya
 > es casi óptimo allí. **Lado positivo:** en las fallas de confianza y lógica el
 > dato es legítimo y el taint es ciego, así que la estructura es la única señal:
-> el detector estructural de **autorización ausente / BOLA** recupera casos que el
-> taint pasa por alto por completo (**0 hallazgos de taint**) con
-> **precisión/recall 1.0** en un micro-corpus curado (`examples/python/bola/`,
-> `benchmarks/run_bola.py`, n=6); y la homología dirigida **GLMY** extrae el
-> generador β₁ concreto de un ciclo de estado que la simetrización borra. Ver
-> *Structural invariants across domains* en el whitepaper.
+> el detector estructural de **autorización ausente / BOLA** alcanza **recall 1.0
+> / precisión 0.72 / F1 0.837** en un corpus curado de 39 casos
+> (`examples/python/bola/`, `examples/python/bola_corpus/`,
+> `benchmarks/run_bola.py`) — el taint puntúa **0** en esos casos; sus 7 falsos
+> positivos son el límite de sobre-aproximación documentado. La homología dirigida
+> **GLMY** extrae el generador β₁ concreto de un ciclo de estado que la
+> simetrización borra. La ablación del LLM sobre 38 archivos (29 hallazgos
+> confirmados) da invariancia de detección/ranking en 37/38 (acuerdo 0.974; la
+> única excepción es una hipótesis no determinista de `compile`), con 28% de
+> cambio en CWE (interpretación) y títulos más concisos.
+> Ver *Structural invariants across domains* en el whitepaper.
 
 ## Idea central / Core idea
 

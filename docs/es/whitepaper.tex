@@ -53,10 +53,11 @@ software moderno --- BOLA/IDOR (CWE-639), autorización ausente (CWE-862) y cicl
 de estado destructivos (reentrancia, deadlocks) --- que son \emph{estructurales}:
 el dato infractor es legítimo, así que el análisis de taint clásico es ciego ante
 ellos, y solo la \emph{forma} de fronteras de privilegio y transiciones de estado
-los delata. Allí la misma maquinaria es la única señal: en un micro-corpus curado
-de BOLA/IDOR, el detector estructural de \emph{autorización ausente} recupera
-casos que el taint pasa por alto por completo ($0$ hallazgos de taint) con
-precisión/recall $1.0$ ($n=6$); y la homología de caminos dirigida GLMY extrae el
+los delata. Allí la misma maquinaria es la única señal: en un corpus curado de
+39 casos de BOLA/IDOR, el detector estructural de \emph{autorización ausente}
+alcanza recall $1.0$ / precisión $0.72$ / F1 $0.837$ mientras el taint puntúa $0$
+(sus 7 falsos positivos son el límite de sobre-aproximación documentado); y la
+homología de caminos dirigida GLMY extrae el
 generador concreto $\beta_1$ de un ciclo de estado que la simetrización borra. El
 resultado es una única cuenta --- el mismo grafo tipado, álgebra de privilegios,
 homología dirigida y verificador Z3 --- de \emph{qué} relaciones de programa
@@ -816,19 +817,26 @@ la invariante es accionable, no solo un número. La simetrización (C2) por tant
 a veces opuesta.
 
 \subsection{Ablación del LLM}
-Ejecutamos el agente dos veces sobre los siete ejemplos de Python: offline
-(hipotetizador heurístico) y online a través del proxy local de \textbf{LiteLLM}
-(DeepSeek \texttt{flash}, compatible OpenAI \texttt{/v1}). Los \textbf{hallazgos
-confirmados son idénticos} en ambos modos --- el verificador SMT es el árbitro,
-exactamente como prescribe la arquitectura --- mientras que el LLM cambia la
-\emph{interpretación}: etiquetas CWE y títulos más ricos (p.~ej.\ CWE-674
-``recursión no controlada'' para el ciclo de reentrancia vs.\ la etiqueta genérica
-de la heurística). A lo largo de corridas repetidas el conjunto de hallazgos
-confirmados es estable; solo varía la redacción del LLM. Esta ablación controlada
-y pequeña (siete ejemplos de Python) confirma la frontera de arbitraje prevista:
-\emph{en estos ejemplos el LLM aporta interpretabilidad, no detección} --- el
-reparto neuro-simbólico se sostiene. Una ablación mayor sobre OWASP (ranking,
-interpretación y reporte, con y sin LLM) queda como trabajo futuro.
+Ejecutamos el agente dos veces sobre un corpus variado de 38 archivos de Python
+(29 con un hallazgo confirmado, abarcando command / code-exec / SQL /
+deserialización / path-traversal / file-write / logging / SSTI, más variantes
+seguras y gateadas): offline (hipotetizador heurístico) y online a través del
+proxy local de \textbf{LiteLLM} (DeepSeek \texttt{flash}, compatible OpenAI
+\texttt{/v1}). Los ejes de \emph{detección} y \emph{ranking} son invariantes: los
+conjuntos de hallazgos confirmados y su orden por confianza coinciden en $37/38$
+archivos (acuerdo $0.974$), porque el verificador SMT --- no el LLM --- es el
+árbitro. La única discrepancia es un caso de \texttt{compile} (code-exec) donde
+la hipótesis del LLM es en sí misma no determinista (a veces vacía), así que
+ocasionalmente deja de re-proponer el hallazgo en lugar de cambiarlo. El eje de
+\emph{interpretación} cambia: en $8$ de los $29$ hallazgos confirmados ($28\%$)
+el LLM asigna un CWE distinto, habitualmente más específico (p.~ej.\ CWE-674
+``recursión no controlada'' para el ciclo de reentrancia vs.\ la etiqueta
+genérica de la heurística), y produce títulos más concisos. Esta ablación
+controlada y mayor (38 archivos, \texttt{benchmarks/run\_llm\_ablation.py})
+confirma la frontera de arbitraje a escala: \emph{el LLM aporta
+interpretabilidad y reporte, no detección ni ranking} --- el reparto
+neuro-simbólico se sostiene con una pequeña fuga de no determinismo medida. Una
+ablación del lado Java/OWASP queda como trabajo futuro.
 
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:
@@ -871,12 +879,15 @@ autorización donde se requiere una. MANIFOLD lo implementa como el detector de
 (\texttt{manifold.analysis.authorization.bola\_idor\_candidates}), y Z3 prueba
 entonces si una asignación de sesión (\texttt{session.user\_id} $\neq$
 \texttt{resource.owner\_id}) alcanza el recurso --- un \emph{witness matemático
-de BOLA}. En un micro-corpus curado (6 casos, \texttt{examples/python/bola/},
-evaluado por \texttt{benchmarks/run\_bola.py}) el taint reporta \emph{cero}
+de BOLA}. En un corpus curado de 39 casos (\texttt{examples/python/bola/},
+\texttt{examples/python/bola\_corpus/}, evaluado por
+\texttt{benchmarks/run\_bola.py}) el taint reporta \emph{cero}
 hallazgos en los casos vulnerables mientras el detector estructural alcanza
-precisión $=$ recall $= 1.0$ --- una señal de factibilidad pequeña y honesta (no
-un benchmark de producción), pero un régimen donde el taint demostrablemente
-puntúa $0$.
+\textbf{recall $1.0$} con \textbf{precisión $0.72$} (F1 $0.837$): una señal de
+factibilidad con un límite de precisión honesto, porque la heurística estructural
+sobre-aproxima (los casos parametrizados/sanitizados/de fuente sin usar son los 7
+falsos positivos documentados). Es precisamente el régimen donde el taint
+demostrablemente puntúa $0$ y la estructura es la única señal.
 
 \subsection{Máquinas de estado, concurrencia y protocolos: homología dirigida}
 En un servlet no hay ciclos de estado; en contratos inteligentes, protocolos de

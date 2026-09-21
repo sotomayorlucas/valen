@@ -447,7 +447,9 @@ class PythonIngest:
         if expr.type in ("assignment", "augmented_assignment", "named_expression"):
             self._handle_assignment(expr, graph, func_id, qualname, path, engine, findings, stmt_id)
         elif expr.type == "call":
-            self._handle_call(expr, graph, func_id, qualname, path, engine, findings, stmt_id)
+            # Recurse so chained calls (``open(...).write(...)``, ``os.popen(...).read(...)``)
+            # also visit their inner source/sink call.
+            self._scan_calls(expr, graph, func_id, qualname, path, engine, findings, stmt_id)
         else:
             for child in expr.named_children:
                 if child.type == "call":

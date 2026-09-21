@@ -25,7 +25,7 @@ This integral account rests on a rigorous **negative** result on linear injectio
 supported** — because a flat, near-acyclic servlet has no such structure. The
 same machinery then pays off where structure *is* the signal: a structural
 missing-authorization/BOLA detector recovers cases taint misses entirely (0 taint
-findings) at precision/recall 1.0 on a curated micro-corpus, and GLMY directed
+findings) at recall 1.0 / precision 0.72 / F1 0.837 on a 39-case curated corpus, and GLMY directed
 homology extracts the concrete β₁ generator of a state cycle that symmetrization
 erases.
 
@@ -230,7 +230,7 @@ analysis is blind:
 
 Substrate already in the repo: the **BOLA/IDOR detector**
 (`manifold.analysis.authorization.bola_idor_candidates`, corpus
-`examples/python/bola/`, eval `benchmarks/run_bola.py`, precision/recall 1.0 with
+`examples/python/bola/` + `bola_corpus/`, eval `benchmarks/run_bola.py`, recall 1.0 / precision 0.72 / F1 0.837 with
 **0 taint findings** on vulnerable cases); the **OpenAPI adapter**
 (`manifold.ingest.web`) emitting `auth` edges from security schemes; **GLMY
 directed homology** (`core/src/path_homology.rs`, state cycle
