@@ -9,7 +9,7 @@ def test_dashboard_embeds_experiments_and_methodology(tmp_path):
     html = out.read_text()
     assert html.startswith("<!doctype html>")
     assert "Methodology" in html and "pipeline" in html
-    assert "Mapping laws" in html and "Evaluation protocol" in html
+    assert "Mapping hypotheses" in html and "Evaluation protocol" in html
     assert "const DATA" in html
 
 

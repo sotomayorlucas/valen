@@ -258,7 +258,7 @@ class PythonIngest:
             )
             self._funcs[fid] = (qualname, body, params)
             # Privilege boundaries become GATE nodes with an `auth` edge to the
-            # protected function (operationalizing the L4 naturality check).
+            # protected function (operationalizing the H4 authorization-invariant check).
             for gate_name in auth:
                 gid = self._new_id("gate")
                 graph.add_node(

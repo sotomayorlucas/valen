@@ -1,7 +1,7 @@
-"""Example: a taint flow that crosses an auth boundary (L4 naturality violation).
+"""Example: a taint flow that crosses an auth boundary (H4 authorization violation).
 
 Both functions have the same SQL-injection flaw, but `admin_delete` sits behind
-an `@login_required` gate. The naturality check (L4) tags the first as crossing a
+an `@login_required` gate. The authorization check (H4) tags the first as crossing a
 privilege boundary — untrusted data reaches a protected region.
 """
 

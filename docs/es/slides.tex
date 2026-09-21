@@ -127,7 +127,7 @@
     \end{column}
     \begin{column}{0.5\textwidth}
       \textbf{Algebraica}\\
-      retículo de taint; naturalidad (categorías).
+      retículo de taint; orden de autorización.
       \vspace{2mm}
       \textbf{Formal}\\
       ejecución simbólica $+$ SMT (Z3); alcanzabilidad.
@@ -142,21 +142,24 @@
   \end{center}
 \end{frame}
 
-\begin{frame}{Leyes de mapeo (rasgo $\to$ vulnerabilidad)}
+\begin{frame}{Hipótesis de mapeo (rasgo $\to$ vulnerabilidad)}
   \begin{center}
   \begin{tabular}{cll}
   \toprule
   \# & Rasgo matemático & Clase \\
   \midrule
-  L1 & curvatura $\kappa \ll 0$ (cuello de botella) & escalada de privilegios \\
-  L2 & generador de $H_1$ persistente & reentrancia / recursión \\
-  L3 & corte de Fiedler & inyección cruzando confianza \\
-  L4 & flujo de taint que cruza arista \texttt{auth} & violación de naturalidad \\
-  L5 & outlier de persistencia & rasgo real vs.\ espurio \\
-  L6 & $\mathrm{SAT}(\phi_{\text{malo}})$ & exploit concreto \\
+  H1 & curvatura $\kappa \ll 0$ (cuello de botella) & escalada de privilegios \\
+  H2 & generador de $H_1$ persistente & reentrancia / recursión \\
+  H3 & corte de Fiedler & inyección cruzando confianza \\
+  H4 & flujo de taint que cruza arista \texttt{auth} & violación de la invariante de autorización \\
+  H5 & outlier de persistencia & rasgo real vs.\ espurio \\
+  H6 & $\mathrm{SAT}(\phi_{\text{malo}})$ & witness (semántica codificada) \\
   \bottomrule
   \end{tabular}
   \end{center}
+  \vspace{2mm}
+  \footnotesize Son \emph{hipótesis falsables}, no leyes; H1/H2/H5 \emph{no se
+  sostienen} en los corpus evaluados (ver resultados).
 \end{frame}
 
 \begin{frame}[fragile]{El agente neuro-simbólico}
@@ -189,7 +192,9 @@
   \end{center}
 
   \vspace{1mm}
-  {\footnotesize (a) reportado en evaluaciones públicas. (b) \textbf{medido} (Z3 aporta witnesses, no precisión).}
+  {\footnotesize (a) reportado en evaluaciones públicas; puede usar esquemas de
+  agregación distintos --- \emph{no} es una comparación head-to-head hasta reejecutarlos
+  bajo un protocolo uniforme. (b) \textbf{medido} (Z3 aporta witnesses, no precisión).}
 \end{frame}
 
 \begin{frame}{Ablación: de dónde viene la mejora}
@@ -210,7 +215,9 @@
   \begin{itemize}
     \item \textbf{Branch-join} (supremo del retículo) es la palanca de \emph{recall} ($+0.28$).
     \item La \textbf{restricción del writer HTTP} es la palanca de \emph{precisión}.
-    \item Los errores residuales son casos adversariales: los que $V(x)+$Z3 deben recuperar.
+    \item Los errores residuales \emph{no} los recuperan $V$ ni Z3: el campo empeora
+          el ranking medio y el verificador Z3 reproduce las métricas del adaptador.
+          Los límites son estructurales (interprocedural) e internos a frameworks.
   \end{itemize}
 \end{frame}
 
@@ -231,15 +238,21 @@
   \textbf{Conclusiones}
   \begin{itemize}
     \item Una IR tipada enriquece señales independientes en un campo $V(x)$ navegable.
-    \item El reparto neuro-simbólico (matemática/LLM/SMT) es el correcto.
-    \item En OWASP Benchmark: $F_1$ $0.466 \to 0.662$ solo con mejoras genéricas de taint.
+    \item El reparto neuro-simbólico (matemática/LLM/SMT) es el correcto: el LLM
+          aporta interpretabilidad, no detección.
+    \item \textbf{Resultado principal (negativo):} el dataflow semántico domina. El
+          campo estructural ayuda solo con presupuestos muy pequeños ($P@10$) y
+          perjudica en promedio (MRR $0.872$ vs.\ $0.894$; AP $0.434$ vs.\ $0.489$).
+    \item La ingeniería guiada por datos funciona: el taint interprocedural subió el
+          recall de Juliet $0.562 \to 0.750$; las summaries de frameworks capturan
+          flujos a nivel aplicación.
   \end{itemize}
   \vspace{2mm}
   \textbf{Trabajo futuro}
   \begin{itemize}
-    \item Verificación Z3 para Java (cerrar la fila proyectada).
-    \item Homología dirigida y Sinkhorn a escala; calibración de $\alpha_i$ sobre corpus reales.
-    \item Benchmarks ELF/PE (SARD) sobre el backend binario dual.
+    \item Reejecución uniforme de CodeQL/SonarQube (caveat metodológico).
+    \item Estudio de CVEs más amplio; corpus interprocedural/library-aware.
+    \item Ablación mayor del LLM sobre OWASP (ranking/interpretación/reporte).
   \end{itemize}
 \end{frame}
 
@@ -247,7 +260,8 @@
   \centering
   \Large\color{manifold}\textbf{Gracias}\\[4mm]
   \normalsize\color{black}
-  MAP the code as a space; let geometry reveal the flaw.
+  Mapear el programa como un espacio --- y probar si la estructura realmente ayuda.\\[1mm]
+  Cuando la geometría falla, el fallo también es información.
 \end{frame}
 
 \end{document}

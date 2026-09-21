@@ -146,11 +146,14 @@ def reciprocal_ranks(cache: Sequence[Tuple[List[Candidate], str]], method: str, 
     return [1.0 / rank_of_target(order(c, method, seed), cat) for c, cat in cache]
 
 
-def paired_permutation(a: Sequence[float], b: Sequence[float], iters: int = 5000, seed: int = 0) -> dict:
+def paired_permutation(a: Sequence[float], b: Sequence[float], iters: int = 20000, seed: int = 0) -> dict:
     """Paired permutation test on the difference of means.
 
     Returns the observed mean difference, a 95\\% bootstrap CI and a two-sided
     permutation p-value. Used to test ``taint`` vs the fused field.
+
+    The p-value uses the standard add-one estimator ``(b + 1) / (N + 1)`` so it
+    is never reported as exactly zero.
     """
     rnd = random.Random(seed)
     n = min(len(a), len(b))
@@ -172,8 +175,8 @@ def paired_permutation(a: Sequence[float], b: Sequence[float], iters: int = 5000
         stat = sum(diffs[i] if rnd.random() < 0.5 else -diffs[i] for i in range(n)) / n if n else 0.0
         if abs(stat) >= abs(obs):
             ge += 1
-    p = ge / iters if iters else 1.0
-    return {"mean_diff": obs, "ci95": [lo, hi], "p_value": p, "n": n}
+    p = (ge + 1) / (iters + 1)
+    return {"mean_diff": obs, "ci95": [lo, hi], "p_value": p, "n": n, "iters": iters}
 
 
 def global_metrics(

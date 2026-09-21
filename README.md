@@ -15,10 +15,12 @@ neuro-symbolic loop (LLM + Z3) act on the prioritized regions.
 
 > **Resultado principal (honesto):** en OWASP Benchmark 1.2, el taint crudo
 > ordena mejor el sink vulnerable (MRR 0.894, AUC 0.895) y supera al campo
-> fusionado con **p=0.000**; las señales espectral (AUC 0.496) y topológica
+> fusionado con **$p=5\times10^{-5}$** (estimador add-one sobre 20000
+> permutaciones); las señales espectral (AUC 0.496) y topológica
 > (0.500) están en el azar y la curvatura (0.376) por debajo. El campo
 > estructural solo ayuda en el extremo superior de una cola global (P@10 0.8 vs
-> 0.6). Las hipótesis H1/H2/H5 quedan **no soportadas**.
+> 0.6, diferencia pequeña en absoluto). Las hipótesis H1/H2/H5 quedan **no
+> soportadas**.
 
 ## Idea central / Core idea
 
@@ -214,9 +216,10 @@ Resultados del adaptador Java (corpus completo):
 | todas las categorías (11, 2740 casos) | 0.572 | 0.842 | 0.681 |
 
 **Oráculo (priorización)**: `taint` MRR 0.894 vs campo `V_prior` 0.872; test
-pareado **+0.0225, p=0.000**. **Cola global** (todos seguros+vulnerables): AP
-taint 0.489, `V_prior` 0.434, DFS 0.286, random 0.216; P@10 `V_prior` 0.8 vs
-taint 0.6 (el campo ayuda solo en el extremo superior).
+pareado **+0.0225, $p=5\times10^{-5}$** (add-one, 20000 permutaciones). **Cola
+global** (todos seguros+vulnerables): AP taint 0.489, `V_prior` 0.434, DFS 0.286,
+random 0.216; P@10 `V_prior` 0.8 vs taint 0.6 (el campo ayuda solo en el extremo
+superior; la diferencia es pequeña en absoluto y no se reporta como significativa).
 
 **Verificación Z3 para Java** (`manifold/analysis/java_verifier.py`): con
 `--verify` el verificador simbólico (branches con merge, strings, sanitizadores

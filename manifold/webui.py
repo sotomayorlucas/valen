@@ -131,7 +131,7 @@ pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:
     <div><h2>Mathematical layers &rarr; signal &rarr; evidence</h2><div class="cards" id="layers"></div></div>
     <div><h2>Evaluation protocol</h2><div class="panel"><svg id="protocol" viewBox="0 0 560 360"></svg></div></div>
   </div>
-  <h2 style="margin-top:16px">Mapping laws</h2><div id="laws"></div>
+  <h2 style="margin-top:16px">Mapping hypotheses</h2><div id="laws"></div>
 </section>
 
 </main>
@@ -360,7 +360,7 @@ function renderMethodology(R){
   const layers=[["Spectral","L=D−A · Fiedler · embedding","|Fiedler|","spectral"],["Topological","persistent H₀/H₁ · Mapper","H₁ membership","topological"],["Geometric","Ollivier/Forman Ricci · Sinkhorn","curvature κ","geometric"],["Algebraic","taint lattice · Galois · auth functor","taint tags","taint"],["Formal","symbolic exec + SMT (Z3)","SAT(φ_bad)","formal"],["Directed","Chung Laplacian · SCC+Perron","directed λ₂","directed"]];
   $("#layers").innerHTML=layers.map(([n,d,sig,k])=>{let b=`<span class="badge">defined</span>`;if(a[k]){const v=a[k].auc;const c=v>0.7?"var(--green)":(v<0.45?"var(--red)":"var(--muted)");b=`<span class="badge" style="color:${c}">AUC ${v.toFixed(3)}</span>`;}
     return `<div class="card"><div class="small">${n}</div><div style="font-size:12.5px;margin-top:5px">${d}</div><div class="small" style="margin-top:5px">${sig} · ${b}</div></div>`;}).join("");
-  const laws=[["L1","curvature κ≪0","priv. escalation","geometric"],["L2","persistent H₁","reentrancy","topological"],["L3","Fiedler cut","injection/trust","spectral"],["L4","taint crossing auth","naturality viol.",""],["L5","persistence outlier","real vs spurious","topological"],["L6","SAT(φ_bad)","concrete exploit","formal"]];
+  const laws=[["H1","curvature κ≪0","priv. escalation","geometric"],["H2","persistent H₁","reentrancy","topological"],["H3","Fiedler cut","injection/trust","spectral"],["H4","taint crossing auth","auth-invariant viol.",""],["H5","persistence outlier","real vs spurious","topological"],["H6","SAT(φ_bad)","model witness","formal"]];
   const rows=laws.map(([id,f,c,k])=>{const v=k&&a[k]?a[k].auc:null;let st=k? "—" : "definitional (Prop. 2)";
     if(v!==null) st=v>0.7?`<span style="color:var(--green)">supported (${v.toFixed(3)})</span>`:(v<0.45?`<span style="color:var(--red)">not supported (${v.toFixed(3)})</span>`:`<span style="color:var(--amber)">at chance (${v.toFixed(3)})</span>`);
     return [id,f,c,st];});

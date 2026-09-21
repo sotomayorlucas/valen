@@ -410,7 +410,7 @@ class ManifoldAgent:
                 if v is not None:
                     evidence = f"Z3 witness: {v.witness}"
                     if h.auth_gates:
-                        evidence += f"; crosses auth boundary ({', '.join(h.auth_gates)}) — naturality violation (L4)"
+                        evidence += f"; crosses auth boundary ({', '.join(h.auth_gates)}) — authorization-invariant violation (H4)"
                     entries.append(
                         ReportEntry(
                             region=h.region,

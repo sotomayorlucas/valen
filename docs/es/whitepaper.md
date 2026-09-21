@@ -37,7 +37,7 @@ artefacto → IR (grafo tipado) → capas matemáticas → V(x) → agente LLM �
 ```
 
 Una vulnerabilidad **no** es un patrón; es la *violación de una invariante
-estructural* (naturalidad rota, ciclo persistente, cuello de botella de curvatura
+estructural* (invariante de autorización rota, ciclo persistente, cuello de botella de curvatura
 negativa, flujo de taint que cruza un corte de confianza).
 
 ## 3. La Representación Intermedia (IR)
@@ -66,12 +66,13 @@ entrópica de Sinkhorn); Forman–Ricci $\kappa_F = 4 - \deg(u) - \deg(v)$.
 
 ### 4.4 Algebraica
 El retículo de taint $\mathbb{T} = \{\bot = \text{limpio} \sqsubseteq \top = \text{manchado}\}$
-y una conexión de Galois $(\alpha, \gamma)$. El programa es una categoría
-$\mathbf{Prog}$; el **funtor de autorización** $F: \mathbf{Prog} \to \mathbf{Auth}$ mapea cada
-punto a un nivel de privilegio. **Proposición (violación de naturalidad):** un
-flujo de taint viola naturalidad si y solo si su camino cruza una arista `auth`
-sin un sanitizador endomorfismo — la regla operacional L4/§8 (prueba en el PDF,
-§4.6). La mecanización es trabajo futuro.
+y una conexión de Galois $(\alpha, \gamma)$. La **función de nivel de privilegio**
+$F: V \to \mathbb{N}$ asigna un nivel a cada punto; una arista $(u,v)$ es *arista
+auth* si y solo si $F(u) < F(v)$. **Proposición (violación de la invariante de
+autorización):** un flujo de taint viola la invariante si y solo si su camino cruza
+una arista `auth` sin un sanitizador — la regla operacional H4/§8 (prueba en el PDF,
+§4.6; mecanizada en Lean 4). No se reclama ninguna transformación natural
+categórica.
 
 ### 4.5 Formal
 La ejecución simbólica calcula una condición de camino $\Phi$; un solver SMT
@@ -86,16 +87,19 @@ Las señales se normalizan por capa; en el prototipo los pesos son **uniformes**
 ($\alpha_i = 1/N$) y $V$ se reporta como el puntaje fusionado crudo; la calibración
 se hace por regresión logística sobre datos etiquetados (§11.1).
 
-## 6. Leyes de mapeo
+## 6. Hipótesis de mapeo
 
 | # | Rasgo | Clase |
 |---|-------|-------|
-| L1 | cuello de botella $\kappa \ll 0$ | escalada de privilegios |
-| L2 | generador de $H_1$ persistente | reentrancia / recursión |
-| L3 | corte de Fiedler | inyección cruzando confianza |
-| L4 | taint que cruza arista `auth` | violación de naturalidad |
-| L5 | outlier de persistencia | real vs. espurio |
-| L6 | $\mathrm{SAT}(\phi_{\text{malo}})$ | exploit concreto |
+| H1 | cuello de botella $\kappa \ll 0$ | escalada de privilegios |
+| H2 | generador de $H_1$ persistente | reentrancia / recursión |
+| H3 | corte de Fiedler | inyección cruzando confianza |
+| H4 | taint que cruza arista `auth` | violación de la invariante de autorización |
+| H5 | outlier de persistencia | real vs. espurio |
+| H6 | $\mathrm{SAT}(\phi_{\text{malo}})$ | witness (semántica codificada) |
+
+Son *hipótesis falsables*, no leyes; H1/H2/H5 no se sostienen en los corpus
+evaluados.
 
 ## 7. El agente LLM autónomo
 
@@ -114,8 +118,8 @@ fallback offline determinista.
   delegan a retículos/alcanzabilidad.
 * **C3 — Coste del transporte.** Forman–Ricci por defecto ($O(|E|)$);
   Ollivier–Ricci con Sinkhorn como alternativa rápida.
-* **C4 — Operacionalización de L4.** Un flujo de taint que cruza una arista `auth`
-  es violación de naturalidad (consulta de alcanzabilidad sobre `dato ∪ taint ∪ auth`).
+* **C4 — Operacionalización de H4.** Un flujo de taint que cruza una arista `auth`
+  es violación de la invariante de autorización (alcanzabilidad sobre `dato ∪ taint ∪ auth`).
 * **C5 — Puente manifold→verificador.** Gramática de verificación fija; el LLM
   nunca emite SMT-LIB.
 
@@ -130,14 +134,15 @@ def search(db, query_param):
 
 El pipeline produce un nodo `source` (`param:query_param`), un nodo `sink`
 (`cursor.execute`, categoría `sql`) y una arista `taint`; $V(x)$ se dispara en el
-sink; Z3 devuelve `SAT` con un witness concreto. La variante parametrizada se
+sink; Z3 devuelve `SAT` con un witness bajo la semántica codificada (no un exploit
+end-to-end). La variante parametrizada se
 excluye correctamente, y un decorador `@login_required` eleva el hallazgo a
-violación de naturalidad L4.
+violación de la invariante de autorización H4.
 
 ## 10. Estado de implementación
 
 F0 whitepaper · F1 IR + SAST Python + taint · F2 espectral/geométrico (Rust) ·
-F3 TDA · F4 verificador Z3 + retículo de taint + L4 · F5 agente LLM autónomo ·
+F3 TDA · F4 verificador Z3 + retículo de taint + H4 · F5 agente LLM autónomo ·
 F6 visualización + demo · F7 adaptadores multi-dominio (binario objdump/angr,
 OpenAPI, agente LLM, Java). Además: arnés de benchmark, calibración de pesos y el
 estudio OWASP.

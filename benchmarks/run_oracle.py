@@ -94,8 +94,10 @@ def main() -> int:
     perm = paired_permutation(reciprocal_ranks(vuln_cache, "taint"),
                               reciprocal_ranks(vuln_cache, "field"))
     results["taint_vs_field"] = perm
+    pstr = f"p<{1/(perm['iters']+1):.0e}" if perm["p_value"] <= 1 / (perm["iters"] + 1) else f"p={perm['p_value']:.4f}"
     print(f"\n== paired test (taint - field): diff={perm['mean_diff']:+.4f} "
-          f"CI95=[{perm['ci95'][0]:+.4f}, {perm['ci95'][1]:+.4f}] p={perm['p_value']:.3f}")
+          f"CI95=[{perm['ci95'][0]:+.4f}, {perm['ci95'][1]:+.4f}] {pstr} "
+          f"({perm['iters']} permutations, 2000 bootstrap)")
 
     print("\n== per-signal ranking ablation (MRR) ==")
     signal_mrr = {}

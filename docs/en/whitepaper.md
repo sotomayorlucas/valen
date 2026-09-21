@@ -36,7 +36,7 @@ artifact → IR (typed graph) → mathematical layers → V(x) → LLM agent →
 ```
 
 A vulnerability is **not** a pattern; it is a *violation of a structural
-invariant* (a broken naturality condition, a persistent cycle, a negative
+invariant* (a broken authorization invariant, a persistent cycle, a negative
 curvature chokepoint, a taint flow across a trust cut).
 
 ## 3. The Intermediate Representation (IR)
@@ -65,11 +65,12 @@ entropic approximation); Forman–Ricci $\kappa_F = 4 - \deg(u) - \deg(v)$.
 
 ### 4.4 Algebraic
 The taint lattice $\mathbb{T} = \{\bot = \text{clean} \sqsubseteq \top = \text{tainted}\}$
-and a Galois connection $(\alpha, \gamma)$. The program is a category $\mathbf{Prog}$;
-the **authorization functor** $F: \mathbf{Prog} \to \mathbf{Auth}$ maps each point to a
-privilege level. **Proposition (naturality violation):** a taint flow violates
-naturality iff its path crosses an `auth` edge without a sanitizer endomorphism —
-the operational rule L4/§8 (proof in the PDF, §4.6). Mechanization is future work.
+and a Galois connection $(\alpha, \gamma)$. The **privilege-level function**
+$F: V \to \mathbb{N}$ assigns each point a level; an edge $(u,v)$ is an *auth edge*
+iff $F(u) < F(v)$. **Proposition (authorization-invariant violation):** a taint flow
+violates the invariant iff its path crosses an `auth` edge without a sanitizer —
+the operational rule H4/§8 (proof in the PDF, §4.6; mechanized in Lean 4). No
+category-theoretic natural transformation is claimed.
 
 ### 4.5 Formal
 Symbolic execution computes a path condition $\Phi$; an SMT solver checks
@@ -84,16 +85,19 @@ Signals are normalized per layer; in the prototype the weights are **uniform**
 ($\alpha_i = 1/N$) and $V$ is reported as the raw fused score; calibration is
 done by logistic regression over labeled data (§11.1).
 
-## 6. Mapping laws
+## 6. Mapping hypotheses
 
 | # | Feature | Class |
 |---|---------|-------|
-| L1 | $\kappa \ll 0$ chokepoint | privilege escalation |
-| L2 | persistent $H_1$ generator | reentrancy / recursion |
-| L3 | Fiedler cut | injection across trust |
-| L4 | taint crossing an `auth` edge | naturality violation |
-| L5 | persistence outlier | real vs. spurious |
-| L6 | $\mathrm{SAT}(\phi_{\text{bad}})$ | concrete exploit |
+| H1 | $\kappa \ll 0$ chokepoint | privilege escalation |
+| H2 | persistent $H_1$ generator | reentrancy / recursion |
+| H3 | Fiedler cut | injection across trust |
+| H4 | taint crossing an `auth` edge | authorization-invariant violation |
+| H5 | persistence outlier | real vs. spurious |
+| H6 | $\mathrm{SAT}(\phi_{\text{bad}})$ | model witness (encoded semantics) |
+
+These are *falsifiable hypotheses*, not laws; H1/H2/H5 are not supported on the
+evaluated corpora.
 
 ## 7. The autonomous LLM agent
 
@@ -112,8 +116,8 @@ a deterministic offline fallback.
   handed to the lattice/reachability layers.
 * **C3 — Transport cost.** Forman–Ricci is the default ($O(|E|)$); Ollivier–Ricci
   with Sinkhorn is the fast alternative.
-* **C4 — L4 operationalization.** A taint flow crossing an `auth` edge is a
-  naturality violation (a reachability query over `data ∪ taint ∪ auth`).
+* **C4 — H4 operationalization.** A taint flow crossing an `auth` edge is an
+  authorization-invariant violation (reachability over `data ∪ taint ∪ auth`).
 * **C5 — Manifold→verifier bridge.** Fixed verification grammar; the LLM never
   emits SMT-LIB.
 
@@ -128,14 +132,14 @@ def search(db, query_param):
 
 The pipeline yields a `source` node (`param:query_param`), a `sink` node
 (`cursor.execute`, category `sql`) and a `taint` edge; $V(x)$ spikes at the sink;
-Z3 returns `SAT` with a concrete witness. The parameterized variant is correctly
-not flagged, and an `@login_required` gate upgrades the finding to an L4
-naturality violation.
+Z3 returns `SAT` with a model witness under the encoded semantics (not an
+end-to-end exploit). The parameterized variant is correctly not flagged, and an
+`@login_required` gate upgrades the finding to an H4 authorization violation.
 
 ## 10. Implementation status
 
 F0 whitepaper · F1 IR + Python SAST + taint · F2 spectral/geometric (Rust) ·
-F3 TDA · F4 Z3 verifier + taint lattice + L4 · F5 autonomous LLM agent ·
+F3 TDA · F4 Z3 verifier + taint lattice + H4 · F5 autonomous LLM agent ·
 F6 visualization + demo · F7 multi-domain adapters (binary objdump/angr, OpenAPI,
 LLM-agent, Java). Plus benchmark harness, weight calibration, and the OWASP study.
 

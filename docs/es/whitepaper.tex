@@ -21,8 +21,6 @@
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
-\newcommand{\catProg}{\mathbf{Prog}}
-\newcommand{\catAuth}{\mathbf{Auth}}
 
 \title{\bfseries ¿Aportan información las invariantes geométricas de los\\ grafos de programa por encima del análisis semántico clásico?\\[2mm]\Large MANIFOLD: un estudio falsable sobre OWASP Benchmark~1.2}
 \author{Proyecto MANIFOLD}
@@ -43,7 +41,7 @@ instrumento: convierte un artefacto en un grafo tipado (la IR), computa un campo
 que un ciclo neuro-simbólico actúe sobre las regiones priorizadas. Reportamos un
 resultado \emph{negativo} riguroso. Sobre OWASP Benchmark~1.2 (2740 casos), el
 taint crudo ordena mejor el sink vulnerable (MRR $0.894$, AUC $0.895$) y supera
-al campo fusionado con $p=0.000$ (permutación pareada); las señales
+al campo fusionado con $p=5\times10^{-5}$ (permutación pareada, estimador add-one sobre 20000 réplicas); las señales
 \emph{espectral} ($0.496$) y \emph{topológica} ($0.500$) están en el azar y la
 \emph{curvatura de Forman--Ricci} está \emph{por debajo} ($0.376$). En una cola
 global de todos los candidatos, el campo estructural ayuda solo en el extremo
@@ -60,9 +58,10 @@ invariante de autorización.
 \end{abstract}
 
 \section{Motivación}
-Los escáneres tradicionales (SAST/DAST) enumeran patrones sintácticos. Son
+Los pipelines de análisis estático basados en reglas y los semánticos son
 frágiles: pasan por alto vulnerabilidades novedosas y ahogan al analista en
-falsos positivos. Faltan dos capacidades:
+falsos positivos, por problemas de composición, priorización, caminos complejos
+y gaps de modelado. Faltan dos capacidades:
 \begin{enumerate}[label=(\arabic*)]
   \item Una \emph{representación unificada y cuantitativa} de la ``estructura del
         programa'' sobre la cual proyectar y fusionar muchas señales
@@ -102,7 +101,7 @@ resultado se re-embebe en el manifold.}
 \end{figure}
 
 Una vulnerabilidad \emph{no} es un patrón; es una \emph{violación de una
-invariante estructural} (una condición de naturalidad rota, un ciclo
+invariante estructural} (una invariante de autorización rota, un ciclo
 persistente, un cuello de botella de curvatura negativa, un flujo de taint que
 cruza un corte espectral de confianza). Cada capa detecta un \emph{tipo} distinto
 de violación de invariante, y el campo fusionado $V(x)$ ordena las regiones para
@@ -189,33 +188,31 @@ caminos más cortos. La \emph{curvatura de Forman--Ricci} (sin pesos) es
 $\kappa_F(u,v) = 4 - \deg(u) - \deg(v)$, marcando de forma barata los nodos de
 alto grado.
 
-\subsection{Capa algebraica (retículos y categorías)}
+\subsection{Capa algebraica (retículo de taint y orden de autorización)}
 \emph{Retículo de taint.} El dominio abstracto es el retículo de conjuntos de
 etiquetas de taint $\mathbb{T} = (2^{\mathcal{K}}, \subseteq, \cup, \cap)$, con
 $\bot = \emptyset$ (limpio) y $\top$ (manchado). Forma una conexión de Galois
 $(\alpha, \gamma)$ con la semántica recolectora concreta; la solidez se prueba en
-\S4.6. \emph{Categoría de programa.} Sea $\catProg$ la categoría cuyos objetos
-son puntos de programa $v \in V$ (con un estado abstracto), cuyos morfismos son
-aristas dirigidas y cuya composición es la concatenación de caminos. El
-\emph{funtor de autorización} $F : \catProg \to \catAuth$ mapea cada punto a un
-nivel de privilegio en el poset $\catAuth$ (p.~ej.\ \texttt{no confiable <=
-usuario <= admin}); una arista $e=(u,v)$ es \emph{arista auth} si y solo si
-$F(u) < F(v)$. Un \emph{sanitizador} es un endomorfismo $s : v \to v$ que mapea
-toda etiqueta a limpio. \textbf{Invariante de autorización:} un flujo de taint es
-un morfismo con imagen de etiquetas no vacía; es una \emph{violación} cuando su
-camino cruza una arista auth y ningún sanitizador del segmento de cruce restaura
-la invariante. Esto se enuncia con precisión, sobre una base de tipos coherente, y
-se mecaniza en \S4.6.
+\S4.6. \emph{Orden de autorización.} El modelo de autorización es deliberadamente
+minimal --- no se necesita teoría de categorías. Sea $F : V \to \mathbb{N}$ una
+\emph{función de nivel de privilegio} sobre puntos de programa (distintos puntos
+pueden compartir nivel; una arista no tiene por qué subirlo); una arista $e=(u,v)$
+es \emph{arista auth} si y solo si $F(u) < F(v)$ (escalada estricta), y $E_A$ es
+el conjunto de aristas auth. Un \emph{sanitizador} en un punto mapea toda etiqueta
+a limpio. \textbf{Invariante de autorización:} un flujo de taint que alcanza un
+sink es una \emph{violación} cuando su camino cruza una arista auth y ningún
+sanitizador del segmento de cruce restaura la invariante. Esto se enuncia con
+precisión y se mecaniza en \S4.6.
 
 \subsection{Capa formal (ejecución simbólica y model checking)}
 La ejecución simbólica calcula una condición de camino $\Phi$ y un estado
 simbólico $\sigma$; un solucionador SMT comprueba
-$\mathrm{SAT}(\phi_{\text{malo}})$, cuyo modelo es un exploit concreto. La
+$\mathrm{SAT}(\phi_{\text{malo}})$; un modelo es un witness bajo la semántica codificada, no una prueba de explotabilidad end-to-end. La
 alcanzabilidad es la fórmula CTL $\mathbf{EF}\,\phi_{\text{malo}}$; la propagación de
 taint es un autómata finito cuyo lenguaje aceptado es exactamente el conjunto de
 caminos fuente $\to$ sumidero.
 
-\subsection{Núcleo formal: naturalidad y solidez}
+\subsection{Núcleo formal: invariante de autorización y solidez}
 \emph{Semántica small-step de la IR.} Un estado de ejecución mapea variables a
 valores concretos; la relación de transición $v \xrightarrow{\sigma} v'$ avanza
 por la IR. La semántica recolectora concreta de taint $\mathcal{C}$ mapea cada
@@ -243,12 +240,11 @@ solidez. Este es exactamente el enunciado mecanizado \texttt{prop1\_soundness}
 completo de etiquetas es directo pero se asume aquí.
 
 \smallskip
-\noindent\textbf{Proposición 2 (invariante de autorización / violación de
-naturalidad).} \emph{Sea $F : \catProg \to \catAuth$ el funtor de autorización al
-poset $(\mathbb{N}, \le)$, y sea $p = e_1 \circ \dots \circ e_n : s \to k$ un
-camino. Denotemos $\mathrm{Auth}(p)$ las aristas auth de $p$ y
-$\mathrm{San}(p)$ los endomorfismos sanitizadores en $p$. Entonces: (i) si
-$\mathrm{Auth}(p) = \emptyset$ entonces $F(k) \le F(s)$ (sin escalada de
+\noindent\textbf{Proposición 2 (violación de la invariante de autorización).}
+\emph{Sea $F : V \to \mathbb{N}$ la función de nivel de privilegio, y sea
+$p = e_1 \circ \dots \circ e_n : s \to k$ un camino. Denotemos $\mathrm{Auth}(p)$
+las aristas auth de $p$ y $\mathrm{San}(p)$ los sanitizadores en $p$. Entonces:
+(i) si $\mathrm{Auth}(p) = \emptyset$ entonces $F(k) \le F(s)$ (sin escalada de
 privilegio); (ii) si $\mathrm{Auth}(p) \neq \emptyset$ y ningún sanitizador cubre
 el segmento de cruce, el flujo atestigua un alcance a $k$ con privilegio escalado
 y controlado por el atacante --- una violación de autorización.}
@@ -257,12 +253,11 @@ y controlado por el atacante --- una violación de autorización.}
 $\neg(F(u) < F(v))$, es decir $F(v) \le F(u)$, así que $F$ no crece a lo largo de
 $p$; por transitividad $F(k) \le F(s)$. Este es el enunciado mecanizado
 \texttt{no\_auth\_bounded} (\S4.6). (ii) Una arista auth eleva estrictamente $F$;
-sin un sanitizador que preserve la limpieza en el segmento de cruce, la etiqueta
-sobrevive, así que el alcance compuesto no preserva la política. La dirección
-``solo si'' de la formulación anterior es \emph{de definición}, no un teorema, y
-aquí se presenta como invariante en lugar de como transformación natural (la
-expresión previa $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ estaba mal tipada y se
-retira). $\square$
+sin un sanitizador en el segmento de cruce, la etiqueta
+sobrevive, así que el alcance compuesto no preserva la política. (Una expresión de
+la forma $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ apareció en un borrador previo;
+estaba mal tipada y se retira --- aquí no se reclama ninguna transformación
+natural.) $\square$
 
 \noindent La invariante (ii) es exactamente la regla operacional implementada como
 H4 (\S8/C4): un hallazgo de taint dentro de una función protegida por auth es una
@@ -270,8 +265,8 @@ violación de autorización. Ambas proposiciones están \emph{mecanizadas} en Le
 (solo core, sin Mathlib) en \texttt{formal/Manifold.lean}:
 \texttt{prop1\_soundness} prueba la solidez de la abstracción booleana de taint
 frente a la semántica recolectora de etiquetas (\S3 allí), y
-\texttt{no\_auth\_bounded} prueba la ley de naturalidad a nivel de camino (\S4
-allí). La verificación de pruebas es parte del artefacto de reproducibilidad
+\texttt{no\_auth\_bounded} prueba la invariante de autorización a nivel de camino
+(\S4 allí). La verificación de pruebas es parte del artefacto de reproducibilidad
 (\texttt{scripts/check\_formal.sh}).
 
 \section{El campo escalar de vulnerabilidad}
@@ -329,9 +324,9 @@ trabajo futuro.
 H1 & Cuello de botella ($\kappa \ll 0$) & escalada de privilegios, bypass de auth \\
 H2 & Ciclo ($H_1$ persistente) & reentrancia, recursión infinita \\
 H3 & Corte de confianza (corte de Fiedler) & inyección que cruza la frontera de confianza \\
-H4 & Ruptura de naturalidad & violación arbitraria de taint \\
+H4 & Violación de la invariante de autorización & violación arbitraria de taint \\
 H5 & Outlier de persistencia & rasgo real vs.\ espurio \\
-H6 & Alcanzabilidad ($\mathrm{SAT}(\phi_{\text{malo}})$) & exploit concreto \\
+H6 & Alcanzabilidad ($\mathrm{SAT}(\phi_{\text{malo}})$) & witness (semántica codificada) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -353,7 +348,7 @@ verificador simbólico Z3 devuelve \texttt{SAT} con un witness concreto (p.~ej.\
 depende del símbolo controlado por el atacante. La variante parametrizada
 \texttt{execute(query, (param,))} se excluye correctamente, y un decorador
 \texttt{@login\_required} en la función contenedora eleva el hallazgo a una
-violación de naturalidad H4 (un flujo de taint que cruza una arista
+violación de la invariante de autorización H4 (un flujo de taint que cruza una arista
 \texttt{auth}).
 
 \section{El agente LLM autónomo}
@@ -405,18 +400,20 @@ defecto; el transporte regularizado por entropía (Sinkhorn) está implementado
 como la alternativa rápida al PL exacto. \emph{Abierto:} esquemas adaptativos de
 regularización para grafos muy grandes.
 
-\textbf{C4 -- Operacionalizar H4 (naturalidad).} Se requiere una regla
-constructiva. Sean las aristas \texttt{auth} $E_A$ las que marcan fronteras de
-privilegio. Definamos el funtor de autorización $F$ como la etiqueta de si un
-nodo es alcanzable \emph{detrás} de una arista auth. Entonces un flujo de taint
-$s \to^{*} k$ \emph{viola la naturalidad} si y solo si su camino cruza al menos
-una arista auth --- es decir, datos no confiables entran a una región protegida
-sin que la frontera los neutralice. Esto es una consulta de alcanzabilidad sobre
-el grafo combinado $(\text{dato} \cup \text{taint} \cup \text{auth})$,
+\textbf{C4 -- Operacionalizar H4 (invariante de autorización).} Se requiere una
+regla constructiva. Recordemos la función de nivel de privilegio
+$F : V \to \mathbb{N}$ y las aristas auth
+$E_A = \{(u,v) : F(u) < F(v)\}$ de \S4.4; el extractor solo necesita emitir las
+aristas \texttt{auth} que marcan fronteras de privilegio. Entonces un flujo de taint
+$s \to^{*} k$ \emph{viola la invariante de autorización} si y solo si su camino
+cruza al menos una arista auth --- es decir, datos no confiables entran a una
+región protegida sin que la frontera los neutralice. Esto es una consulta de
+alcanzabilidad sobre el grafo combinado
+$(\text{dato} \cup \text{taint} \cup \text{auth})$,
 directamente computable y automatizable. \emph{Implementado:} un extractor de
 autorización emite nodos \texttt{gate} y aristas \texttt{auth} desde decoradores
 de frontera de privilegio, y un flujo de taint dentro de una función protegida se
-reporta como violación de naturalidad.
+reporta como violación de autorización.
 
 \textbf{C5 -- Puente manifold-verificador.} Los rasgos geométricos son
 cuantitativos; Z3 necesita precondiciones exactas. Fijamos una \emph{gramática}:
@@ -426,10 +423,12 @@ una hipótesis es la especificación estructurada
 confianza) y el verificador consume la especificación --- nunca la prosa del
 LLM. Esto mantiene la consulta SMT precisa y reproducible.
 
-La tesis de fondo se sostiene: los analizadores estáticos fallan porque buscan
-palabras en vez de invariantes en una estructura topológica. El criterio es si
-$V(x)$ poda el espacio de búsqueda para Z3/angr de forma más eficiente que un
-DFS plano sobre el grafo de llamadas.
+La tesis que respaldan nuestros datos es más modesta. El dataflow semántico
+(taint) es la señal dominante en los corpus evaluados; las invariantes
+estructurales aportan \emph{hipótesis complementarias}. La pregunta abierta es si
+los priors estructurales pueden reducir el \emph{costo de verificación} en
+regímenes donde el análisis semántico es incompleto (interprocedural, mediado por
+frameworks), y si ayudan con presupuestos muy pequeños.
 
 \section{Estado de implementación}
 \begin{center}
@@ -539,7 +538,7 @@ no en el prior geométrico. H1, H2 y H5 se reportan por tanto como \emph{no
 soportadas} en este corpus.
 
 \noindent\textbf{Test pareado y cola global.} La diferencia taint\,$-$\,campo es
-$+0.0225$ (MRR), IC bootstrap 95\% $[+0.0157,+0.0294]$, permutación $p=0.000$:
+$+0.0225$ (MRR), IC bootstrap 95\% $[+0.0157,+0.0294]$, permutación $p=5\times10^{-5}$ (estimador add-one sobre 20000 permutaciones, 2000 bootstrap):
 el taint domina significativamente. Para medir también la situación real del
 analista (candidatos seguros y vulnerables compitiendo en una única cola),
 agrupamos \emph{todos} los sinks de los 1698 casos de categorías de taint y los
@@ -561,7 +560,11 @@ aleatorio & 0.216 & 0.2 & 0.002 & 4176 \\
 
 El cuadro es matizado: el campo estructural es mejor en el extremo superior
 ($P@10=0.8$ vs.\ $0.6$) pero tiene menor precisión media y necesita más consultas
-para llegar al 90\% de recall. Es decir, los priors geométrico/topológico ayudan
+para llegar al 90\% de recall. La diferencia en $P@10$ es pequeña en términos
+absolutos --- ocho contra seis aciertos en el top diez --- así que no la leemos
+como una ventaja robusta; es compatible con ruido de desempate y la reportamos sin
+afirmar significancia. El veredicto global sigue siendo negativo: los priors
+geométrico/topológico ayudan
 solo marginalmente con presupuestos muy pequeños y perjudican en promedio --- una
 versión más fina, y aún negativa, del veredicto H1/H2/H5.
 
@@ -728,8 +731,11 @@ summaries de frameworks/librerías: \emph{fuentes por atributo}
 analizador ahora ve flujos a nivel aplicación que antes se le escapaban --- SQL
 injection por query-params de Django, SSTI de Flask, inyección JPA --- manteniendo
 seguras las queries parametrizadas y las plantillas literales. Esta es la palanca
-concreta que apuntaban los CVEs; no mueve los agregados de OWASP/Juliet porque
-esos fallos son \emph{internos} a frameworks y no a nivel aplicación.
+concreta que apuntaban los CVEs. No mueve los agregados, pero por dos razones
+distintas: los fallos de OWASP/Juliet son mayormente \emph{estructurales} (flujos
+entre métodos que requieren análisis interprocedural), mientras que los CVEs sin
+resolver son \emph{internos} a frameworks (la lógica vulnerable vive dentro del
+propio framework, sin una fuente a nivel aplicación).
 
 \subsection{Escalabilidad de cada kernel}
 Cronometramos cada kernel sobre grafos sintéticos (log--log,
@@ -797,9 +803,11 @@ exactamente como prescribe la arquitectura --- mientras que el LLM cambia la
 \emph{interpretación}: etiquetas CWE y títulos más ricos (p.~ej.\ CWE-674
 ``recursión no controlada'' para el ciclo de reentrancia vs.\ la etiqueta genérica
 de la heurística). A lo largo de corridas repetidas el conjunto de hallazgos
-confirmados es estable; solo varía la redacción del LLM. La ablación decisiva es,
-por tanto, empírica: \emph{el LLM aporta interpretabilidad, no detección} --- el
-reparto neuro-simbólico se sostiene.
+confirmados es estable; solo varía la redacción del LLM. Esta ablación controlada
+y pequeña (siete ejemplos de Python) confirma la frontera de arbitraje prevista:
+\emph{en estos ejemplos el LLM aporta interpretabilidad, no detección} --- el
+reparto neuro-simbólico se sostiene. Una ablación mayor sobre OWASP (ranking,
+interpretación y reporte, con y sin LLM) queda como trabajo futuro.
 
 \subsection{Backend binario dual}
 El adaptador binario trae dos backends intercambiables que emiten la misma IR:

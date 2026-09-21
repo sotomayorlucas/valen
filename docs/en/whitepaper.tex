@@ -21,8 +21,6 @@
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
-\newcommand{\catProg}{\mathbf{Prog}}
-\newcommand{\catAuth}{\mathbf{Auth}}
 
 \title{\bfseries Do geometric invariants of program graphs add information\\ over classic semantic analysis?\\[2mm]\Large MANIFOLD: a falsifiable study on OWASP Benchmark~1.2}
 \author{MANIFOLD Project}
@@ -43,7 +41,7 @@ experiment: it turns an artifact into a typed graph (the IR), computes a
 neuro-symbolic loop act on the prioritized regions. We report a rigorous
 \emph{negative} result. On OWASP Benchmark~1.2 (2740 cases), raw taint ranks the
 vulnerable sink best (MRR $0.894$, AUC $0.895$) and beats the fused field with
-$p=0.000$ (paired permutation); \emph{spectral} ($0.496$) and \emph{topological}
+$p=5\times10^{-5}$ (paired permutation, add-one over 20000 draws); \emph{spectral} ($0.496$) and \emph{topological}
 ($0.500$) signals are at chance and \emph{Forman--Ricci curvature} is
 \emph{below} chance ($0.376$). On a global pool of all candidates the structural
 field helps only at the extreme top ($P@10=0.8$ vs.\ $0.6$) but loses on average
@@ -59,7 +57,7 @@ invariant.
 \end{abstract}
 
 \section{Motivation}
-Traditional scanners (SAST/DAST) enumerate syntactic patterns. They are brittle:
+Rule-based and semantic static-analysis pipelines are brittle:
 they miss novel vulnerabilities and drown analysts in false positives. Two
 capabilities are missing:
 \begin{enumerate}[label=(\arabic*)]
@@ -100,7 +98,7 @@ result re-embeds into the manifold.}
 \end{figure}
 
 A vulnerability is \emph{not} a pattern; it is a \emph{violation of a structural
-invariant} (a broken naturality condition, a persistent cycle, a negative
+invariant} (a broken authorization invariant, a persistent cycle, a negative
 curvature chokepoint, a taint flow across a spectral trust cut). Each layer
 detects a different \emph{kind} of invariant violation, and the fused field
 $V(x)$ ranks regions for the agent to inspect.
@@ -183,31 +181,29 @@ Negative curvature marks \emph{funnels} through which many shortest paths pass.
 The \emph{Forman--Ricci} curvature (unweighted) is $\kappa_F(u,v) = 4 - \deg(u)
 - \deg(v)$, cheaply flagging high-degree hubs.
 
-\subsection{Algebraic layer (lattices \& categories)}
+\subsection{Algebraic layer (taint lattice \& authorization order)}
 \emph{Taint lattice.} The abstract domain is the powerset lattice of taint tags
 $\mathbb{T} = (2^{\mathcal{K}}, \subseteq, \cup, \cap)$, with $\bot = \emptyset$
 (clean) and $\top$ (tainted). It forms a Galois connection $(\alpha, \gamma)$
 with the concrete collecting semantics; soundness is proved in \S4.6.
-\emph{Program category.} Let $\catProg$ be the category whose objects are
-program points $v \in V$ (each carrying an abstract state), whose morphisms are
-directed edges, and whose composition is path concatenation. The
-\emph{authorization functor} $F : \catProg \to \catAuth$ maps each point to a
-privilege level in the poset $\catAuth$ (e.g.\ \texttt{untrusted <= user <=
-admin}); an edge $e=(u,v)$ is an \emph{auth edge} iff $F(u) < F(v)$. A
-\emph{sanitizer} is an endomorphism $s : v \to v$ that maps every tag to clean.
-\textbf{Authorization invariant:} a taint flow is a morphism with non-empty tag
-image; it is a \emph{violation} when its path crosses an auth edge and no
-sanitizer on the crossing segment restores the invariant. This is stated
-precisely, on a consistent type-theoretic footing, and mechanized in \S4.6.
+\emph{Authorization order.} We keep the authorization model deliberately minimal
+--- no category theory is needed. Let $F : V \to \mathbb{N}$ be a
+\emph{privilege-level function} on program points (so different points may share a
+level; an edge need not raise it); an edge $e=(u,v)$ is an \emph{auth edge} iff
+$F(u) < F(v)$ (a strict escalation), and $E_A$ is the set of auth edges. A
+\emph{sanitizer} at a point maps every tag to clean. \textbf{Authorization
+invariant:} a taint flow reaching a sink is a \emph{violation} when its path
+crosses an auth edge and no sanitizer on the crossing segment restores the
+invariant. This is stated precisely and mechanized in \S4.6.
 
 \subsection{Formal layer (symbolic execution \& model checking)}
 Symbolic execution computes a path condition $\Phi$ and symbolic state $\sigma$;
 an SMT solver checks $\mathrm{SAT}(\phi_{\text{bad}})$, whose model is a
-concrete exploit. Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
+a model witness under the encoded semantics. Reachability is the CTL formula $\mathbf{EF}\,\phi_{\text{bad}}$;
 taint propagation is a finite automaton whose accepted language is exactly the
 set of source $\to$ sink paths.
 
-\subsection{Formal core: naturality and soundness}
+\subsection{Formal core: authorization invariant and soundness}
 \emph{Small-step semantics of the IR.} A state maps variables to
 concrete values; the transition relation $v \xrightarrow{\sigma} v'$ steps
 through the IR. The concrete taint collecting semantics $\mathcal{C}$ maps each
@@ -232,25 +228,23 @@ for a concrete boolean abstraction; extending it to the full tag lattice is
 straightforward but assumed here.
 
 \smallskip
-\noindent\textbf{Proposition 2 (authorization invariant / naturality
-violation).} \emph{Let $F : \catProg \to \catAuth$ be the authorization functor
-into the poset $(\mathbb{N}, \le)$, and let $p = e_1 \circ \dots \circ e_n :
-s \to k$ be a path. Write $\mathrm{Auth}(p)$ for the auth edges on $p$ and
-$\mathrm{San}(p)$ for the sanitizer endomorphisms on $p$. Then: (i) if
-$\mathrm{Auth}(p) = \emptyset$ then $F(k) \le F(s)$ (no privilege escalation);
-(ii) if $\mathrm{Auth}(p) \neq \emptyset$ and no sanitizer covers the crossing
-segment, the flow witnesses a privilege-escalating, attacker-controlled reach to
-$k$ --- an authorization violation.}
+\noindent\textbf{Proposition 2 (authorization-invariant violation).} \emph{Let
+$F : V \to \mathbb{N}$ be the privilege-level function, and let
+$p = e_1 \circ \dots \circ e_n : s \to k$ be a path. Write $\mathrm{Auth}(p)$ for
+the auth edges on $p$ and $\mathrm{San}(p)$ for the sanitizers on $p$. Then:
+(i) if $\mathrm{Auth}(p) = \emptyset$ then $F(k) \le F(s)$ (no privilege
+escalation); (ii) if $\mathrm{Auth}(p) \neq \emptyset$ and no sanitizer covers the
+crossing segment, the flow witnesses a privilege-escalating, attacker-controlled
+reach to $k$ --- an authorization violation.}
 
 \noindent\emph{Proof.} (i) Each non-auth edge satisfies $\neg(F(u) < F(v))$, i.e.\
 $F(v) \le F(u)$, so $F$ is non-increasing along $p$; transitivity gives
 $F(k) \le F(s)$. This is the mechanized \texttt{no\_auth\_bounded} (\S4.6). (ii) An
-auth edge strictly raises $F$; absent a $\bot$-preserving sanitizer on the crossing
-segment, the tag survives, so the composed reach does not preserve the policy. The
-``only if'' direction of the earlier formulation is \emph{definitional}, not a
-theorem, and is presented here as an invariant rather than a natural transformation
-(the earlier $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ was under-typed and is
-withdrawn). $\square$
+auth edge strictly raises $F$; absent a sanitizer on the crossing
+segment, the tag survives, so the composed reach does not preserve the policy.
+(A formula of the form $F(p)\circ\eta_s \neq \eta_k\circ T(p)$ appeared in an
+earlier draft; it was under-typed and is withdrawn --- no natural transformation is
+claimed here.) $\square$
 
 \noindent The invariant (ii) is exactly the operational rule H4 (§8/C4): a taint
 finding inside an auth-gated function is an authorization violation. Both
@@ -315,7 +309,7 @@ H2 & Cycle (persistent $H_1$) & reentrancy, infinite recursion \\
 H3 & Trust cut (Fiedler cut) & injection across trust boundary \\
 H4 & Naturality break & arbitrary taint violation \\
 H5 & Persistence outlier & real vs.\ spurious features \\
-H6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & concrete exploit \\
+H6 & Reachability ($\mathrm{SAT}(\phi_{\text{bad}})$) & model witness (encoded semantics) \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -337,7 +331,7 @@ verifier returns \texttt{SAT} with a concrete witness (e.g.\
 the attacker-controlled symbol. The parameterized variant
 \texttt{execute(query, (param,))} is correctly \emph{not} flagged, and a
 \texttt{@login\_required} gate on the enclosing function upgrades the finding to
-an H4 naturality violation (a taint flow crossing an \texttt{auth} edge).
+an H4 authorization violation (a taint flow crossing an \texttt{auth} edge).
 
 \section{The autonomous LLM agent}
 A closed loop: (1) \emph{ingest} into the IR; (2) \emph{embed \& map} ($V(x)$,
@@ -386,16 +380,17 @@ chokepoint signal; entropy-regularized (Sinkhorn) transport is implemented as th
 fast alternative to the exact LP. \emph{Open:} adaptive regularization
 schedules for very large graphs.
 
-\textbf{C4 -- Operationalizing H4 (naturality).} A constructive rule is
-required. Let \texttt{auth} edges $E_A$ mark privilege boundaries. Define the
-authorization functor $F$ to label a node by whether it is reachable \emph{behind}
-an auth edge. Then a taint flow $s \to^{*} k$ \emph{violates naturality} iff its
-path crosses at least one auth edge --- i.e. untrusted data enters a protected
-region without the boundary neutralizing it. This is a reachability query over
+\textbf{C4 -- Operationalizing H4 (authorization invariant).} A constructive rule
+is required. Recall the privilege-level function $F : V \to \mathbb{N}$ and the
+auth edges $E_A = \{(u,v) : F(u) < F(v)\}$ from \S4.4; the extractor only needs to
+emit the \texttt{auth} edges that mark privilege boundaries. Then a taint flow
+$s \to^{*} k$ \emph{violates the authorization invariant} iff its path crosses at
+least one auth edge --- i.e. untrusted data enters a protected region without the
+boundary neutralizing it. This is a reachability query over
 the combined $(\text{data} \cup \text{taint} \cup \text{auth})$ graph, directly
 computable and automatable. \emph{Implemented:} an authorization extractor emits
 \texttt{gate} nodes and \texttt{auth} edges from privilege-gate decorators, and a
-taint finding inside a gated function is reported as a naturality violation.
+taint finding inside a gated function is reported as an authorization violation.
 
 \textbf{C5 -- Manifold-to-verifier bridge.} Geometric features are
 quantitative; Z3 needs exact preconditions. We fix a \emph{grammar}: a
@@ -404,10 +399,12 @@ manifold supplies the spec (it knows the sink and line), the LLM supplies the
 interpretation (CWE, description, confidence), and the verifier consumes the
 spec --- never the LLM prose. This keeps the SMT query precise and reproducible.
 
-The underlying thesis stands: static analyzers fail because they match words
-instead of invariants in a topological structure. The criterion is whether
-$V(x)$ prunes the search space for Z3/angr more effectively than a plain DFS
-over the call graph.
+The thesis our data supports is more modest. Semantic dataflow (taint) is the
+dominant signal on the evaluated corpora; structural invariants provide
+\emph{complementary hypotheses}. The open question is whether structural priors
+can reduce \emph{verification cost} in regimes where semantic analysis is
+incomplete (interprocedural, framework-mediated), and whether they help at very
+small budgets.
 
 \section{Implementation status}
 \begin{center}
@@ -514,7 +511,7 @@ not in the geometric prior. H1, H2 and H5 are therefore reported as \emph{not
 supported} on this corpus.
 
 \noindent\textbf{Paired test and global pool.} The difference taint\,$-$\,field is
-$+0.0225$ (MRR), 95\% bootstrap CI $[+0.0157,+0.0294]$, permutation $p=0.000$:
+$+0.0225$ (MRR), 95\% bootstrap CI $[+0.0157,+0.0294]$, permutation $p=5\times10^{-5}$ (add-one estimator over 20000 permutations, 2000 bootstrap):
 taint significantly dominates. To also measure the real analyst situation (safe
 and vulnerable candidates competing in one queue), we pooled \emph{every} sink
 candidate over all 1698 taint-category cases and ranked globally:
@@ -535,9 +532,12 @@ random & 0.216 & 0.2 & 0.002 & 4176 \\
 
 The picture is nuanced: the structural field is best at the extreme top
 ($P@10=0.8$ vs.\ $0.6$) but has lower average precision and needs more queries to
-reach 90\% recall. So the geometric/topological priors help only marginally at
-very small budgets and hurt on average --- a sharper, still negative, version of
-the H1/H2/H5 verdict.
+reach 90\% recall. The $P@10$ gap is small in absolute terms --- eight versus six
+correct items in the top ten --- so we do not read it as a robust advantage; it is
+consistent with tie-breaking noise and we report it without a significance claim.
+The overall verdict remains negative: the geometric/topological priors help only
+marginally at very small budgets and hurt on average --- a sharper, still
+negative, version of the H1/H2/H5 verdict.
 
 \input{figs/oracle}
 
@@ -694,8 +694,11 @@ Guided by the CVE evidence, we added an explicit framework/library summary layer
 the analyzer now sees application-level flows it previously missed --- Django
 query-parameter SQL injection, Flask SSTI, JPA injection --- while keeping
 parameterized queries and literal templates safe. This is the concrete lever the
-CVEs pointed to; it does not move the OWASP/Juliet aggregates because those
-failures are framework-\emph{internal} rather than application-level.
+CVEs pointed to. It does not move the aggregates, but for two different reasons:
+OWASP/Julet failures are mostly \emph{structural} (cross-method flows that need
+interprocedural analysis), whereas the unresolved CVEs are \emph{framework-internal}
+(the vulnerable logic lives inside the framework itself, with no
+application-level source).
 
 \subsection{Scalability of each kernel}
 We timed every kernel on synthetic graphs (log--log, Fig.~\ref{fig:scale}).
@@ -757,9 +760,11 @@ are identical} in both modes --- the SMT verifier is the arbiter, exactly as the
 architecture prescribes --- while the LLM changes the \emph{interpretation}:
 richer CWE labels and titles (e.g.\ CWE-674 ``Uncontrolled Recursion'' for the
 reentrancy cycle vs.\ the heuristic's generic label). Across repeated runs the
-set of confirmed findings is stable; only the LLM's phrasing varies. The
-decisive ablation is therefore empirical: \emph{the LLM adds interpretability,
-not detection} --- the neuro-symbolic split holds.
+set of confirmed findings is stable; only the LLM's phrasing varies. This small
+controlled ablation (seven Python examples) confirms the intended arbitration
+boundary: \emph{on these examples the LLM adds interpretability, not detection}
+--- the neuro-symbolic split holds. A larger ablation over OWASP (ranking,
+interpretation and reporting, with and without the LLM) is left to future work.
 
 \subsection{Dual binary backend}
 The binary adapter ships two interchangeable backends that emit the same IR:

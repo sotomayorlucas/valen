@@ -127,7 +127,7 @@
     \end{column}
     \begin{column}{0.5\textwidth}
       \textbf{Algebraic}\\
-      taint lattice; naturality (categories).
+      taint lattice; authorization order.
       \vspace{2mm}
       \textbf{Formal}\\
       symbolic execution $+$ SMT (Z3); reachability.
@@ -142,21 +142,24 @@
   \end{center}
 \end{frame}
 
-\begin{frame}{Mapping laws (feature $\to$ vulnerability)}
+\begin{frame}{Mapping hypotheses (feature $\to$ vulnerability)}
   \begin{center}
   \begin{tabular}{cll}
   \toprule
   \# & Mathematical feature & Class \\
   \midrule
-  L1 & curvature $\kappa \ll 0$ (chokepoint) & privilege escalation \\
-  L2 & persistent $H_1$ generator & reentrancy / recursion \\
-  L3 & Fiedler cut & injection across trust \\
-  L4 & taint crossing an \texttt{auth} edge & naturality violation \\
-  L5 & persistence outlier & real vs.\ spurious feature \\
-  L6 & $\mathrm{SAT}(\phi_{\text{bad}})$ & concrete exploit \\
+  H1 & curvature $\kappa \ll 0$ (chokepoint) & privilege escalation \\
+  H2 & persistent $H_1$ generator & reentrancy / recursion \\
+  H3 & Fiedler cut & injection across trust \\
+  H4 & taint crossing an \texttt{auth} edge & auth-invariant violation \\
+  H5 & persistence outlier & real vs.\ spurious feature \\
+  H6 & $\mathrm{SAT}(\phi_{\text{bad}})$ & model witness (encoded semantics) \\
   \bottomrule
   \end{tabular}
   \end{center}
+  \vspace{2mm}
+  \footnotesize These are \emph{falsifiable hypotheses}, not laws; H1/H2/H5 are
+  \emph{not supported} on the evaluated corpora (see results).
 \end{frame}
 
 \begin{frame}[fragile]{The neuro-symbolic agent}
@@ -189,7 +192,9 @@
   \end{center}
 
   \vspace{1mm}
-  {\footnotesize (a) reported in public evaluations. (b) \textbf{measured} (Z3 adds witnesses, not precision).}
+  {\footnotesize (a) reported in public evaluations; may use different aggregation
+  schemes --- \emph{not} a head-to-head comparison until re-executed under a uniform
+  protocol. (b) \textbf{measured} (Z3 adds witnesses, not precision).}
 \end{frame}
 
 \begin{frame}{Ablation: where the gain comes from}
@@ -210,7 +215,9 @@
   \begin{itemize}
     \item \textbf{Branch-join} (lattice join) is the \emph{recall} lever ($+0.28$).
     \item The \textbf{HTTP response-writer restriction} is the \emph{precision} lever.
-    \item Residual errors are adversarial cases --- what $V(x)+$Z3 must recover.
+    \item Residual errors are \emph{not} recovered by $V$ or Z3: the field worsens
+          the mean ranking and the Z3 verifier reproduces the adapter's metrics.
+          The binding limits are structural (interprocedural) and framework-internal.
   \end{itemize}
 \end{frame}
 
@@ -231,15 +238,20 @@
   \textbf{Conclusions}
   \begin{itemize}
     \item A typed IR fuses independent signals into a navigable field $V(x)$.
-    \item The neuro-symbolic split (math/LLM/SMT) is the right one.
-    \item On OWASP Benchmark: $F_1$ $0.466 \to 0.662$ with generic taint fixes alone.
+    \item The neuro-symbolic split (math/LLM/SMT) is the right one: the LLM adds
+          interpretability, not detection.
+    \item \textbf{Main result (negative):} semantic dataflow dominates. The
+          structural field helps only at very small budgets ($P@10$) and hurts on
+          average (MRR $0.872$ vs.\ $0.894$; AP $0.434$ vs.\ $0.489$).
+    \item Data-driven engineering works: interprocedural taint raised Juliet recall
+          $0.562 \to 0.750$; framework summaries capture app-level flows.
   \end{itemize}
   \vspace{2mm}
   \textbf{Future work}
   \begin{itemize}
-    \item Z3 verification for Java (closing the projected row).
-    \item Directed homology and Sinkhorn at scale; calibrating $\alpha_i$ on real corpora.
-    \item ELF/PE benchmarks (SARD) on the dual binary backend.
+    \item Uniform re-execution of CodeQL/SonarQube (methodological caveat).
+    \item Larger CVE study; interprocedural/library-aware corpus.
+    \item Larger LLM ablation over OWASP (ranking/interpretation/reporting).
   \end{itemize}
 \end{frame}
 
@@ -247,7 +259,8 @@
   \centering
   \Large\color{manifold}\textbf{Thank you}\\[4mm]
   \normalsize\color{black}
-  MAP the code as a space; let geometry reveal the flaw.
+  Map the program as a space --- then test whether structure actually helps.\\[1mm]
+  When geometry fails, the failure is information too.
 \end{frame}
 
 \end{document}

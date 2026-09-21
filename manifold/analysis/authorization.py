@@ -1,14 +1,14 @@
-"""L4 operationalization: naturality violations.
+"""H4 operationalization: authorization-invariant violations.
 
-The review pointed out that "a vulnerability is a naturality violation of the
-authorization functor" needs a *constructive* rule. Here it is:
+The review pointed out that "a vulnerability is a violation of an authorization
+invariant" needs a *constructive* rule. Here it is:
 
-* A privilege boundary is an ``auth`` gate (a decorator/function such as
+* A privilege boundary is an ``auth`` edge (from a decorator/function such as
   ``login_required``) attached to a function. The IR encodes this as a ``gate``
   node with an ``auth`` edge into the function.
-* A taint finding is a **naturality violation** iff its sink lies inside a
-  function that is behind an auth gate: untrusted data reaches a protected
-  region without the boundary neutralizing it.
+* A taint finding is an **authorization-invariant violation** iff its sink lies
+  inside a function that is behind an auth gate: untrusted data reaches a
+  protected region without the boundary neutralizing it.
 """
 
 from __future__ import annotations
@@ -38,12 +38,15 @@ def auth_gates_for(graph: Graph, line: int) -> List[str]:
 
 
 def annotate_findings(graph: Graph, findings: List[Finding]) -> List[Finding]:
-    """Populate ``finding.auth_gates`` for every taint finding (L4 tagging)."""
+    """Populate ``finding.auth_gates`` for every taint finding (H4 tagging)."""
     for finding in findings:
         finding.auth_gates = auth_gates_for(graph, finding.line)
     return findings
 
 
-def naturality_violations(graph: Graph, findings: List[Finding]) -> List[Finding]:
+def authorization_violations(graph: Graph, findings: List[Finding]) -> List[Finding]:
     """The subset of findings that cross a privilege boundary."""
     return [f for f in annotate_findings(graph, findings) if f.auth_gates]
+
+
+naturality_violations = authorization_violations  # deprecated alias (pre-rename)

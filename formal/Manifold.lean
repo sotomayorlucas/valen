@@ -5,8 +5,8 @@
 
   * Prop. 1 — soundness of the boolean taint abstraction: an abstract "clean"
     verdict implies that no concrete execution taints the variable.
-  * Prop. 2 — the naturality law: an authorization edge is a privilege
-    escalation, and a path with no authorization edges cannot escalate.
+  * Prop. 2 — the authorization invariant: an authorization edge is a
+    privilege escalation, and a path with no authorization edges cannot escalate.
 
   Build:  lean formal/Manifold.lean
 -/

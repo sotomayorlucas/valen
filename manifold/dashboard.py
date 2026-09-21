@@ -147,7 +147,7 @@ select,button{background:var(--panel2);color:var(--text);border:1px solid var(--
         <div class="chart"><svg id="protocol" viewBox="0 0 560 360"></svg></div>
       </div>
     </div>
-    <h3 style="font-size:13px;color:#8b949e;margin-top:16px">Mapping laws (feature &rarr; vulnerability class)</h3>
+    <h3 style="font-size:13px;color:#8b949e;margin-top:16px">Mapping hypotheses (feature &rarr; vulnerability class)</h3>
     <div id="laws"></div>
   </section>
 
@@ -261,12 +261,12 @@ $("#cards").innerHTML = cards.map(([k,v,s])=>`<div class="card"><div class="k">$
   const a=auc;
   const aucOf=k=>a[k]?a[k].auc:null;
   const laws=[
-    ["L1","chokepoint: curvature κ ≪ 0","privilege escalation","geometric"],
-    ["L2","persistent H₁ generator","reentrancy / recursion","topological"],
-    ["L3","Fiedler spectral cut","injection across trust","spectral"],
-    ["L4","taint crossing an `auth` edge","naturality violation","","definitional (Prop. 2)"],
-    ["L5","persistence outlier","real vs. spurious feature","topological"],
-    ["L6","SAT(φ_bad) (formal reachability)","concrete exploit","formal"],
+    ["H1","chokepoint: curvature κ ≪ 0","privilege escalation","geometric"],
+    ["H2","persistent H₁ generator","reentrancy / recursion","topological"],
+    ["H3","Fiedler spectral cut","injection across trust","spectral"],
+    ["H4","taint crossing an `auth` edge","auth-invariant violation","","definitional (Prop. 2)"],
+    ["H5","persistence outlier","real vs. spurious feature","topological"],
+    ["H6","SAT(φ_bad) (formal reachability)","model witness (encoded semantics)","formal"],
   ];
   const rows=laws.map(([id,f,c,k,override])=>{
     const v=aucOf(k);
@@ -276,7 +276,7 @@ $("#cards").innerHTML = cards.map(([k,v,s])=>`<div class="card"><div class="k">$
       : `<span style="color:var(--amber)">at chance (AUC ${v.toFixed(3)})</span>`); }
     return [id,f,c,status];
   });
-  $("#laws").innerHTML=table(rows,["law","feature","class","status on OWASP Benchmark"]);
+  $("#laws").innerHTML=table(rows,["hypothesis","feature","class","status on OWASP Benchmark"]);
 })();
 
 
