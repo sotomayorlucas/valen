@@ -24,12 +24,19 @@ def main() -> int:
     ap.add_argument("--root", required=True)
     ap.add_argument("--cwes", default="CWE89,CWE78,CWE80,CWE81,CWE90,CWE643,CWE22,CWE501")
     ap.add_argument("--interproc", action="store_true", help="use the interprocedural Java analyzer")
+    ap.add_argument("--cs", action="store_true", help="context-sensitive (with --interproc)")
     args = ap.parse_args()
 
     if args.interproc:
         from manifold.ingest.java_interproc import JavaInterproceduralIngest
 
-        analyzer = JavaInterproceduralIngest()
+        _base = JavaInterproceduralIngest()
+
+        class _CS:
+            def analyze(self, code, path="<java>"):
+                return _base.analyze(code, path=path, context_sensitive=True)
+
+        analyzer = _CS() if args.cs else _base
     else:
         analyzer = JavaIngest()
 

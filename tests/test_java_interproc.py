@@ -33,3 +33,19 @@ def test_interprocedural_no_taint_stays_clean():
         "  java.sql.Statement s = null; s.executeQuery(\"SELECT \" + data); } }"
     )
     assert JavaInterproceduralIngest().analyze(code).findings == []
+
+
+RETURN_CTX = """class T {
+  String f(String x) { return x; }
+  void bad(HttpServletRequest req) throws Exception { String p = req.getParameter("x"); f(p); }
+  void good() throws Exception { String r = f("safe"); sink(r); }
+  void sink(String d) throws Exception { java.sql.Statement s = null; s.executeQuery("SELECT " + d); }
+}"""
+
+
+def test_context_sensitivity_prunes_return_false_positive():
+    analyzer = JavaInterproceduralIngest()
+    # context-insensitive return-taint over-approximates and fires the clean caller
+    assert analyzer.analyze(RETURN_CTX).findings
+    # per-context return-taint prunes it
+    assert analyzer.analyze(RETURN_CTX, context_sensitive=True).findings == []

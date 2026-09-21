@@ -56,7 +56,7 @@ class Facts:
 
 
 class JavaInterproceduralIngest:
-    def analyze(self, code: str, path: str = "<java>") -> AnalysisResult:
+    def analyze(self, code: str, path: str = "<java>", context_sensitive: bool = False) -> AnalysisResult:
         parser = parser_for("java")
         tree = parser.parse(code.encode())
         root = tree.root_node
@@ -66,33 +66,63 @@ class JavaInterproceduralIngest:
         for i, m in enumerate(methods):
             by_name.setdefault(m.name, i)
 
-        tainted_params: List[Set[int]] = [set() for _ in methods]
-        return_tainted: Set[int] = set()
+        return_tainted: Set = set()
+        self._cs = context_sensitive
+        self._cur_method_name = ""
 
-        # fixpoint
-        for _ in range(len(methods) + 2):
-            changed = False
-            for i, m in enumerate(methods):
-                facts = self._run(m, by_name, tainted_params, return_tainted, findings=None, path=path)
+        if context_sensitive:
+            # Caller-context sensitivity: a method is analyzed once per distinct
+            # caller method, so a parameter tainted by one caller does not taint
+            # the same parameter reached by a clean caller. Return-taint is also
+            # tracked per context.
+            seeds: Dict[Tuple[int, str], Set[int]] = {}
+            processed: Set[Tuple[int, str, Tuple[int, ...]]] = set()
+            work: List[Tuple[int, str, Tuple[int, ...]]] = [(i, "<entry>", ()) for i in range(len(methods))]
+            while work:
+                i, ctx, seed = work.pop()
+                key = (i, ctx, seed)
+                if key in processed:
+                    continue
+                processed.add(key)
+                facts = self._run(methods[i], set(seed), by_name, return_tainted, None, path)
+                if facts.returns_tainted:
+                    return_tainted.add((i, ctx))
                 for (mi, pi) in facts.callee_params:
-                    if 0 <= mi < len(methods) and pi < len(methods[mi].params):
-                        if pi not in tainted_params[mi]:
-                            tainted_params[mi].add(pi)
-                            changed = True
-                if facts.returns_tainted and i not in return_tainted:
-                    return_tainted.add(i)
-                    changed = True
-            if not changed:
-                break
+                    if mi >= len(methods) or pi >= len(methods[mi].params):
+                        continue
+                    k = (mi, methods[i].name)
+                    cur = seeds.setdefault(k, set())
+                    if pi not in cur:
+                        cur.add(pi)
+                        work.append((mi, methods[i].name, tuple(sorted(cur))))
+            final_runs = [(i, set(seed)) for (i, _, seed) in processed]
+        else:
+            tainted_params: List[Set[int]] = [set() for _ in methods]
+            for _ in range(len(methods) + 2):
+                changed = False
+                for i, m in enumerate(methods):
+                    facts = self._run(m, tainted_params[i], by_name, return_tainted, None, path)
+                    for (mi, pi) in facts.callee_params:
+                        if 0 <= mi < len(methods) and pi < len(methods[mi].params):
+                            if pi not in tainted_params[mi]:
+                                tainted_params[mi].add(pi)
+                                changed = True
+                    if facts.returns_tainted and i not in return_tainted:
+                        return_tainted.add(i)
+                        changed = True
+                if not changed:
+                    break
+            final_runs = [(i, tainted_params[i]) for i in range(len(methods))]
 
         # final pass -> findings
         findings: List[Finding] = []
         graph = Graph()
-        graph.meta = {"language": "java", "file": path, "interprocedural": True}
+        graph.meta = {"language": "java", "file": path, "interprocedural": True,
+                      "context_sensitive": context_sensitive}
         for m in methods:
             graph.add_node(m.nid, NodeKind.FUNCTION, m.name, file=path, line=m.line, end_line=m.end_line)
-        for i, m in enumerate(methods):
-            self._run(m, by_name, tainted_params, return_tainted, findings=findings, path=path)
+        for i, seed in final_runs:
+            self._run(methods[i], seed, by_name, return_tainted, findings=findings, path=path)
 
         self._attach_sinks(graph, findings, path)
         return AnalysisResult(graph=graph, findings=findings)
@@ -130,11 +160,12 @@ class JavaInterproceduralIngest:
         return out
 
     # -- one method --------------------------------------------------------
-    def _run(self, m: Method, by_name, tainted_params, return_tainted, findings, path) -> Facts:
+    def _run(self, m: Method, seed_indices, by_name, return_tainted, findings, path) -> Facts:
+        self._cur_method_name = m.name
         facts = Facts()
         env: Dict[str, Set[str]] = {}
         for idx, p in enumerate(m.params):
-            if idx in tainted_params[by_name[m.name]]:
+            if idx in seed_indices:
                 env[p] = {"param"}
         self._walk(m.body, env, facts, by_name, return_tainted, findings, path)
         return facts
@@ -256,9 +287,15 @@ class JavaInterproceduralIngest:
             for idx, at in enumerate(arg_tags):
                 if at:
                     facts.callee_params.add((mi, idx))
-            if mi in return_tainted:
+            if self._ret_tainted(mi, return_tainted):
                 tags = set(tags) | {"call"}
         return tags
+
+    def _ret_tainted(self, mi: int, return_tainted) -> bool:
+        """Context-sensitive return-taint lookup when in CS mode."""
+        if self._cs:
+            return (mi, self._cur_method_name) in return_tainted
+        return mi in return_tainted
 
     def _emit(self, node, name, category, findings, path):
         key = (category, name, node.start_point[0])
