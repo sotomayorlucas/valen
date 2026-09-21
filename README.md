@@ -38,7 +38,11 @@ are the only signal, because there the data is legitimate and taint is blind.
 > `benchmarks/run_bola.py`) — el taint puntúa **0** en esos casos; sus 7 falsos
 > positivos son el límite de sobre-aproximación documentado. La homología dirigida
 > **GLMY** (evaluada en 12 grafos de estado, `benchmarks/run_state_glmy.py`)
-> domina al simetrizado: recall 1.0 / precisión 0.75 vs 0.5/0.5. El **witness de
+> domina al simetrizado: recall 1.0 / precisión 0.75 vs 0.5/0.5. **Datos reales**
+> (OWASP crAPI, `examples/api/`, `benchmarks/run_crapi_bola.py`): la señal de
+> referencia-a-objeto recupera los 9 BOLA/BFLA documentados con recall 1.0 /
+> precisión 0.90, donde el chequeo de auth-ausente puntúa 0 (todo BOLA **está**
+> autenticado). El **witness de
 > ownership en Z3** (`bola_verifier.py`) separa autorización de objeto de mera
 > autenticación (`login_required` NO bloquea BOLA). Además: detección de
 > **auth-gap OpenAPI** (CWE-862), **puentes de privilegio IAM** vía Fiedler/Forman-Ricci

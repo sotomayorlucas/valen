@@ -1,0 +1,14 @@
+{
+  "source": "OWASP crAPI (Completely Ridiculous API) - https://github.com/OWASP/crAPI - Apache-2.0. Ground-truth labels transcribed from docs/challenges.md and docs/challengeSolutions.md.",
+  "vulnerable": [
+    "GET /identity/api/v2/vehicle/{vehicleId}/location",
+    "GET /workshop/api/mechanic/mechanic_report",
+    "DELETE /identity/api/v2/admin/videos/{video_id}",
+    "DELETE /identity/api/v2/user/videos/{video_id}",
+    "GET /identity/api/v2/user/videos/{video_id}",
+    "PUT /identity/api/v2/user/videos/{video_id}",
+    "GET /workshop/api/shop/orders/{order_id}",
+    "PUT /workshop/api/shop/orders/{order_id}",
+    "POST /workshop/api/shop/orders/return_order"
+  ]
+}

@@ -248,7 +248,11 @@ P 0.75 vs no dirigida 0.5/0.5, `benchmarks/run_state_glmy.py`); el **adaptador
 IAM** (`manifold.ingest.iam` + `manifold.analysis.trust`) para puentes de
 privilegio vía Fiedler/Forman-Ricci (`examples/iam/demo.json`); la
 **spec-mining** (`benchmarks/run_spec_mining.py`, 0.5 recall / 0 alucinación); y
-el **adaptador de agentes LLM**
+una **evaluación en datos reales sobre OWASP crAPI**
+(`manifold.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) que recupera los 9
+endpoints BOLA/BFLA documentados con recall 1.0 / precisión 0.90, donde el
+chequeo de auth-ausente puntúa 0 porque todo endpoint BOLA está autenticado. El
+**adaptador de agentes LLM**
 (`manifold.ingest.llm_agent`) para confused-deputy / inyección indirecta de
 prompt. Abandona la competencia estéril con Semgrep/CodeQL en SQLi/XSS locales y
 ataca las fallas arquitectónicas donde las reglas sintácticas callan.

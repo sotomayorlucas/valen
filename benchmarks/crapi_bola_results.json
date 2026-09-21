@@ -1,0 +1,282 @@
+{
+  "n": 44,
+  "n_vulnerable": 9,
+  "tp": 9,
+  "fp": 1,
+  "fn": 0,
+  "tn": 34,
+  "precision": 0.9,
+  "recall": 1.0,
+  "f1": 0.9473684210526316,
+  "vulnerable_authenticated": 9,
+  "false_positives": [
+    "GET /identity/api/v2/user/videos/convert_video"
+  ],
+  "false_negatives": [],
+  "rows": [
+    {
+      "key": "POST /identity/api/auth/signup",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/login",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/forget-password",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/v3/check-otp",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/v2/check-otp",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/v4.0/user/login-with-token",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/auth/v2.7/user/login-with-token",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "POST /identity/api/v2/user/reset-password",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/user/change-email",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/user/verify-email-token",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /identity/api/v2/user/dashboard",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/user/pictures",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/user/videos",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /identity/api/v2/user/videos/{video_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "PUT /identity/api/v2/user/videos/{video_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "DELETE /identity/api/v2/user/videos/{video_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "GET /identity/api/v2/user/videos/convert_video",
+      "vulnerable": false,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "DELETE /identity/api/v2/admin/videos/{video_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "GET /identity/api/v2/vehicle/vehicles",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/vehicle/add_vehicle",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /identity/api/v2/vehicle/{vehicleId}/location",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "POST /identity/api/v2/vehicle/resend_email",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /community/api/v2/community/posts/{postId}",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /community/api/v2/community/posts",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /community/api/v2/community/posts/{postId}/comment",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /community/api/v2/community/posts/recent",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /community/api/v2/coupon/new-coupon",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /community/api/v2/coupon/validate-coupon",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/shop/products",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/shop/products",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/shop/orders",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "PUT /workshop/api/shop/orders/{order_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/shop/orders/{order_id}",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/shop/orders/all",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/shop/orders/return_order",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/shop/apply_coupon",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/shop/return_qr_code",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/management/users/all",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/mechanic/",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/merchant/contact_mechanic",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/mechanic/receive_report",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    },
+    {
+      "key": "GET /workshop/api/mechanic/mechanic_report",
+      "vulnerable": true,
+      "predicted": true,
+      "authenticated": true
+    },
+    {
+      "key": "GET /workshop/api/mechanic/service_requests",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": true
+    },
+    {
+      "key": "POST /workshop/api/mechanic/signup",
+      "vulnerable": false,
+      "predicted": false,
+      "authenticated": false
+    }
+  ]
+}

@@ -240,7 +240,11 @@ sink-without-scheme operations (CWE-862); **GLMY directed homology**
 0.5/0.5, `benchmarks/run_state_glmy.py`); the **IAM adapter**
 (`manifold.ingest.iam` + `manifold.analysis.trust`) for privilege bridges via
 Fiedler/Forman-Ricci (`examples/iam/demo.json`); **spec-mining**
-(`benchmarks/run_spec_mining.py`, 0.5 recall / 0 hallucination); and the
+(`benchmarks/run_spec_mining.py`, 0.5 recall / 0 hallucination); and a
+**real-data evaluation on OWASP crAPI**
+(`manifold.analysis.api_bola`, `benchmarks/run_crapi_bola.py`) recovering the 9
+documented BOLA/BFLA endpoints at recall 1.0 / precision 0.90, where the
+missing-auth check scores 0 because every BOLA endpoint is authenticated. The
 **LLM-agent adapter**
 (`manifold.ingest.llm_agent`) for confused-deputy / indirect prompt injection.
 It abandons the sterile competition with Semgrep/CodeQL on local SQLi/XSS and

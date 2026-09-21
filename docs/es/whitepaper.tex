@@ -58,7 +58,11 @@ los delata. Allí la misma maquinaria es la única señal: en un corpus curado d
 alcanza recall $1.0$ / precisión $0.72$ / F1 $0.837$ mientras el taint puntúa $0$
 (sus 7 falsos positivos son el límite de sobre-aproximación documentado; un
 witness de ownership en Z3 separa la autorización a nivel de objeto de la mera
-autenticación); la homología de caminos dirigida GLMY, evaluada sobre 12 grafos
+autenticación; en datos reales --- OWASP crAPI, 9 endpoints BOLA/BFLA
+documentados --- una señal de referencia a objeto a nivel de API alcanza recall
+$1.0$ / precisión $0.90$ donde el chequeo de auth-ausente puntúa $0$, porque todo
+endpoint BOLA \emph{está} autenticado); la homología de caminos dirigida GLMY,
+evaluada sobre 12 grafos
 de estado, alcanza recall $1.0$ / precisión $0.75$ frente al $0.5$/$0.5$ de la
 homología simetrizada que supera. El
 resultado es una única cuenta --- el mismo grafo tipado, álgebra de privilegios,
@@ -904,8 +908,15 @@ $[0.54,0.89]$). Una escalera de ablación muestra que cada requisito estructural
 rinde: all-positive $0.46$, solo-sink $0.49$, fuente+sink $0.56$ y el detector
 completo $0.72$, a recall constante $1.0$ --- y los 7 falsos positivos son el
 límite de sobre-aproximación documentado (parametrizados/sanitizados/fuente sin
-usar). Es precisamente el régimen donde el taint demostrablemente puntúa $0$ y la
-estructura es la única señal.
+usar). Esto transfiere a \emph{datos reales}: sobre \textbf{OWASP crAPI} (una API
+deliberadamente vulnerable; 44 operaciones, 9 endpoints BOLA/BFLA etiquetados
+desde la documentación oficial de challenges), la señal estructural de referencia
+a objeto a nivel de API alcanza \textbf{recall $1.0$ / precisión $0.90$ / F1
+$0.947$} --- y, crucialmente, los 9 endpoints BOLA \emph{están} autenticados, así
+que un chequeo de esquema-de-seguridad-ausente puntúa recall $0$ sobre ellos:
+BOLA es invisible a la pregunta ``¿está autenticado?'' y solo la estructura a
+nivel de objeto lo delata. Es precisamente el régimen donde el taint
+demostrablemente puntúa $0$ y la estructura es la única señal.
 
 \subsection{Máquinas de estado, concurrencia y protocolos: homología dirigida}
 En un servlet no hay ciclos de estado; en contratos inteligentes, protocolos de

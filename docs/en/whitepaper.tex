@@ -55,7 +55,11 @@ program gives them away. There the same machinery is the only signal: on a
 curated 39-case BOLA/IDOR corpus the structural \emph{missing-authorization}
 detector reaches recall $1.0$ / precision $0.72$ / F1 $0.837$ while taint scores
 $0$ (its $7$ false positives are the documented over-approximation limit; a Z3
-ownership witness separates object-level authorization from mere authentication);
+ownership witness separates object-level authorization from mere authentication;
+on real data --- OWASP crAPI, 9 documented BOLA/BFLA endpoints --- an API-level
+object-reference signal reaches recall $1.0$ / precision $0.90$ where the
+missing-auth check scores $0$, because every BOLA endpoint \emph{is}
+authenticated);
 GLMY directed path homology, benchmarked on 12 state graphs, reaches
 recall $1.0$ / precision $0.75$ versus $0.5$/$0.5$ for the symmetrized homology
 it supersedes. The
@@ -855,7 +859,14 @@ vulnerable cases while the structural detector reaches \textbf{recall $1.0$} at
 shows each structural requirement earns its keep: all-positive $0.46$, sink-only
 $0.49$, source+sink $0.56$, and the full detector $0.72$, at constant recall
 $1.0$ --- and the 7 false positives are the documented over-approximation limit
-(parameterized/sanitized/unused-source). It is precisely the regime where taint
+(parameterized/sanitized/unused-source). This transfers to \emph{real data}: on
+\textbf{OWASP crAPI} (a deliberately-vulnerable API; 44 operations, 9
+BOLA/BFLA endpoints labeled from the official challenge documentation), the
+API-level object-reference signal reaches \textbf{recall $1.0$ / precision
+$0.90$ / F1 $0.947$} --- and crucially, all 9 BOLA endpoints \emph{are}
+authenticated, so a missing-security-scheme check scores recall $0$ on them:
+BOLA is invisible to the ``is it authenticated?'' question and only the
+object-level structure gives it away. It is precisely the regime where taint
 provably scores $0$ and structure is the only signal.
 
 \subsection{State machines, concurrency and protocols: directed homology}
