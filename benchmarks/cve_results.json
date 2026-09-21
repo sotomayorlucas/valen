@@ -238,5 +238,329 @@
         "persisting": []
       }
     ]
+  },
+  {
+    "cve": "CVE-2025-66455",
+    "repo": "InternLM/lmdeploy",
+    "url": "",
+    "files": [
+      {
+        "file": "lmdeploy/pytorch/disagg/conn/engine_conn.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-50024",
+    "repo": "WangYihang/GitHacker",
+    "url": "",
+    "files": [
+      {
+        "file": "githacker/__main__.py",
+        "adapter": "python",
+        "vuln_findings": 12,
+        "patched_findings": 11,
+        "resolved": [],
+        "persisting": [
+          [
+            "logging",
+            "logging.error"
+          ],
+          [
+            "logging",
+            "logging.info"
+          ],
+          [
+            "logging",
+            "logging.warning"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-78677",
+    "repo": "gitpython-developers/GitPython",
+    "url": "",
+    "files": [
+      {
+        "file": "git/objects/submodule/base.py",
+        "adapter": "python",
+        "vuln_findings": 1,
+        "patched_findings": 1,
+        "resolved": [],
+        "persisting": [
+          [
+            "path_traversal",
+            "os.remove"
+          ]
+        ]
+      },
+      {
+        "file": "git/repo/base.py",
+        "adapter": "python",
+        "vuln_findings": 1,
+        "patched_findings": 1,
+        "resolved": [],
+        "persisting": [
+          [
+            "path_traversal",
+            "os.remove"
+          ]
+        ]
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-79676",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/chunk/named_entity.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/crubadan.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/ipipan.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/lin.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/mte.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/nkjp.py",
+        "adapter": "python",
+        "vuln_findings": 2,
+        "patched_findings": 1,
+        "resolved": [
+          [
+            "file_write",
+            "open"
+          ]
+        ],
+        "persisting": [
+          [
+            "path_traversal",
+            "os.remove"
+          ]
+        ]
+      },
+      {
+        "file": "nltk/corpus/reader/pl196x.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/corpus/reader/xmldocs.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-79657",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/parse/transitionparser.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/picklesec.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/tokenize/punkt.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-78683",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/parse/transitionparser.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/picklesec.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      },
+      {
+        "file": "nltk/tokenize/punkt.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62383",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/corpus/reader/ipipan.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62384",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/corpus/reader/framenet.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62385",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/corpus/reader/framenet.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-63312",
+    "repo": "nltk/nltk",
+    "url": "",
+    "files": [
+      {
+        "file": "nltk/corpus/reader/util.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62677",
+    "repo": "omnigent-ai/omnigent",
+    "url": "",
+    "files": [
+      {
+        "file": "omnigent/server/bundles.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62674",
+    "repo": "omnigent-ai/omnigent",
+    "url": "",
+    "files": [
+      {
+        "file": "omnigent/server/routes/sessions.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
+  },
+  {
+    "cve": "CVE-2026-62675",
+    "repo": "omnigent-ai/omnigent",
+    "url": "",
+    "files": [
+      {
+        "file": "omnigent/server/bundles.py",
+        "adapter": "python",
+        "vuln_findings": 0,
+        "patched_findings": 0,
+        "resolved": [],
+        "persisting": []
+      }
+    ]
   }
 ]

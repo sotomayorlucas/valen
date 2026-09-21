@@ -50,5 +50,70 @@
     "repo": "apache/airflow",
     "commit": "69b6c54ef17b048ebb0e9a656d0d9e1c99480d6b",
     "url": "https://github.com/advisories/GHSA-2943-9672-r45w"
+  },
+  {
+    "cve": "CVE-2025-66455",
+    "repo": "InternLM/lmdeploy",
+    "commit": "f05b4ad8bf2e2d84101a1d63b3c44fadd99223b2"
+  },
+  {
+    "cve": "CVE-2026-50024",
+    "repo": "WangYihang/GitHacker",
+    "commit": "5f2a8ba"
+  },
+  {
+    "cve": "CVE-2026-78677",
+    "repo": "gitpython-developers/GitPython",
+    "commit": "b68afff45af0f49e79a3e2d2162018986b37ad5d"
+  },
+  {
+    "cve": "CVE-2026-79676",
+    "repo": "nltk/nltk",
+    "commit": "10d34b3f4fe3fec74b76527a409eb0acbac2e8ab"
+  },
+  {
+    "cve": "CVE-2026-79657",
+    "repo": "nltk/nltk",
+    "commit": "c3e37113742a1ebeeb4f2ca58941f320f98805ea"
+  },
+  {
+    "cve": "CVE-2026-78683",
+    "repo": "nltk/nltk",
+    "commit": "f26b3753038d937b68145daf15e9636f8451053c"
+  },
+  {
+    "cve": "CVE-2026-62383",
+    "repo": "nltk/nltk",
+    "commit": "ee1a42e51982c4dce6ad3ee77ff1ac43894288ab"
+  },
+  {
+    "cve": "CVE-2026-62384",
+    "repo": "nltk/nltk",
+    "commit": "736d3212a47de2005b85b785dde6720556d3925d"
+  },
+  {
+    "cve": "CVE-2026-62385",
+    "repo": "nltk/nltk",
+    "commit": "7d1389d0789c1eca56bd0ed444089e0a3972e3ed"
+  },
+  {
+    "cve": "CVE-2026-63312",
+    "repo": "nltk/nltk",
+    "commit": "674ea75accdf08eca3782dee0a9c4ed7e0d0025b"
+  },
+  {
+    "cve": "CVE-2026-62677",
+    "repo": "omnigent-ai/omnigent",
+    "commit": "7ca0cca3c9a65c04c489edf68f0e080424a26868"
+  },
+  {
+    "cve": "CVE-2026-62674",
+    "repo": "omnigent-ai/omnigent",
+    "commit": "25a22dc9e6da4648d23749f0a589e47e6aed991b"
+  },
+  {
+    "cve": "CVE-2026-62675",
+    "repo": "omnigent-ai/omnigent",
+    "commit": "1f3f398f41cbf97b905133c21e848621c21da6e0"
   }
 ]

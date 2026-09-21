@@ -698,19 +698,19 @@ $\sim10^5$ edges for the near-linear signals, which covers the corpora used here
 We ran the vulnerable-vs-patched comparison on real CVE fix commits drawn from
 OSV / GitHub Security Advisories (\texttt{benchmarks/run\_cves.py}; the harness
 reconstructs the \emph{before} revision by reverse-applying the commit diff to
-the commit's raw content, so it needs no API quota). On 9 CVEs and 21 changed
-source files, \textbf{2 files resolved a finding}: both are \texttt{eval}
+the commit's raw content, so it needs no API quota). On 22 CVEs and 46 changed
+source files, \textbf{3 files resolved a finding}: they are \texttt{eval}
 injections --- \texttt{senaite.core} (CVE-2026-54569; \texttt{value = eval(value)}
 on a method parameter) and \texttt{xinference} (CVE-2026-61539;
-\texttt{eval(text)} on LLM output) --- flagged in the vulnerable revision and
-clean in the patch. The remaining CVEs are \emph{framework-internal} fixes
-(Django ORM SQL injection at CVE-2021-35042/2022-28466/2020-9402, Jinja,
-requests): the taint flow is indirect (user input reaches the ORM through
-\texttt{**kwargs}/query construction), so the intraprocedural adapter sees
-nothing. This mirrors the Juliet result and locates the frontier precisely:
-MANIFOLD already catches application-level \texttt{eval}/\texttt{exec}/
-deserialization fixes; framework-mediated flows need interprocedural,
-library-aware analysis.
+\texttt{eval(text)} on LLM output) --- plus a partial resolution in
+\texttt{nltk} (CVE-2026-79676) --- flagged in the vulnerable revision and
+clean in the patch. The remaining CVEs are mostly \emph{framework-internal} or
+non-taint fixes (Django ORM SQL injection, Jinja, requests, GitPython, NLTK
+argument-injection and integrity checks): the flow is indirect or outside our
+sink model, so the adapter sees nothing. This mirrors the Juliet result and
+locates the frontier precisely: MANIFOLD already catches application-level
+\texttt{eval}/\texttt{exec}/deserialization fixes; framework-mediated flows need
+interprocedural, context-sensitive, library-aware analysis.
 
 \subsection{Directed path homology (GLMY)}
 We implemented Grigor'yan--Lin--Muranov--Yau \emph{path homology} $H_0,H_1$ over
