@@ -32,10 +32,12 @@ def test_bootstrap_commands_use_correct_method_per_tool():
     if not cmds:
         return
     joined = "\n".join(cmds)
-    assert "apt-get install" in joined
-    if "theHarvester" in missing_tools():
+    missing = set(missing_tools())
+    if missing & {"nmap", "masscan", "gobuster", "ffuf", "sqlmap", "nikto"}:
+        assert "apt-get install" in joined
+    if "theHarvester" in missing:
         assert "git clone" in joined and "laramies/theHarvester" in joined
-    if "amass" in missing_tools():
+    if missing & {"amass", "subfinder", "nuclei"}:
         assert "go install" in joined
         assert "golang-go" in joined
         assert "GOPATH" in joined

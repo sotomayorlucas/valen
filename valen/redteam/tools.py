@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+from pathlib import Path
 from typing import Dict, List
 
 # name -> {exe, method, install (list of shell commands), pkg, description}
@@ -56,14 +57,43 @@ TOOLS: Dict[str, dict] = {
 }
 
 
+def _gopath() -> Path:
+    try:
+        out = subprocess.run(["go", "env", "GOPATH"], capture_output=True, text=True)
+        if out.returncode == 0 and out.stdout.strip():
+            return Path(out.stdout.strip())
+    except Exception:
+        pass
+    return Path.home() / "go"
+
+
+def _detect(t: dict) -> str:
+    """Locate a tool's executable, including non-PATH installs (git/go)."""
+    on_path = shutil.which(t["exe"])
+    if on_path:
+        return on_path
+    method = t["method"]
+    home = Path.home()
+    if method == "git" and t["exe"] == "theHarvester":
+        clone = home / "theHarvester" / "theHarvester.py"
+        if clone.exists():
+            return str(home / "theHarvester")
+    if method == "go":
+        gopath = _gopath()
+        for candidate in (gopath / "bin" / t["exe"], home / "go" / "bin" / t["exe"]):
+            if candidate.exists():
+                return str(candidate)
+    return ""
+
+
 def tool_status() -> Dict[str, Dict]:
     """Return per-tool ``{installed, path, method, pkg, description, install}``."""
     out = {}
     for name, t in TOOLS.items():
-        path = shutil.which(t["exe"])
+        path = _detect(t)
         out[name] = {
-            "installed": path is not None,
-            "path": path or "",
+            "installed": bool(path),
+            "path": path,
             "method": t["method"],
             "pkg": t["pkg"],
             "description": t["description"],
