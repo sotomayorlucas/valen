@@ -208,7 +208,14 @@ window.copyPoc = i => {
   navigator.clipboard && navigator.clipboard.writeText(ps[i].poc || '');
 };
 
+function refresh(){ fetch('/api/redteam').then(r=>r.json()).then(d=>{Object.assign(DATA,d);document.getElementById('app').innerHTML=toolsCard()+reconCard()+enumCard()+bolaCard()+exploitCard()+pentestCard()+solidityCard()+llmCard()+planCard()+pocsCard();}).catch(()=>{}); }
+
 document.getElementById('app').innerHTML =
+  `<div style="grid-column:1/-1;text-align:right">
+    <button onclick="refresh()">Refresh</button>
+    <button onclick="location.href='benchmarks/report.html'" class="ghost">Report HTML</button>
+    <button onclick="location.href='benchmarks/report.pdf'" class="ghost">Report PDF</button>
+  </div>` +
   toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + pentestCard() + solidityCard() + llmCard() + planCard() + pocsCard();
 </script>
 <script type="application/json" id="data">__DATA__</script>
