@@ -163,8 +163,9 @@ autorizados.
 
 - **Agente autónomo** (`valen/redteam/{operators,executor,challenges}.py`): operadores por
   tiers (passive/bounded/intrusive), planner+executor con presupuesto y audit log, fallback
-  LLM (LiteLLM). Resuelve 3/18 challenges de crAPI de forma autónoma (JWT forge, exposición,
-  acceso no autenticado); el resto son recetas por challenge honestamente reportadas.
+  LLM (LiteLLM). Resuelve **12/18** challenges de crAPI de forma autónoma (BOLA/IDOR,
+  mass-assignment, BFLA, JWT forge, exposición, NoSQLi, acceso no autenticado); el resto
+  (SSRF, SQLi, brute OTP, chatbot LLM) son recetas pendientes honestamente reportadas.
   Chatbot (16-18) se cablea a LiteLLM con `examples/lab/crapi-chatbot-litellm.yml`.
 - **Smart contracts** (`valen/ingest/solidity.py`, `valen/analysis/reentrancy.py`): parsea
   `.sol` (tree-sitter-solidity) y detecta reentrancy por orden checks-effects-interactions +
