@@ -27,6 +27,12 @@ def _load_languages() -> Dict[str, Language]:
         langs["java"] = Language(tree_sitter_java.language())
     except ImportError:  # pragma: no cover
         pass
+    try:
+        import tree_sitter_solidity
+
+        langs["solidity"] = Language(tree_sitter_solidity.language())
+    except ImportError:  # pragma: no cover
+        pass
     return langs
 
 

@@ -13,6 +13,7 @@ dependencies = [
     "tree-sitter-python",
     "tree-sitter-javascript",
     "tree-sitter-java",
+    "tree-sitter-solidity",
     "z3-solver",
 ]
 
