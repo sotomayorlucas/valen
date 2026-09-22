@@ -1,0 +1,111 @@
+% Shared figures for the VALEN paper (TikZ diagrams + pgfplots graphs).
+% Labels are minimal / math-only so the same file works for en and es.
+% Data sources: benchmarks/{oracle,glmy_state,solidity_glmy,bola,autopentest}_results.json
+
+% --- Figure 1: system pipeline --------------------------------------------
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\small, inner sep=4pt},
+      arr/.style={-{Stealth[length=2mm]}, thick, valen},
+    ]
+    \node[box] (art) {artifact\\code / binary / API / IAM / agent};
+    \node[box, right=6mm of art] (ir) {typed graph IR};
+    \node[box, right=6mm of ir] (layers) {math layers\\spectral $\cdot$ topological $\cdot$ geometric $\cdot$ algebraic};
+    \node[box, below=7mm of layers] (field) {structural field $V(x)$};
+    \node[box, left=7mm of field] (agent) {neuro-symbolic\\agent (LLM)};
+    \node[box, below=7mm of field] (verify) {Z3 $\cdot$ GLMY $\cdot$ Lean 4};
+    \node[box, below=7mm of verify] (wit) {machine-checkable\\witnesses};
+    \draw[arr] (art) -- (ir);
+    \draw[arr] (ir) -- (layers);
+    \draw[arr] (layers) -- (field);
+    \draw[arr] (field) -- (agent);
+    \draw[arr] (field) -- (verify);
+    \draw[arr] (agent) -- (verify);
+    \draw[arr] (verify) -- (wit);
+  \end{tikzpicture}
+  \caption{The pipeline: an artifact becomes one typed IR, enriched with the
+  mathematical layers into a field $V(x)$; a neuro-symbolic loop proposes and the
+  formal layer disposes, emitting only machine-checkable witnesses.}
+\end{figure}
+
+% --- Figure 2: boundary result (per-signal AUC) ---------------------------
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.6cm, width=0.9\linewidth, height=4.5cm,
+        symbolic x coords={taint, formal, spectral, topological, geometric},
+        xtick=data, x tick label style={rotate=20, anchor=east, font=\scriptsize},
+        ymin=0, ymax=1.0, ylabel={AUC (prioritization)},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+        ymin=0,
+      ]
+      \addplot[fill=valen] coordinates {
+        (taint,0.895) (formal,0.878) (spectral,0.496)
+        (topological,0.500) (geometric,0.376)};
+      \draw[dashed, gray] (axis cs:taint,0.5) -- (axis cs:geometric,0.5);
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The boundary result: spectral/topological signals are at chance
+  (dashed line) and curvature below chance; taint is the dominant signal.}
+\end{figure}
+
+% --- Figure 3: directed vs symmetrized homology ---------------------------
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.28cm, width=0.9\linewidth, height=4.5cm,
+        symbolic x coords={state machines, smart contracts},
+        xtick=data, ymin=0, ymax=1.05, ylabel={recall},
+        legend style={at={(0.5,1.02)}, anchor=south, legend columns=-1, font=\scriptsize},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+        enlarge x limits=0.3,
+      ]
+      \addplot[fill=valen] coordinates {(state machines,1.00) (smart contracts,0.968)};
+      \addplot[fill=gray!50]  coordinates {(state machines,0.50) (smart contracts,0.065)};
+      \legend{GLMY directed, symmetrized}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Directed (GLMY) path homology vs.\ symmetrized homology for destructive
+  cycle detection. Symmetrization collapses the directed 2-cycle --- recall drops
+  from $1.0$ to $0.5$ on state machines and from $0.97$ to $0.065$ on smart
+  contracts.}
+\end{figure}
+
+% --- Figure 4: BOLA/IDOR baseline ladder ----------------------------------
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.55cm, width=0.85\linewidth, height=4.2cm,
+        symbolic x coords={all-positive, sink-only, source+sink, detector},
+        xtick=data, x tick label style={rotate=20, anchor=east, font=\scriptsize},
+        ymin=0, ymax=0.8, ylabel={precision (recall $=1.0$)},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+      ]
+      \addplot[fill=valen] coordinates {
+        (all-positive,0.46) (sink-only,0.49) (source+sink,0.56) (detector,0.72)};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The BOLA/IDOR detector ablation ladder: each structural requirement
+  (source, no-gate) raises precision at constant recall.}
+\end{figure}
+
+% --- Figure 5: autonomous pentest score -----------------------------------
+\begin{figure}[h]
+  \centering
+  \begin{tikzpicture}
+    \node[font=\normalsize] {\textbf{Autonomous pentest: 14/18 crAPI challenges solved}};
+    \draw[gray!30, line width=8pt] (0,0) -- (8,0);
+    \draw[valen, line width=8pt] (0,0) -- (6.22,0);
+    \node[below] at (0,-0.15) {\scriptsize 0};
+    \node[below] at (8,-0.15) {\scriptsize 18};
+    \node[above, font=\scriptsize] at (3.1,0.15) {14};
+  \end{tikzpicture}
+  \caption{The autonomous agent solves 14 of crAPI's 18 documented challenges
+  (BOLA/IDOR, mass assignment, BFLA, JWT forgery, exposure, NoSQLi, unauthenticated
+  access, password reset, SSRF); the rest are reported honestly.}
+\end{figure}

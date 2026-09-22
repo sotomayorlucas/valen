@@ -192,8 +192,13 @@ cd core && cargo test
 
 - Whitepaper (español): [`docs/es/whitepaper.md`](docs/es/whitepaper.md) · [PDF](docs/es/whitepaper.pdf)
 - Whitepaper (English): [`docs/en/whitepaper.md`](docs/en/whitepaper.md) · [PDF](docs/en/whitepaper.pdf)
+- **Paper de contribuciones** (con diagramas TikZ + gráficas pgfplots): [en](docs/en/paper.pdf) · [es](docs/es/paper.pdf)
 - Slides de conferencia: [es](docs/es/slides.pdf) · [en](docs/en/slides.pdf) (Beamer)
-- Fuente LaTeX: `docs/{es,en}/whitepaper.tex`, `docs/{es,en}/slides.tex` (compilar con `tectonic`)
+- Fuente LaTeX: `docs/{es,en}/whitepaper.tex`, `docs/{es,en}/slides.tex`, `docs/{es,en}/paper.tex` y las figuras compartidas en `docs/figs/figures.tex`.
+- Compilación: `tectonic docs/en/paper.tex` (sin dependencias). La fuente es
+  compatible con pdflatex; para compilar literalmente con pdflatex:
+  `sudo apt-get install -y texlive-latex-base texlive-pictures texlive-latex-extra texlive-fonts-recommended`
+  y luego `cd docs/en && pdflatex paper.tex`.
 
 ## Núcleo numérico (F2)
 
