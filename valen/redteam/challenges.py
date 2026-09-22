@@ -272,6 +272,19 @@ def _unimplemented(agent):
     return {"status": 0, "body": "", "note": "not implemented"}
 
 
+def _sqli_stub(agent):
+    return {"status": 0, "body": "",
+            "note": "SQLi: apply_coupon uses the raw coupon_code in BOTH the Postgres "
+                    "SELECT and the exact Mongo get(); no single string passes the SQL "
+                    "check and matches Mongo, and stacked queries are blocked."}
+
+
+def _chatbot_stub(agent):
+    return {"status": 0, "body": "",
+            "note": "chatbot: needs TLS_ENABLED=false (self-signed certs block the "
+                    "LangGraph agent) + an MCP client; the LiteLLM override is applied."}
+
+
 CHALLENGES: Dict[str, Dict] = {
     "ch1_bola_vehicle": {
         "goal": "read another user's vehicle location", "category": "BOLA",
@@ -341,7 +354,7 @@ CHALLENGES: Dict[str, Dict] = {
     },
     "ch13_sqli_coupon": {
         "goal": "redeem an already-claimed coupon (SQLi)", "category": "SQLi",
-        "recipe": _unimplemented,
+        "recipe": _sqli_stub,
         "check": lambda a, o: False,
     },
     "ch14_unauthenticated": {
@@ -356,17 +369,17 @@ CHALLENGES: Dict[str, Dict] = {
     },
     "ch16_llm_prompt_injection": {
         "goal": "prompt-inject the chatbot", "category": "LLM",
-        "recipe": _unimplemented,
+        "recipe": _chatbot_stub,
         "check": lambda a, o: False,
     },
     "ch17_llm_extract_creds": {
         "goal": "extract another user's credentials via chatbot", "category": "LLM",
-        "recipe": _unimplemented,
+        "recipe": _chatbot_stub,
         "check": lambda a, o: False,
     },
     "ch18_llm_act_as_user": {
         "goal": "make the chatbot act for another user", "category": "LLM",
-        "recipe": _unimplemented,
+        "recipe": _chatbot_stub,
         "check": lambda a, o: False,
     },
 }
