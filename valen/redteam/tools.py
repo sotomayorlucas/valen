@@ -39,12 +39,14 @@ TOOLS: Dict[str, dict] = {
     "nikto":        {"exe": "nikto", "method": "apt", "pkg": "nikto",
                      "install": ["sudo apt-get install -y nikto"],
                      "description": "web server scanning"},
-    "theHarvester": {"exe": "theHarvester", "method": "git", "pkg": "github.com/laramies/theHarvester",
+    "theHarvester": {"exe": "theHarvester", "method": "uv", "pkg": "github.com/laramies/theHarvester",
                      "install": [
                          "git clone --depth 1 https://github.com/laramies/theHarvester.git ~/theHarvester",
-                         "cd ~/theHarvester && python3 -m pip install -r requirements/base.txt",
+                         "curl -LsSf https://astral.sh/uv/install.sh | sh",
+                         "cd ~/theHarvester && uv sync",
                      ],
-                     "description": "OSINT email/domain recon (run: python3 ~/theHarvester/theHarvester.py)"},
+                     "run": "cd ~/theHarvester && uv run theHarvester -d DOMAIN -b crtsh,certspotter",
+                     "description": "OSINT email/domain recon (needs uv; run: uv run theHarvester)"},
     "amass":        {"exe": "amass", "method": "go", "pkg": "github.com/owasp-amass/amass/v4",
                      "install": ["go install -v github.com/owasp-amass/amass/v4/...@master"],
                      "description": "subdomain enumeration"},
@@ -74,10 +76,11 @@ def _detect(t: dict) -> str:
         return on_path
     method = t["method"]
     home = Path.home()
-    if method == "git" and t["exe"] == "theHarvester":
-        clone = home / "theHarvester" / "theHarvester.py"
-        if clone.exists():
-            return str(home / "theHarvester")
+    if method == "uv" and t["exe"] == "theHarvester":
+        # installed only after `uv sync` creates the project .venv entry point
+        entry = home / "theHarvester" / ".venv" / "bin" / "theHarvester"
+        if entry.exists():
+            return str(entry)
     if method == "go":
         gopath = _gopath()
         for candidate in (gopath / "bin" / t["exe"], home / "go" / "bin" / t["exe"]):

@@ -21,7 +21,7 @@ def test_tool_status_inventory():
     assert set(status["nmap"]) >= {"installed", "path", "method", "pkg", "description"}
     assert isinstance(missing_tools(), list)
     # non-apt tools carry the right install method
-    assert status["theHarvester"]["method"] == "git"
+    assert status["theHarvester"]["method"] == "uv"
     assert status["amass"]["method"] == "go"
     assert status["subfinder"]["method"] == "go"
     assert status["nuclei"]["method"] == "go"
@@ -36,7 +36,7 @@ def test_bootstrap_commands_use_correct_method_per_tool():
     if missing & {"nmap", "masscan", "gobuster", "ffuf", "sqlmap", "nikto"}:
         assert "apt-get install" in joined
     if "theHarvester" in missing:
-        assert "git clone" in joined and "laramies/theHarvester" in joined
+        assert "uv" in joined and "laramies/theHarvester" in joined
     if missing & {"amass", "subfinder", "nuclei"}:
         assert "go install" in joined
         assert "golang-go" in joined
