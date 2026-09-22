@@ -40,6 +40,10 @@ def parse_nmap_xml(xml_text: str) -> List[Dict]:
             hostname = hn.get("name", "")
         services = []
         for port in host.findall("ports/port"):
+            state = port.find("state")
+            state_val = (state.get("state", "") if state is not None else "")
+            if state_val not in ("open", "open|filtered"):
+                continue  # only feed the reachable attack surface
             svc = port.find("service")
             product = (svc.get("product", "") if svc is not None else "")
             version = (svc.get("version", "") if svc is not None else "")

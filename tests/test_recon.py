@@ -26,6 +26,16 @@ def test_parse_nmap_xml():
     assert web["services"][0]["product"] == "Apache httpd"
 
 
+def test_parse_nmap_xml_ignores_closed_ports():
+    xml = """<nmaprun><host><address addr="10.0.0.9" addrtype="ipv4"/>
+    <ports>
+      <port protocol="tcp" portid="22"><state state="closed"/><service name="ssh"/></port>
+      <port protocol="tcp" portid="80"><state state="open"/><service name="http"/></port>
+    </ports></host></nmaprun>"""
+    hosts = parse_nmap_xml(xml)
+    assert [s["port"] for s in hosts[0]["services"]] == [80]
+
+
 def test_parse_masscan_json():
     hosts = parse_masscan_json(MASSCAN)
     assert len(hosts) == 3
