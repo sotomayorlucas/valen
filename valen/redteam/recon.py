@@ -107,3 +107,23 @@ def hypothesis_for(version: str) -> Optional[str]:
         if key.lower() in v.lower():
             return hint
     return None
+
+
+def network_topology_graph(hosts: List[Dict], gateway: str) -> Graph:
+    """Build a network-topology graph: hosts + services, plus host<->gateway edges.
+
+    Every live host is connected to the gateway (the routing hub), so the
+    Fiedler cut and Forman--Ricci curvature can surface the *network bridges*
+    --- the gateway and any chokepoint host an attacker would pivot through ---
+    rather than just the per-host star of services.
+    """
+    graph = recon_to_graph(hosts)
+    ips = {h["ip"] for h in hosts}
+    if gateway in ips:
+        for h in hosts:
+            ip = h["ip"]
+            if ip == gateway:
+                continue
+            graph.add_edge(gateway, ip, EdgeKind.CALL, attrs={"relation": "route"})
+            graph.add_edge(ip, gateway, EdgeKind.CALL, attrs={"relation": "route"})
+    return graph

@@ -1,0 +1,72 @@
+{
+  "gateway": "10.0.0.1",
+  "n_hosts": 3,
+  "hosts": [
+    {
+      "ip": "10.0.0.1",
+      "hostname": "gw",
+      "open_ports": [
+        22
+      ]
+    },
+    {
+      "ip": "10.0.0.5",
+      "hostname": "web",
+      "open_ports": [
+        80,
+        443
+      ]
+    },
+    {
+      "ip": "10.0.0.10",
+      "hostname": "ftp",
+      "open_ports": [
+        21
+      ]
+    }
+  ],
+  "trust_bridges": [
+    {
+      "src": "10.0.0.1",
+      "dst": "10.0.0.5",
+      "src_label": "gw",
+      "dst_label": "web",
+      "kappa": -2.0
+    },
+    {
+      "src": "10.0.0.1",
+      "dst": "10.0.0.10",
+      "src_label": "gw",
+      "dst_label": "ftp",
+      "kappa": -1.0
+    },
+    {
+      "src": "10.0.0.1",
+      "dst": "10.0.0.1:22",
+      "src_label": "gw",
+      "dst_label": "ssh OpenSSH 7.2",
+      "kappa": 0.0
+    },
+    {
+      "src": "10.0.0.5",
+      "dst": "10.0.0.5:80",
+      "src_label": "web",
+      "dst_label": "http Apache httpd 2.4.49",
+      "kappa": 0.0
+    },
+    {
+      "src": "10.0.0.5",
+      "dst": "10.0.0.5:443",
+      "src_label": "web",
+      "dst_label": "https Apache httpd 2.4.49",
+      "kappa": 0.0
+    }
+  ],
+  "fiedler_boundary": [
+    "10.0.0.5:443",
+    "10.0.0.5:80",
+    "10.0.0.5",
+    "10.0.0.1:22",
+    "10.0.0.10:21"
+  ]
+}

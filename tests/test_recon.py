@@ -7,6 +7,7 @@ from pathlib import Path
 
 from valen.redteam.recon import (
     hypothesis_for,
+    network_topology_graph,
     parse_masscan_json,
     parse_nmap_xml,
     recon_to_graph,
@@ -47,6 +48,15 @@ def test_recon_to_graph():
     assert graph.meta["language"] == "recon"
     assert graph.node_count == 3 + 4  # 3 hosts + 4 services (22, 80, 443, 21)
     assert any(n.attrs.get("kind") == "service" for n in graph.nodes)
+
+
+def test_network_topology_adds_gateway_edges():
+    hosts = parse_nmap_xml(NMAP)
+    graph = network_topology_graph(hosts, gateway="10.0.0.1")
+    # gateway <-> every other host (2 hosts), so +4 route edges
+    routes = [e for e in graph.edges() if e.attrs.get("relation") == "route"]
+    assert len(routes) == 4
+    assert any(e.src == "10.0.0.1" and e.dst == "10.0.0.5" for e in routes)
 
 
 def test_cve_hypothesis_mapping():
@@ -98,3 +108,17 @@ def test_recon_plan_generation():
     # the three illustrative CVE hypotheses are present
     assert len(data["cve_hypotheses"]) >= 3
     assert data["profile"] == "sneaky"
+
+
+def test_network_map_generation():
+    subprocess.run(
+        [sys.executable, str(ROOT / "benchmarks" / "run_network_map.py"),
+         "--nmap", str(ROOT / "examples" / "recon" / "nmap.xml"), "--gateway", "10.0.0.1"],
+        capture_output=True, text=True, check=True,
+    )
+    import json
+    data = json.loads((ROOT / "benchmarks" / "network_map.json").read_text())
+    assert data["n_hosts"] == 3
+    assert data["gateway"] == "10.0.0.1"
+    # the gateway surfaces among the trust bridges (it is the routing hub)
+    assert any("gw" in f"{b['src_label']}{b['dst_label']}" for b in data["trust_bridges"])
