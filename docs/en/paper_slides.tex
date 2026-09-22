@@ -61,6 +61,31 @@ state-cycle, and trust-topology flaws}
   shared Python $\leftrightarrow$ Rust.
 \end{frame}
 
+\begin{frame}{The pipeline}
+  \begin{center}
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\footnotesize, inner sep=3pt},
+      arr/.style={-{Stealth[length=1.5mm]}, thick, valen},
+    ]
+    \node[box] (art) {artifact\\code / binary / API / IAM / agent};
+    \node[box, right=5mm of art] (ir) {typed graph IR};
+    \node[box, right=5mm of ir] (layers) {math layers\\spectral $\cdot$ topological $\cdot$ geometric $\cdot$ algebraic};
+    \node[box, below=7mm of layers] (field) {structural field $V(x)$};
+    \node[box, left=7mm of field] (agent) {neuro-symbolic agent};
+    \node[box, below=7mm of field] (verify) {Z3 $\cdot$ GLMY $\cdot$ Lean 4};
+    \node[box, below=7mm of verify] (wit) {machine-checkable witnesses};
+    \draw[arr] (art) -- (ir);
+    \draw[arr] (ir) -- (layers);
+    \draw[arr] (layers) -- (field);
+    \draw[arr] (field) -- (agent);
+    \draw[arr] (field) -- (verify);
+    \draw[arr] (agent) -- (verify);
+    \draw[arr] (verify) -- (wit);
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+
 \begin{frame}{C1 --- The boundary on geometric priors}
   \begin{itemize}
     \item \textbf{Question:} do spectral/topological/geometric invariants add
@@ -129,6 +154,8 @@ state-cycle, and trust-topology flaws}
   C3 directed homology & $0.75$/$1.0$ vs.\ undirected $0.5$/$0.5$ \\
   C4 arbitration & detection/ranking $0.974$; CWE $28\%$ \\
   C5 trust topology & privilege bridge $\kappa_F=-1$ \\
+  Smart contracts & reentrancy F1 $0.80$; GLMY $0.97$ vs.\ sym $0.065$ \\
+  Autonomous agent & \textbf{14/18} crAPI challenges solved \\
   \bottomrule
   \end{tabular}
   \end{center}

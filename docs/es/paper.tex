@@ -239,6 +239,24 @@ detector de orden alcanza F1 $0.80$, la homología dirigida GLMY recuerda $0.97$
 y la simetrizada colapsa a $0.065$ --- la misma brecha dirigida-vs-simetrizada
 mostrada para máquinas de estado, ahora en contratos reales.
 
+\subsection{Resultados de un vistazo}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Contribución} & \textbf{Métrica} & \textbf{Resultado} \\
+\midrule
+C1 frontera & taint vs.\ campo fusionado (MRR) & $0.894$ vs.\ $0.872$ ($p=5\times10^{-5}$) \\
+C2 autorización & BOLA/IDOR crAPI (recall / precisión) & $1.0$ / $0.90$ \\
+C2 autorización & escalera BOLA (precisión) & $0.46\to0.72$ \\
+C3 homología dirigida & GLMY vs.\ simetrizada (estado) & $0.75$/$1.0$ vs.\ $0.5$/$0.5$ \\
+C3 homología dirigida & GLMY vs.\ simetrizada (contratos) & $0.968$ vs.\ $0.065$ recall \\
+C4 arbitraje & acuerdo detección/ranking & $0.974$; CWE $28\%$ \\
+Red team & challenges crAPI autónomos & $14/18$ resueltos \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \input{../figs/figures.tex}
 
 \section{Limitaciones}

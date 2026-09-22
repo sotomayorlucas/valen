@@ -61,6 +61,31 @@ de autorización, ciclos de estado y topologías de confianza}
   compartido Python $\leftrightarrow$ Rust.
 \end{frame}
 
+\begin{frame}{El pipeline}
+  \begin{center}
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\footnotesize, inner sep=3pt},
+      arr/.style={-{Stealth[length=1.5mm]}, thick, valen},
+    ]
+    \node[box] (art) {artefacto\\código / binario / API / IAM / agente};
+    \node[box, right=5mm of art] (ir) {IR de grafo tipado};
+    \node[box, right=5mm of ir] (layers) {capas matemáticas\\espectral $\cdot$ topológica $\cdot$ geométrica $\cdot$ algebraica};
+    \node[box, below=7mm of layers] (field) {campo estructural $V(x)$};
+    \node[box, left=7mm of field] (agent) {agente neuro-simbólico};
+    \node[box, below=7mm of field] (verify) {Z3 $\cdot$ GLMY $\cdot$ Lean 4};
+    \node[box, below=7mm of verify] (wit) {witnesses verificables por máquina};
+    \draw[arr] (art) -- (ir);
+    \draw[arr] (ir) -- (layers);
+    \draw[arr] (layers) -- (field);
+    \draw[arr] (field) -- (agent);
+    \draw[arr] (field) -- (verify);
+    \draw[arr] (agent) -- (verify);
+    \draw[arr] (verify) -- (wit);
+  \end{tikzpicture}
+  \end{center}
+\end{frame}
+
 \begin{frame}{C1 --- La frontera sobre los priors geométricos}
   \begin{itemize}
     \item \textbf{Pregunta:} ¿aportan las invariantes espectrales/topológicas/
@@ -129,6 +154,8 @@ de autorización, ciclos de estado y topologías de confianza}
   C3 homología dirigida & $0.75$/$1.0$ vs.\ no dirigida $0.5$/$0.5$ \\
   C4 arbitraje & detección/ranking $0.974$; CWE $28\%$ \\
   C5 topología de confianza & puente de privilegio $\kappa_F=-1$ \\
+  Smart contracts & reentrancy F1 $0.80$; GLMY $0.97$ vs.\ sim. $0.065$ \\
+  Agente autónomo & \textbf{14/18} challenges crAPI resueltos \\
   \bottomrule
   \end{tabular}
   \end{center}

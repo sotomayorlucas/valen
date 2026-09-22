@@ -223,6 +223,24 @@ reaches F1 $0.80$, GLMY directed homology recalls $0.97$, and symmetrized
 homology collapses to $0.065$ --- the same directed-vs-symmetrized gap shown for
 state machines, now on real contracts.
 
+\subsection{Results at a glance}
+\begin{center}
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Contribution} & \textbf{Metric} & \textbf{Result} \\
+\midrule
+C1 boundary & taint vs.\ fused field (MRR) & $0.894$ vs.\ $0.872$ ($p=5\times10^{-5}$) \\
+C2 authorization & crAPI BOLA/IDOR (recall / precision) & $1.0$ / $0.90$ \\
+C2 authorization & curated BOLA ladder (precision) & $0.46\to0.72$ \\
+C3 directed homology & GLMY vs.\ symmetrized (state) & $0.75$/$1.0$ vs.\ $0.5$/$0.5$ \\
+C3 directed homology & GLMY vs.\ symmetrized (contracts) & $0.968$ vs.\ $0.065$ recall \\
+C4 arbitration & detection/ranking agreement & $0.974$; CWE $28\%$ \\
+Red team & autonomous crAPI challenges & $14/18$ solved \\
+\bottomrule
+\end{tabular}
+\end{center}
+
 \input{../figs/figures.tex}
 
 \section{Limitations}
