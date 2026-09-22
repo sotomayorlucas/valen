@@ -9,6 +9,7 @@
 //! * `topology`  — persistent homology / Mapper (F3)
 //! * `algebra`   — abstract-interpretation lattices & taint lattice (F4)
 
+pub mod centrality;
 pub mod directed;
 pub mod geometry;
 pub mod graph;
@@ -21,4 +22,5 @@ pub use spectral::{fiedler, laplacian_csr, spectral_embedding, Fiedler, Spectral
 pub use directed::{directed_laplacian, DirectedSpectral};
 pub use geometry::{forman_ricci, ollivier_ricci, ollivier_ricci_sinkhorn, RicciEdge};
 pub use path_homology::{path_homology, PathHomology};
+pub use centrality::{betweenness_centrality, pagerank};
 pub use topology::{homology, mapper, Bar, Cycle, Homology, MapperResult};

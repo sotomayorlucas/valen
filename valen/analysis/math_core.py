@@ -71,6 +71,25 @@ def topology(graph: Graph, kind: str = "call") -> Dict[str, Any]:
     return run_core(graph)["topology"][kind]
 
 
+def centrality(graph: Graph, kind: str = "call") -> Dict[str, Any]:
+    """Return betweenness centrality and PageRank for a node kind."""
+    return run_core(graph)["centrality"][kind]
+
+
+def betweenness_ranking(graph: Graph, kind: str = "call") -> List[Tuple[str, str, float]]:
+    """Betweenness centrality ranked by score descending (bridge nodes first)."""
+    labels = {n.id: n.label for n in graph.nodes}
+    block = centrality(graph, kind)
+    return [(nid, labels.get(nid, nid), val) for nid, val in block.get("betweenness", [])]
+
+
+def pagerank_ranking(graph: Graph, kind: str = "call") -> List[Tuple[str, str, float]]:
+    """PageRank sorted by score descending (importance ranking)."""
+    labels = {n.id: n.label for n in graph.nodes}
+    block = centrality(graph, kind)
+    return [(nid, labels.get(nid, nid), val) for nid, val in block.get("pagerank", [])]
+
+
 def cycle_ranking(graph: Graph, kind: str = "call") -> List[List[str]]:
     """Return the H1 cycle basis as lists of node labels (one list per cycle)."""
     labels = {n.id: n.label for n in graph.nodes}

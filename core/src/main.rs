@@ -2,8 +2,9 @@
 //! geometric results (JSON) on stdout.
 
 use valen_core::{
-    directed_laplacian, fiedler, forman_ricci, graph::{EdgeKind, Graph}, homology, mapper,
-    ollivier_ricci, ollivier_ricci_sinkhorn, path_homology, spectral_embedding,
+    betweenness_centrality, directed_laplacian, fiedler, forman_ricci,
+    graph::{EdgeKind, Graph}, homology, mapper, ollivier_ricci, ollivier_ricci_sinkhorn,
+    pagerank, path_homology, spectral_embedding,
 };
 use serde_json::{json, Value};
 use std::io::{self, Read};
@@ -77,6 +78,15 @@ fn topology_block(graph: &Graph, kind: EdgeKind) -> Value {
     })
 }
 
+fn centrality_block(graph: &Graph, kind: EdgeKind) -> Value {
+    let betweenness = betweenness_centrality(graph, kind);
+    let pr = pagerank(graph, kind, 20, 0.85);
+    json!({
+        "betweenness": betweenness.iter().map(|(id, v)| json!([id, v])).collect::<Vec<_>>(),
+        "pagerank": pr.iter().map(|(id, v)| json!([id, v])).collect::<Vec<_>>(),
+    })
+}
+
 fn main() -> io::Result<()> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
@@ -102,6 +112,11 @@ fn main() -> io::Result<()> {
             "call": topology_block(&graph, EdgeKind::Call),
             "data": topology_block(&graph, EdgeKind::Data),
             "control": topology_block(&graph, EdgeKind::Control),
+        },
+        "centrality": {
+            "call": centrality_block(&graph, EdgeKind::Call),
+            "data": centrality_block(&graph, EdgeKind::Data),
+            "control": centrality_block(&graph, EdgeKind::Control),
         },
     });
 

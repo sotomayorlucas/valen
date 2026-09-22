@@ -19,7 +19,7 @@ from __future__ import annotations
 from typing import Dict, List, Tuple
 
 from ..ir import Graph
-from .math_core import run_core
+from .math_core import betweenness_ranking, run_core
 
 
 def _label(graph: Graph) -> Dict[str, str]:
@@ -54,9 +54,17 @@ def privilege_bridges(graph: Graph, top_k: int = 5) -> List[Dict[str, object]]:
     ]
 
 
+def bridge_nodes(graph: Graph, top_k: int = 5) -> List[Tuple[str, str, float]]:
+    """Bridge nodes by betweenness centrality (high = sole connector between
+    trust subnets — the attacker's pivot). Complements Fiedler cut + Forman-Ricci.
+    """
+    return betweenness_ranking(graph, kind="call")[:top_k]
+
+
 def trust_analysis(graph: Graph, top_k: int = 5) -> Dict[str, object]:
-    """Combined trust-topology report (Fiedler boundary + privilege bridges)."""
+    """Combined trust-topology report (Fiedler boundary + privilege bridges + bridge nodes)."""
     return {
         "fiedler_boundary": [list(x) for x in fiedler_boundary(graph, top_k)],
         "privilege_bridges": privilege_bridges(graph, top_k),
+        "bridge_nodes": [list(x) for x in bridge_nodes(graph, top_k)],
     }
