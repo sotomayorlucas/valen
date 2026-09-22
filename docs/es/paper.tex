@@ -224,6 +224,20 @@ con evidencia request/response --- todo dry-run por defecto y bloqueado tras un
 base CVSS~3.1, se emiten como reporte HTML autocontenido y se renderizan a PDF
 con Chrome headless (\texttt{valen.redteam.report}).
 
+El mismo stack se empaqueta como un \emph{agente autónomo de pentest}
+(\texttt{valen.redteam.operators/executor/challenges}): operadores por tiers
+(passive/bounded/intrusive), un planner dirigido por objetivos con audit log y
+fallback LLM, y un harness que re-ejecuta cada uno de los 18 challenges
+documentados de crAPI contra un lab limpio. Resuelve un subconjunto de forma
+autónoma (forja de JWT, exposición excesiva, acceso no autenticado) y reporta el
+resto honestamente. Finalmente, la tesis estructural se extiende a \emph{smart
+contracts} (\texttt{valen.ingest.solidity} + \texttt{valen.analysis.reentrancy}):
+la reentrancia es una violación checks-effects-interactions que también forma un
+2-ciclo dirigido; sobre SmartBugs-curated (31 positivos / 112 negativos) el
+detector de orden alcanza F1 $0.80$, la homología dirigida GLMY recuerda $0.97$,
+y la simetrizada colapsa a $0.065$ --- la misma brecha dirigida-vs-simetrizada
+mostrada para máquinas de estado, ahora en contratos reales.
+
 \section{Limitaciones}
 La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un
 benchmark; el detector estructural sobre-aproxima (casos sanitizados/

@@ -39,6 +39,8 @@ def collect() -> Dict[str, Any]:
         "llm": _j("llm_ablation.json").get("summary", {}),
         "enum": _j("enum_results.json"),
         "exploit": _j("exploit_results.json"),
+        "autopentest": _j("autopentest_results.json"),
+        "solidity": _j("solidity_glmy_results.json"),
     }
 
 
@@ -184,13 +186,30 @@ function exploitCard(){
     ${tk.length?`<div class="d mono">${esc(tk[0].technique||'')}</div>`:''}</div>`;
 }
 
+function pentestCard(){
+  const p = DATA.autopentest || {};
+  const solved = p.solved||0, n = p.n||0;
+  return `<div class="card"><h2>Autonomous pentest</h2>
+    <div class="metric">${solved}/${n}<span> crAPI challenges solved</span></div>
+    ${(p.results||[]).map(r=>`<div class="row"><span>${esc(r.challenge)}</span><b style="color:${r.solved?'var(--green)':'var(--muted)'}">${r.solved?'solved':'—'}</b></div>`).join('')}</div>`;
+}
+
+function solidityCard(){
+  const s = DATA.solidity || {};
+  const o = s.ordering||{}, g = s.glmy||{}, sym = s.symmetrized||{};
+  return `<div class="card"><h2>Smart contracts (reentrancy)</h2>
+    <div class="row"><span>ordering (CEI)</span><b>F1 ${o.f1!=null?o.f1.toFixed(2):'—'}</b></div>
+    <div class="row"><span>GLMY directed</span><b>R ${g.recall!=null?g.recall.toFixed(2):'—'}</b></div>
+    <div class="row"><span>symmetrized</span><b>R ${sym.recall!=null?sym.recall.toFixed(2):'—'} (collapses 2-cycles)</b></div></div>`;
+}
+
 window.copyPoc = i => {
   const ps = (DATA.pocs.pocs || DATA.pocs || []);
   navigator.clipboard && navigator.clipboard.writeText(ps[i].poc || '');
 };
 
 document.getElementById('app').innerHTML =
-  toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + llmCard() + planCard() + pocsCard();
+  toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + pentestCard() + solidityCard() + llmCard() + planCard() + pocsCard();
 </script>
 <script type="application/json" id="data">__DATA__</script>
 </body>

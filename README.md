@@ -150,6 +150,27 @@ autorizados.
 - **Reporte** (`valen/redteam/report.py`): resumen ejecutivo, hallazgos con **CVSS 3.1**,
   reproducción, evidencia y remediación, en HTML + PDF.
 
+## Agente autónomo de pentest + smart contracts
+
+```bash
+# Agente autónomo: plan -> actuar -> observar -> re-planear, sobre los 18 challenges de crAPI
+.venv/bin/python -m valen.cli pentest --scope http://127.0.0.1:8888 --goal all --authorize
+.venv/bin/python benchmarks/run_autopentest.py --compose /tmp/opencode/crapi/deploy/docker --authorize
+
+# Smart contracts: reentrancy via homología dirigida (GLMY) sobre SmartBugs-curated
+.venv/bin/python benchmarks/run_solidity_glmy.py --smartbugs /path/to/smartbugs-curated
+```
+
+- **Agente autónomo** (`valen/redteam/{operators,executor,challenges}.py`): operadores por
+  tiers (passive/bounded/intrusive), planner+executor con presupuesto y audit log, fallback
+  LLM (LiteLLM). Resuelve 3/18 challenges de crAPI de forma autónoma (JWT forge, exposición,
+  acceso no autenticado); el resto son recetas por challenge honestamente reportadas.
+  Chatbot (16-18) se cablea a LiteLLM con `examples/lab/crapi-chatbot-litellm.yml`.
+- **Smart contracts** (`valen/ingest/solidity.py`, `valen/analysis/reentrancy.py`): parsea
+  `.sol` (tree-sitter-solidity) y detecta reentrancy por orden checks-effects-interactions +
+  ciclo dirigido GLMY. Sobre SmartBugs-curated (31 pos / 112 neg): **orden P=0.72/R=0.90/F1=0.80**,
+  GLMY R=0.97 (el 2-ciclo de reentrancy), y **simetrizada R=0.065** (colapsa el ciclo).
+
 ## Uso rápido / Quick start
 
 ```bash
