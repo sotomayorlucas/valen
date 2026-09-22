@@ -230,7 +230,8 @@ El mismo stack se empaqueta como un \emph{agente autónomo de pentest}
 fallback LLM, y un harness que re-ejecuta cada uno de los 18 challenges
 documentados de crAPI contra un lab limpio. Resuelve un subconjunto de forma
 autónoma (BOLA/IDOR, mass assignment, BFLA, forja de JWT, exposición excesiva,
-inyección NoSQL, acceso no autenticado) y reporta el resto honestamente. Finalmente, la tesis estructural se extiende a \emph{smart
+inyección NoSQL, acceso no autenticado, reset de contraseña, SSRF) y reporta el
+resto honestamente. Finalmente, la tesis estructural se extiende a \emph{smart
 contracts} (\texttt{valen.ingest.solidity} + \texttt{valen.analysis.reentrancy}):
 la reentrancia es una violación checks-effects-interactions que también forma un
 2-ciclo dirigido; sobre SmartBugs-curated (31 positivos / 112 negativos) el

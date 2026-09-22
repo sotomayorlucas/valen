@@ -212,9 +212,9 @@ The same stack is packaged as an \emph{autonomous pentest agent}
 (\texttt{valen.redteam.operators/executor/challenges}): tiered operators
 (passive/bounded/intrusive), a goal-directed planner with an audit log and an
 LLM fallback, and a harness that re-runs each of crAPI's 18 documented
-challenges against a fresh lab. It solves 12 of the 18 autonomously (BOLA/IDOR,
-mass assignment, BFLA, JWT forgery, excessive data exposure, NoSQL injection,
-unauthenticated access) and reports the rest honestly.
+challenges against a fresh lab. It solves 14 of the 18 autonomously (BOLA/IDOR, mass assignment, BFLA,
+JWT forgery, excessive data exposure, NoSQL injection, unauthenticated access,
+password reset, SSRF) and reports the rest honestly.
 Finally, the structural thesis extends to \emph{smart contracts}
 (\texttt{valen.ingest.solidity} + \texttt{valen.analysis.reentrancy}): reentrancy
 is a checks-effects-interactions violation that also forms a directed 2-cycle;
