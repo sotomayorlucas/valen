@@ -11,14 +11,41 @@ from .analysis.verifier import verify
 from .ingest import analyze, infer_adapter
 
 
-def main(argv: list[str] | None = None) -> int:
+def _pentest_main(argv: list[str]) -> int:
+    from .redteam.challenges import CHALLENGES
+    from .redteam.executor import AutonomousAgent
+
+    parser = argparse.ArgumentParser(prog="valen pentest", description="Autonomous red-team engagement.")
+    parser.add_argument("--scope", required=True, help="target base URL (authorized scope)")
+    parser.add_argument("--goal", default="all", help="challenge id, or 'all'")
+    parser.add_argument("--authorize", action="store_true", help="execute intrusive operators")
+    parser.add_argument("--profile", default="sneaky", help="stealth profile")
+    parser.add_argument("--max-requests", type=int, default=40)
+    args = parser.parse_args(argv)
+
+    ids = [args.goal] if args.goal != "all" else list(CHALLENGES)
+    results = []
+    for cid in ids:
+        c = dict(CHALLENGES[cid]); c["id"] = cid
+        agent = AutonomousAgent(args.scope, authorize=args.authorize,
+                                max_steps=args.max_requests)
+        r = agent.solve(c)
+        results.append(r)
+        print(f"  [{cid:<22}] {'SOLVED' if r['solved'] else 'not solved'} "
+              f"({r['requests']} req)")
+    solved = sum(1 for r in results if r["solved"])
+    print(f"\n== VALEN autonomous pentest: {solved}/{len(results)} challenges solved ==")
+    return 0
+
+
+def _analyze_main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="valen", description="Analyze a target for vulnerabilities.")
-    parser.add_argument("target", help="source file / OpenAPI JSON / agent JSON / disassembly to analyze")
-    parser.add_argument("--adapter", help="adapter: python, binary, angr-binary, web, llm-agent (inferred if omitted)")
+    parser.add_argument("target", help="source / OpenAPI JSON / agent JSON / disassembly to analyze")
+    parser.add_argument("--adapter", help="adapter: python, binary, angr-binary, web, llm-agent")
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
-    parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3, python only)")
+    parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
     parser.add_argument("--agent", action="store_true", help="run the autonomous agent (python only)")
-    parser.add_argument("--viz", metavar="FILE.html", help="render the vulnerability valen to a self-contained HTML file")
+    parser.add_argument("--viz", metavar="FILE.html", help="render the vulnerability valen to HTML")
     args = parser.parse_args(argv)
 
     path = Path(args.target)
@@ -96,6 +123,14 @@ def main(argv: list[str] | None = None) -> int:
         )
         print(f"== valen written to {args.viz}")
     return 0
+
+
+def main(argv: list[str] | None = None) -> int:
+    if argv is None:
+        argv = sys.argv[1:]
+    if argv and argv[0] == "pentest":
+        return _pentest_main(argv[1:])
+    return _analyze_main(argv)
 
 
 if __name__ == "__main__":

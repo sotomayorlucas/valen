@@ -55,6 +55,22 @@ class CrApiClient:
         )
         return {"status": r.status_code, "body": r.text, "json": self._safe_json(r)}
 
+    def post(self, path: str, token: str, json_body: Optional[Dict] = None) -> Dict:
+        headers = {"Authorization": f"Bearer {token}"} if token else {}
+        r = self.session.post(
+            f"{self.base_url}{path}", headers=headers,
+            json=json_body or {}, timeout=self.timeout, verify=self.verify_tls,
+        )
+        return {"status": r.status_code, "body": r.text, "json": self._safe_json(r)}
+
+    def delete(self, path: str, token: str) -> Dict:
+        r = self.session.delete(
+            f"{self.base_url}{path}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=self.timeout, verify=self.verify_tls,
+        )
+        return {"status": r.status_code, "body": r.text, "json": self._safe_json(r)}
+
     @staticmethod
     def _safe_json(r) -> Optional[dict]:
         try:

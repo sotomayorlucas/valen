@@ -1,0 +1,14 @@
+# crAPI chatbot -> local LiteLLM proxy (enables challenges 16-18).
+# Usage (from the crAPI repo):
+#   docker compose -f deploy/docker/docker-compose.yml -f <this file> up -d
+# Requires the LiteLLM proxy on the host at http://127.0.0.1:4000 and
+# LITELLM_MASTER_KEY exported.
+services:
+  crapi-chatbot:
+    environment:
+      - CHATBOT_LLM_PROVIDER=openai
+      - CHATBOT_LLM_MODEL=openai/flash
+      - CHATBOT_OPENAI_BASE_URL=http://host.docker.internal:4000
+      - CHATBOT_OPENAI_API_KEY=${LITELLM_MASTER_KEY}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
