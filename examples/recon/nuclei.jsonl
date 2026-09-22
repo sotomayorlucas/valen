@@ -1,0 +1,4 @@
+{"template-id":"http-missing-security-headers","info":{"name":"Missing Security Headers","severity":"info","tags":["http","misc","misconfig"]},"host":"192.168.1.1","matched-at":"http://192.168.1.1/"}
+{"template-id":"tech-detect","info":{"name":"Technology Detection","severity":"info","tags":["tech"]},"host":"192.168.1.8","matched-at":"http://192.168.1.8:3000/"}
+{"template-id":"CVE-2021-41773","info":{"name":"Apache 2.4.49 Path Traversal","severity":"high","tags":["cve","apache","rce"]},"host":"10.0.0.5","matched-at":"http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd"}
+{"template-id":"exposed-panel","info":{"name":"Exposed Admin Panel","severity":"medium","tags":["exposure","panel"]},"host":"10.0.0.10","matched-at":"http://10.0.0.10/admin"}

@@ -4,8 +4,36 @@
       "phase": "Discovery",
       "tactic_id": "TA0007",
       "tactic": "Discovery",
+      "title": "Map the network (3 hosts, gateway 10.0.0.1)",
+      "detail": "pivot/route bridges: gw<->web, gw<->ftp, gw<->ssh OpenSSH 7.2, web<->http Apache httpd 2.4.49"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Discovery",
       "title": "Map the trust topology (IAM)",
       "detail": "Fiedler boundary: ['secrets-bucket', 'admin-role', 'public-api', 'db-role', 'frontend-role']; privilege bridges: frontend-role->db-role, public-api->frontend-role, frontend-role->admin-role"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Lateral Movement",
+      "title": "INFO \u00b7 Missing Security Headers",
+      "detail": "template http-missing-security-headers matched at http://192.168.1.1/ (host 192.168.1.1)"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Lateral Movement",
+      "title": "INFO \u00b7 Technology Detection",
+      "detail": "template tech-detect matched at http://192.168.1.8:3000/ (host 192.168.1.8)"
+    },
+    {
+      "phase": "Execution",
+      "tactic_id": "TA0002",
+      "tactic": "Execution",
+      "title": "HIGH \u00b7 Apache 2.4.49 Path Traversal",
+      "detail": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)"
     },
     {
       "phase": "Privilege Escalation",
@@ -43,6 +71,13 @@
         "public-api",
         "secrets-bucket"
       ]
+    },
+    {
+      "phase": "Credential Access",
+      "tactic_id": "TA0006",
+      "tactic": "Credential Access",
+      "title": "MEDIUM \u00b7 Exposed Admin Panel",
+      "detail": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)"
     },
     {
       "phase": "Collection",
