@@ -212,7 +212,17 @@ $\to$ CVE convierte en hipótesis para el ciclo. El sigilo es una preocupación
 explícita y de primera clase (\texttt{valen.redteam.stealth}): timing
 conservador (\texttt{-T0}..\texttt{-T2}), límites de tasa, orden de hosts
 aleatorio, jitter entre sondas, padding y modos solo-pasivos --- para engagements
-autorizados, sin escaneo implícito.
+autorizados, sin escaneo implícito. Más allá de hallazgos individuales, VALEN
+realiza \emph{enumeración} (\texttt{valen.redteam.enum}: salida de
+gobuster/ffuf/amass $\to$ IR, con señal de *shadow API* para endpoints ausentes
+del spec OpenAPI) y \emph{explotación activa}
+(\texttt{valen.redteam.auth/jwt/idor}): una forja de JWT con stdlib (``kid''
+path-traversal, \texttt{alg=none}, firma inválida) logra \emph{account takeover}
+contra un lab local de crAPI, y la enumeración activa de ids confirma BOLA/IDOR
+con evidencia request/response --- todo dry-run por defecto y bloqueado tras un
+\texttt{--authorize --scope} explícito. Los hallazgos, cada uno con su puntaje
+base CVSS~3.1, se emiten como reporte HTML autocontenido y se renderizan a PDF
+con Chrome headless (\texttt{valen.redteam.report}).
 
 \section{Limitaciones}
 La evaluación BOLA/IDOR es una sola API real más un corpus curado, no un

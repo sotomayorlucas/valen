@@ -197,7 +197,16 @@ $\to$ CVE hint table turns into hypotheses for the loop. Stealth is a first-clas
 explicit concern (\texttt{valen.redteam.stealth}): conservative timing
 (\texttt{-T0}..\texttt{-T2}), rate limits, randomized host order, inter-probe
 jitter, padding, and passive-only modes --- for authorized engagements, with no
-implicit scanning.
+implicit scanning. Beyond single findings, VALEN performs \emph{enumeration}
+(\texttt{valen.redteam.enum}: gobuster/ffuf/amass output $\to$ IR, with a
+shadow-API signal for endpoints missing from the published OpenAPI spec) and
+\emph{active exploitation} (\texttt{valen.redteam.auth/jwt/idor}): a stdlib JWT
+forge (``kid'' path traversal, \texttt{alg=none}, invalid signature) achieves
+\emph{account takeover} against a local crAPI lab, and active id enumeration
+confirms BOLA/IDOR with request/response evidence --- all dry-run by default and
+gated behind an explicit \texttt{--authorize --scope}. The findings, each with a
+CVSS~3.1 base score, are emitted as a self-contained HTML report and rendered to
+PDF via headless Chrome (\texttt{valen.redteam.report}).
 
 \section{Limitations}
 The BOLA/IDOR evaluation is a single real API plus a curated corpus, not a

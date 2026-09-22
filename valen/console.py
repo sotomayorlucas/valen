@@ -37,6 +37,8 @@ def collect() -> Dict[str, Any]:
         "pocs": _j("redteam_pocs.json"),
         "bola": _j("crapi_bola_results.json"),
         "llm": _j("llm_ablation.json").get("summary", {}),
+        "enum": _j("enum_results.json"),
+        "exploit": _j("exploit_results.json"),
     }
 
 
@@ -163,13 +165,32 @@ function llmCard(){
     <div class="row"><span>CWE change (interpretation)</span><b>${s.cwe_change_rate!=null?(s.cwe_change_rate*100).toFixed(0)+'%':'—'}</b></div></div>`;
 }
 
+function enumCard(){
+  const e = DATA.enum || {};
+  const shadow = e.shadow_endpoints || [];
+  return `<div class="card"><h2>Enumeration</h2>
+    <div class="metric">${e.n||0}<span> discoveries</span></div>
+    ${shadow.length?`<div class="step">Shadow endpoints (not in OpenAPI spec)</div>`+
+      shadow.slice(0,6).map(s=>`<div class="d mono">${esc(s)}</div>`).join(''):''}</div>`;
+}
+
+function exploitCard(){
+  const x = DATA.exploit || {};
+  const tk = (x.takeover||[]).filter(t=>t.victim_data_in_response);
+  const idor = (x.idor||[]);
+  return `<div class="card"><h2>Active exploitation</h2>
+    <div class="row"><span>account takeover (JWT forge)</span><b style="color:${tk.length?'var(--green)':'var(--muted)'}">${tk.length?tk.length+' confirmed':'—'}</b></div>
+    <div class="row"><span>IDOR cross-user hits</span><b style="color:${idor.length?'var(--green)':'var(--muted)'}">${idor.length}</b></div>
+    ${tk.length?`<div class="d mono">${esc(tk[0].technique||'')}</div>`:''}</div>`;
+}
+
 window.copyPoc = i => {
   const ps = (DATA.pocs.pocs || DATA.pocs || []);
   navigator.clipboard && navigator.clipboard.writeText(ps[i].poc || '');
 };
 
 document.getElementById('app').innerHTML =
-  toolsCard() + reconCard() + bolaCard() + llmCard() + planCard() + pocsCard();
+  toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + llmCard() + planCard() + pocsCard();
 </script>
 <script type="application/json" id="data">__DATA__</script>
 </body>

@@ -23,3 +23,8 @@ viz/out/
 benchmarks/oracle_cache.pkl
 benchmarks/results/
 dashboard.html
+
+# red-team live/generated artifacts (may embed lab tokens)
+benchmarks/exploit_results.json
+benchmarks/report.html
+benchmarks/report.pdf

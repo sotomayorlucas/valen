@@ -1,0 +1,70 @@
+{
+  "n": 9,
+  "records": [
+    {
+      "path": "/admin",
+      "status": 200,
+      "size": 1234,
+      "tool": "gobuster"
+    },
+    {
+      "path": "/api",
+      "status": 200,
+      "size": 45,
+      "tool": "gobuster"
+    },
+    {
+      "path": "/login",
+      "status": 200,
+      "size": 900,
+      "tool": "gobuster"
+    },
+    {
+      "path": "/health",
+      "status": 200,
+      "size": 2,
+      "tool": "gobuster"
+    },
+    {
+      "path": "/internal",
+      "status": 403,
+      "size": 12,
+      "tool": "gobuster"
+    },
+    {
+      "path": "/workshop/api/mechanic/receive_report",
+      "status": 200,
+      "size": 340,
+      "tool": "gobuster"
+    },
+    {
+      "path": "127.0.0.1:8888/admin",
+      "status": 200,
+      "size": 1234,
+      "tool": "ffuf",
+      "keywords": 40
+    },
+    {
+      "path": "127.0.0.1:8888/internal",
+      "status": 403,
+      "size": 12,
+      "tool": "ffuf",
+      "keywords": 2
+    },
+    {
+      "path": "127.0.0.1:8888/identity",
+      "status": 200,
+      "size": 88,
+      "tool": "ffuf",
+      "keywords": 6
+    }
+  ],
+  "shadow_endpoints": [
+    "/admin",
+    "/api",
+    "/health",
+    "/internal",
+    "/login"
+  ],
+  "graph_nodes": 10
+}

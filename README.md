@@ -129,6 +129,27 @@ BOLA/IDOR** (witness → `requests`) y resultados medidos (crAPI, neuro-simbóli
 /api/validate` replayea un PoC contra un target vivo. Solo para engagements
 autorizados.
 
+## Enumeración, explotación activa y reporte
+
+```bash
+# Lab crAPI (imágenes prebuilt, no hace falta JDK/Maven/Node):
+#   git clone https://github.com/OWASP/crAPI /tmp/opencode/crapi
+#   cd /tmp/opencode/crapi/deploy/docker && docker compose up -d   # web en http://127.0.0.1:8888
+
+.venv/bin/python benchmarks/run_enum.py                    # gobuster/ffuf/amass -> IR + shadow endpoints
+.venv/bin/python benchmarks/run_exploit.py --base-url http://127.0.0.1:8888 --authorize  # JWT forge -> takeover + IDOR
+.venv/bin/python -m valen.redteam.report                    # report.html + report.pdf (CVSS 3.1, Chrome headless)
+```
+
+- **Enumeración** (`valen/redteam/enum.py`): parsea gobuster/ffuf/amass/theHarvester,
+  detecta *shadow endpoints* (descubiertos pero ausentes del OpenAPI) y alimenta el IR.
+- **Explotación activa** (`valen/redteam/{auth,jwt,idor}.py`): signup/login crAPI,
+  forja de JWT con **stdlib** (`kid` path-traversal, `alg=none`, firma inválida) →
+  **account takeover validado**, y enumeración activa de ids → **BOLA/IDOR confirmado**
+  con evidencia request/response. Dry-run por defecto.
+- **Reporte** (`valen/redteam/report.py`): resumen ejecutivo, hallazgos con **CVSS 3.1**,
+  reproducción, evidencia y remediación, en HTML + PDF.
+
 ## Uso rápido / Quick start
 
 ```bash
