@@ -1,14 +1,22 @@
 # crAPI chatbot -> local LiteLLM proxy (enables challenges 16-18).
 # Usage (from the crAPI repo):
 #   docker compose -f deploy/docker/docker-compose.yml -f <this file> up -d
-# Requires the LiteLLM proxy on the host at http://127.0.0.1:4000 and
-# LITELLM_MASTER_KEY exported.
+#
+# Requires, on the host:
+#   1. The LiteLLM proxy at http://127.0.0.1:4000 and LITELLM_MASTER_KEY exported.
+#   2. The embeddings/chat shim running (LiteLLM has no embeddings model, and the
+#      chatbot's RAG layer would otherwise 400 after every reply):
+#        python examples/lab/openai_shim.py --port 8055
+#
+# The shim forwards /chat/completions to LiteLLM and serves /embeddings with zero
+# vectors; CHATBOT_OPENAI_BASE_URL points at it via host.docker.internal.
 services:
   crapi-chatbot:
     environment:
       - CHATBOT_LLM_PROVIDER=openai
-      - CHATBOT_LLM_MODEL=openai/flash
-      - CHATBOT_OPENAI_BASE_URL=http://host.docker.internal:4000
+      - CHATBOT_LLM_MODEL=flash
+      - CHATBOT_EMBEDDINGS_MODEL=text-embedding-3-large
+      - CHATBOT_OPENAI_BASE_URL=http://host.docker.internal:8055
       - CHATBOT_OPENAI_API_KEY=${LITELLM_MASTER_KEY}
     extra_hosts:
       - "host.docker.internal:host-gateway"
