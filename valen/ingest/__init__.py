@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from .angr_binary import AngrBinaryIngest
 from .binary import BinaryIngest
+from .clike import CLikeIngest
 from .iam import IAMIgest
 from .java import JavaIngest
 from .java_interproc import JavaInterproceduralIngest
@@ -20,6 +21,7 @@ __all__ = [
     "WebIngest",
     "LLMAgentIngest",
     "IAMIgest",
+    "CLikeIngest",
     "LANGUAGE_TO_INGEST",
     "analyze",
 ]
@@ -38,14 +40,50 @@ LANGUAGE_TO_INGEST = {
 
 _EXT_TO_ADAPTER = {
     ".py": "python",
-    ".js": "python",
-    ".mjs": "python",
+    ".java": "java",
+    ".js": "javascript",
+    ".mjs": "javascript",
+    ".cjs": "javascript",
+    ".jsx": "javascript",
+    ".ts": "javascript",
+    ".tsx": "javascript",
+    ".c": "c",
+    ".h": "c",
+    ".cpp": "cpp",
+    ".cc": "cpp",
+    ".cxx": "cpp",
+    ".hpp": "cpp",
+    ".hh": "cpp",
+    ".hxx": "cpp",
+    ".rs": "rust",
+    ".cs": "csharp",
+    ".go": "go",
+    ".php": "php",
+    ".rb": "ruby",
     ".asm": "binary",
     ".s": "binary",
     ".json": None,  # ambiguous: web (OpenAPI) vs llm-agent
     ".yaml": "web",
     ".yml": "web",
 }
+
+
+def _make_clike(profile_name: str):
+    from .sources_sinks import PROFILES
+
+    class _Adapter(CLikeIngest):
+        def __init__(self):
+            super().__init__(PROFILES[profile_name])
+
+    _Adapter.__name__ = f"{profile_name.title()}Ingest"
+    return _Adapter
+
+
+# C-like language adapters built from their taint profiles.
+LANGUAGE_TO_INGEST.update({
+    name: _make_clike(name)
+    for name in ("c", "cpp", "rust", "csharp", "go", "php", "ruby", "javascript")
+})
 
 
 def analyze(source: str, path: str = "<stdin>", adapter: str | None = None):

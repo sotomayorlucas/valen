@@ -5,13 +5,23 @@
 
 Endpoints:
     GET  /                 the single-page UI
+    GET  /api/adapters     supported analysis adapters
     GET  /api/examples     list bundled examples
     GET  /api/example      ?name=... -> {name, adapter, code}
     GET  /api/results      experiment artifacts (oracle/owasp/ablation/scale)
+    GET  /api/challenges   crAPI challenge ids (for the pentest panel)
     POST /api/analyze      {code, path?, adapter?, verify?, agent?} -> results
+    POST /api/compare      {vulnerable, patched, adapter?} -> diff
+    POST /api/viz          {code, path?, adapter?} -> text/html valen document
+    POST /api/dynamic      {code, path?, argv?, timeout?} -> sandboxed run + triangulation (python)
+    POST /api/pentest      {scope, goal?, authorize?, profile?, max_requests?} -> engagement results
+    POST /api/validate     BOLA/IDOR live replay (authorized)
+    POST /api/recon        stealth tool command builder
 
 The analysis is fully static: user code is parsed (tree-sitter), reasoned over,
 and (for the Rust kernels) passed as JSON to a subprocess. It is never executed.
+``/api/dynamic`` is the explicit exception: it writes the posted python code to
+a temp file and runs it under the sandboxed tracer (``valen.dynamic``).
 """
 
 from __future__ import annotations
@@ -35,14 +45,29 @@ ROOT = Path(__file__).resolve().parent.parent
 BENCH = ROOT / "benchmarks"
 EXAMPLES = ROOT / "examples"
 
+_SOURCE_EXTS = (
+    ".py", ".json", ".asm", ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
+    ".rs", ".cs", ".go", ".php", ".rb", ".js", ".mjs", ".cjs", ".jsx", ".ts", ".tsx",
+    ".java", ".yaml", ".yml", ".xml", ".sol",
+)
+
 
 # --------------------------------------------------------------------------
+def _adapters() -> List[Dict[str, str]]:
+    from .ingest import LANGUAGE_TO_INGEST
+
+    out = []
+    for name, cls in sorted(LANGUAGE_TO_INGEST.items()):
+        out.append({"name": name, "class": cls.__name__})
+    return out
+
+
 def _example_index() -> List[Dict[str, str]]:
     out = []
     for source in sorted(EXAMPLES.rglob("*")):
-        if source.is_file() and source.suffix in (".py", ".json", ".asm"):
+        if source.is_file() and source.suffix in _SOURCE_EXTS:
             rel = str(source.relative_to(EXAMPLES))
-            out.append({"name": rel, "adapter": infer_adapter(source.read_text(), source.name)})
+            out.append({"name": rel, "adapter": infer_adapter(source.read_text(errors="replace"), source.name)})
     return out
 
 
@@ -218,6 +243,121 @@ def _recon(payload: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
+def _viz(payload: Dict[str, Any]) -> str:
+    """Render the interactive valen HTML document (same as CLI ``--viz``)."""
+    from .analysis.math_core import run_core
+    from .viz import render_html
+
+    code = payload.get("code", "") or ""
+    path = payload.get("path") or "<web>"
+    adapter = payload.get("adapter") or infer_adapter(code, path)
+    if adapter == "angr-binary":
+        result = analyze("", path=path, adapter="angr-binary")
+    else:
+        result = analyze(code, path=path, adapter=adapter)
+    try:
+        math = run_core(result.graph)
+    except Exception:
+        math = None
+    return render_html(
+        result.graph,
+        math,
+        None,
+        title="VALEN",
+        subtitle=f"{path} ({adapter}) — {result.graph.node_count} nodes, "
+                 f"{result.graph.edge_count} edges",
+    )
+
+
+def _dynamic(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Sandboxed dynamic run + triangulation (CLI ``--dynamic``, python only)."""
+    import tempfile
+
+    from .dynamic import run_module, triangulate
+
+    code = payload.get("code", "") or ""
+    path = payload.get("path") or "<web>"
+    adapter = payload.get("adapter") or infer_adapter(code, path)
+    if adapter != "python":
+        return {"error": "--dynamic is only supported for python targets "
+                         f"(got {adapter!r})"}
+
+    argv = payload.get("argv")
+    if isinstance(argv, str):
+        argv = argv.split()
+    timeout = float(payload.get("timeout", 30.0))
+
+    result = analyze(code, path=path, adapter="python")
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".py", prefix="valen-dyn-", delete=False
+    ) as fh:
+        fh.write(code)
+        target = fh.name
+    try:
+        dyn = run_module(target, argv=argv, timeout=timeout)
+    except Exception as exc:  # noqa: BLE001
+        return {"error": f"dynamic run failed: {exc}"}
+    finally:
+        try:
+            Path(target).unlink()
+        except OSError:
+            pass
+
+    report = triangulate(result, dyn)
+    report["static_findings"] = [f.to_dict() for f in result.findings]
+    return report
+
+
+def _challenges() -> List[Dict[str, str]]:
+    from .redteam.challenges import CHALLENGES
+
+    return [
+        {"id": cid, "goal": str(c.get("goal", ""))[:200]}
+        for cid, c in CHALLENGES.items()
+    ]
+
+
+def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Autonomous red-team engagement (CLI ``valen pentest``)."""
+    from .redteam.challenges import CHALLENGES
+    from .redteam.executor import AutonomousAgent
+
+    scope = (payload.get("scope") or "").rstrip("/")
+    if not scope:
+        return {"error": "scope required (target base URL, authorized scope)"}
+    if not scope.startswith(("http://", "https://")):
+        return {"error": "scope must be an http(s) base URL"}
+
+    goal = payload.get("goal") or "all"
+    authorize = bool(payload.get("authorize"))
+    max_requests = int(payload.get("max_requests", 40))
+    profile = payload.get("profile", "sneaky")
+
+    if goal != "all" and goal not in CHALLENGES:
+        return {"error": f"unknown challenge {goal!r}",
+                "challenges": list(CHALLENGES)}
+
+    ids = [goal] if goal != "all" else list(CHALLENGES)
+    results = []
+    for cid in ids:
+        c = dict(CHALLENGES[cid])
+        c["id"] = cid
+        agent = AutonomousAgent(scope, authorize=authorize, max_steps=max_requests)
+        r = agent.solve(c)
+        r["challenge"] = cid
+        results.append(r)
+
+    solved = sum(1 for r in results if r.get("solved"))
+    return {
+        "scope": scope,
+        "profile": profile,
+        "authorize": authorize,
+        "challenges": results,
+        "solved": solved,
+        "total": len(results),
+    }
+
+
 # --------------------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     server_version = "valen/0.1"
@@ -242,6 +382,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, PAGE, "text/html; charset=utf-8")
         if u.path == "/api/examples":
             return self._json(_example_index())
+        if u.path == "/api/adapters":
+            return self._json(_adapters())
+        if u.path == "/api/challenges":
+            return self._json(_challenges())
         if u.path == "/api/example":
             name = parse_qs(u.query).get("name", [""])[0]
             try:
@@ -261,7 +405,9 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         u = urlparse(self.path)
-        if u.path not in ("/api/analyze", "/api/compare", "/api/validate", "/api/recon"):
+        allowed = ("/api/analyze", "/api/compare", "/api/validate",
+                   "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest")
+        if u.path not in allowed:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
         try:
@@ -275,6 +421,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_validate(payload))
             if u.path == "/api/recon":
                 return self._json(_recon(payload))
+            if u.path == "/api/pentest":
+                return self._json(_pentest(payload))
+            if u.path == "/api/dynamic":
+                return self._json(_dynamic(payload))
+            if u.path == "/api/viz":
+                return self._send(200, _viz(payload), "text/html; charset=utf-8")
             return self._json(_analyze(payload))
         except Exception as exc:
             return self._json({"error": str(exc)}, 500)

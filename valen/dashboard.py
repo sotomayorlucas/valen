@@ -1,11 +1,15 @@
-"""Self-contained HTML dashboard for VALEN.
+"""HTML dashboard for VALEN (static, self-contained by default).
 
 Aggregates every experiment artifact into one page: the prioritization oracle
 (MRR / AUC / cost curve), the OWASP Benchmark table, the ablation, the per-kernel
 scalability curves, an interactive valen explorer over the bundled examples,
-and copy-paste usage recipes. No server or external JS is required.
+and copy-paste usage recipes.
 
     python -m valen.dashboard --out dashboard.html
+
+The analysis core has no external dependencies; the page uses Tailwind +
+Chart.js + D3 via CDN for a polished "modern terminal" look and degrades
+gracefully offline (the tables and numbers still render without JS).
 """
 
 from __future__ import annotations
@@ -18,6 +22,7 @@ from typing import Any, Dict, List
 
 from .analysis.math_core import run_core
 from .ingest import analyze, infer_adapter
+from .theme import head
 from .viz import _edge_data, _findings_data, _node_data
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -95,124 +100,150 @@ def load_data() -> Dict[str, Any]:
 _TEMPLATE = r"""<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>VALEN — dashboard</title>
-<style>
-:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--text:#e6edf3;--muted:#8b949e;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922;--purple:#bc8cff;}
-*{box-sizing:border-box;}
-body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);}
-header{padding:18px 24px;border-bottom:1px solid var(--border);background:linear-gradient(120deg,#161b22,#0d1117);}
-header h1{margin:0;font-size:22px;} header p{margin:4px 0 0;color:var(--muted);font-size:13px;}
-main{padding:20px 24px;max-width:1200px;margin:0 auto;}
-section{margin-bottom:28px;}
-h2{font-size:16px;border-left:3px solid var(--accent);padding-left:10px;margin:0 0 12px;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:14px;}
-.card .k{color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.04em;}
-.card .v{font-size:24px;font-weight:700;margin-top:6px;}
-.card .s{color:var(--muted);font-size:11px;margin-top:2px;}
-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:13px;}
-th,td{padding:7px 10px;text-align:right;border-bottom:1px solid var(--border);}
-th:first-child,td:first-child{text-align:left;}
-th{background:var(--panel2);color:var(--muted);font-weight:600;}
-tr:last-child td{border-bottom:none;}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
-@media(max-width:820px){.two{grid-template-columns:1fr;}}
-.chart{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:10px;}
-pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px;}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:center;}
-select,button{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px;}
-#map{width:100%;height:460px;background:radial-gradient(circle at 50% 50%,#161b22,#0d1117);border:1px solid var(--border);border-radius:10px;}
-.legend{font-size:11px;color:var(--muted);margin-top:8px;line-height:1.7;}
-.sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:middle;}
-.badge{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted);}
-</style>
+__HEAD__
 </head>
-<body>
-<header>
-  <h1>VALEN — experiment dashboard</h1>
-  <p>Prioritization oracle &middot; OWASP Benchmark 1.2 &middot; ablation &middot; scalability &middot; valen explorer</p>
+<body class="min-h-screen">
+<header class="sticky top-0 z-40 backdrop-blur border-b" style="border-color:var(--border);background:rgba(10,14,20,.85)">
+  <div class="max-w-[1280px] mx-auto px-6 py-4 flex items-center gap-4 flex-wrap">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 rounded-lg grid place-items-center glow" style="background:linear-gradient(135deg,var(--spectral),var(--formal));color:#08111c;font-weight:800;font-family:var(--mono)">V</div>
+      <div>
+        <h1 class="text-xl font-bold leading-none tracking-tight">VALEN — experiment dashboard</h1>
+        <p class="text-xs mt-1" style="color:var(--muted)">Prioritization oracle · OWASP Benchmark 1.2 · ablation · scalability · valen explorer</p>
+      </div>
+    </div>
+    <div class="ml-auto flex gap-2 flex-wrap" id="navlinks">
+      <a href="#summary" class="pill">Summary</a>
+      <a href="#methodology" class="pill">Methodology</a>
+      <a href="#oracle" class="pill">Oracle</a>
+      <a href="#owasp" class="pill">OWASP</a>
+      <a href="#scale" class="pill">Scalability</a>
+      <a href="#explorer" class="pill">Explorer</a>
+    </div>
+  </div>
 </header>
-<main>
-  <section id="summary"><h2>Summary</h2><div class="cards" id="cards"></div></section>
 
-  <section id="methodology">
-    <h2>Methodology</h2>
-    <div class="chart" style="margin-bottom:14px"><svg id="pipeline" viewBox="0 0 1120 160"></svg></div>
-    <div class="two">
+<main class="max-w-[1280px] mx-auto px-6 py-6 space-y-8">
+
+  <section id="summary">
+    <div class="kicker h-sep">Summary</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mt-3" id="cards"></div>
+  </section>
+
+  <section id="methodology" class="panel p-5">
+    <div class="kicker h-sep">Methodology</div>
+    <div class="h-40 mt-3"><canvas id="pipeline"></canvas></div>
+    <div class="grid lg:grid-cols-2 gap-6 mt-5">
       <div>
-        <h3 style="font-size:13px;color:#8b949e">Mathematical layers &rarr; signal &rarr; evidence</h3>
-        <div class="cards" id="layers"></div>
+        <div class="kicker">Mathematical layers → signal → evidence</div>
+        <div class="grid grid-cols-2 gap-3 mt-3" id="layers"></div>
       </div>
       <div>
-        <h3 style="font-size:13px;color:#8b949e">Evaluation protocol</h3>
-        <div class="chart"><svg id="protocol" viewBox="0 0 560 360"></svg></div>
+        <div class="kicker">Evaluation protocol</div>
+        <div class="h-80 mt-2"><canvas id="protocol"></canvas></div>
       </div>
     </div>
-    <h3 style="font-size:13px;color:#8b949e;margin-top:16px">Mapping hypotheses (feature &rarr; vulnerability class)</h3>
-    <div id="laws"></div>
+    <div class="kicker mt-5">Mapping hypotheses (feature → vulnerability class)</div>
+    <div id="laws" class="mt-2"></div>
   </section>
 
-  <section id="oracle">
-    <h2>Prioritization oracle (main experiment)</h2>
-    <div class="two">
-      <div class="chart"><svg id="cost" viewBox="0 0 560 320"></svg></div>
-      <div class="chart"><svg id="auc" viewBox="0 0 560 320"></svg></div>
+  <section id="oracle" class="panel p-5">
+    <div class="kicker h-sep">Prioritization oracle (main experiment)</div>
+    <div class="grid lg:grid-cols-2 gap-5 mt-3">
+      <div class="h-72"><canvas id="cost"></canvas></div>
+      <div class="h-72"><canvas id="auc"></canvas></div>
     </div>
-    <div id="oracle-table" style="margin-top:14px"></div>
+    <div id="oracle-table" class="mt-4"></div>
   </section>
 
-  <section id="owasp"><h2>OWASP Benchmark 1.2</h2><div id="owasp-tables"></div></section>
-  <section id="cves"><h2>Real CVE fixes</h2><div id="cve-table"></div></section>
-  <section id="llm"><h2>LLM ablation</h2><div id="llm-table"></div></section>
-  <section id="ablation"><h2>Ablation (Java adapter)</h2><div id="ablation-table"></div></section>
-  <section id="scale"><h2>Scalability</h2><div class="chart"><svg id="scale" viewBox="0 0 900 340"></svg></div></section>
+  <section id="owasp" class="panel p-5">
+    <div class="kicker h-sep">OWASP Benchmark 1.2</div>
+    <div id="owasp-tables" class="mt-3"></div>
+  </section>
 
-  <section id="explorer">
-    <h2>Valen explorer</h2>
-    <div class="grid2" style="margin-bottom:8px">
-      <select id="case"></select>
-      <span class="badge" id="case-meta"></span>
+  <div class="grid lg:grid-cols-2 gap-5">
+    <section id="cves" class="panel p-5"><div class="kicker h-sep">Real CVE fixes</div><div id="cve-table" class="mt-3"></div></section>
+    <section id="llm" class="panel p-5"><div class="kicker h-sep">LLM ablation</div><div id="llm-table" class="mt-3"></div></section>
+  </div>
+
+  <section id="ablation" class="panel p-5"><div class="kicker h-sep">Ablation (Java adapter)</div><div id="ablation-table" class="mt-3"></div></section>
+
+  <section id="scale" class="panel p-5"><div class="kicker h-sep">Scalability</div><div class="h-80 mt-3"><canvas id="scale"></canvas></div></section>
+
+  <section id="explorer" class="panel p-5">
+    <div class="kicker h-sep">Valen explorer</div>
+    <div class="flex items-center gap-3 mt-3 flex-wrap">
+      <select id="case" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1 min-w-[200px]" style="border-color:var(--border)"></select>
+      <span class="pill" id="case-meta"></span>
     </div>
-    <svg id="map" viewBox="0 0 1000 460" preserveAspectRatio="xMidYMid meet"></svg>
-    <div class="legend" id="mlegend"></div>
+    <svg id="map" class="w-full rounded-xl border mt-3" style="height:460px;border-color:var(--border);background:radial-gradient(circle at 50% 50%,#10161f,#0a0e14)"></svg>
+    <div class="flex flex-wrap gap-2 mt-3" id="mlegend"></div>
   </section>
 
-  <section id="usage"><h2>Use it with the experiment data</h2><pre id="recipes"></pre></section>
+  <section id="usage" class="panel p-5">
+    <div class="kicker h-sep">Use it with the experiment data</div>
+    <pre class="mono mt-3 text-xs" id="recipes"></pre>
+  </section>
+
 </main>
+
+<footer class="max-w-[1280px] mx-auto px-6 pb-8 text-[11px]" style="color:var(--muted)">
+  <span class="mono">VALEN</span> — neuro-symbolic structural-invariant verifier · static (taint) + symbolic (Z3) + dynamic (sandboxed trace) triangulation.
+</footer>
+
 <script>
+__JS__
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</body>
+</html>
+"""
+
+_JS = r"""
 const DATA = __DATA__;
 const $ = (s)=>document.querySelector(s);
 const NS="http://www.w3.org/2000/svg";
 
 // ---------- summary cards ----------
-const o = DATA.oracle, auc = (o.signals_auc||{});
-const adapterJ = 0.168, z3J = 0.057;
+const o = DATA.oracle || {}, auc = (o.signals_auc||{});
 const cards = [
-  ["taint MRR", (o.metrics&&o.metrics.taint?o.metrics.taint.mrr:"-"), "prioritization (main)"],
-  ["field MRR", (o.metrics&&o.metrics.field?o.metrics.field.mrr:"-"), "V(x) fused"],
-  ["taint AUC", (auc.taint?auc.taint.auc:"-"), "predict vulnerable sink"],
-  ["geometric AUC", (auc.geometric?auc.geometric.auc:"-"), "below chance"],
-  ["adapter F1", "0.681", "OWASP all categories"],
-  ["Youden J", "0.168", "measured (adapter, all categories)"],
+  ["taint MRR", (o.metrics&&o.metrics.taint?o.metrics.taint.mrr:"-"), "prioritization (main)", "taint"],
+  ["field MRR", (o.metrics&&o.metrics.field?o.metrics.field.mrr:"-"), "V(x) fused", "spectral"],
+  ["taint AUC", (auc.taint?auc.taint.auc:"-"), "predict vulnerable sink", "taint"],
+  ["geometric AUC", (auc.geometric?auc.geometric.auc:"-"), "below chance", "geometric"],
+  ["adapter F1", "0.681", "OWASP all categories", "topological"],
+  ["Youden J", "0.168", "measured (adapter, all categories)", "formal"],
 ];
-$("#cards").innerHTML = cards.map(([k,v,s])=>`<div class="card"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+$("#cards").innerHTML = cards.map(([k,v,s,col])=>`<div class="card"><div class="kicker">${k}</div>
+  <div class="metric" style="color:var(--${col})">${v}</div><div class="text-[11px]" style="color:var(--muted)">${s}</div></div>`).join("");
+
+// ---------- charts ----------
+function mkLine(id, series, xl, yl, opts={}){
+  const c=document.getElementById(id); if(!c || !window.Chart) return;
+  new Chart(c,{type:"line",data:{datasets:series.map(s=>({label:s.label,data:s.pts.map(p=>({x:p[0],y:p[1]})),borderColor:s.color,backgroundColor:s.color,borderWidth:2,pointRadius:2.5,tension:0.15}))},
+    options:{scales:{x:{type:opts.log?"logarithmic":"linear",title:{display:true,text:xl}},y:{type:opts.log?"logarithmic":"linear",title:{display:true,text:yl},beginAtZero:!opts.log}},plugins:{legend:{labels:{color:"#8b949e"}}}}});
+}
+function mkBar(id, labels, vals){
+  const c=document.getElementById(id); if(!c || !window.Chart) return;
+  new Chart(c,{type:"bar",data:{labels,datasets:[{data:vals,backgroundColor:vals.map(v=>v>0.7?"#3fb950":(v>=0.45?"#d29922":"#f85149")),borderRadius:4}]},
+    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{min:0,max:1,title:{display:true,text:"AUC (0.5 = chance)"}}}}});
+}
+function table(rows,cols){return `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`+rows.map(r=>`<tr>${r.map(c=>`<td class="num">${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;}
 
 // ---------- methodology: pipeline ----------
 (function(){
-  const svg=$("#pipeline");
-  const boxes=[["artifact",""],["IR\ntyped graph",""],["math\nlayers",""],["V(x)\nfield",""],["LLM\nagent",""],["Z3\nverifier",""]];
-  const W=1120,bw=150,bh=54,gap=30,x0=24,y=38;
-  let s=`<defs><marker id="arr" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#58a6ff"/></marker></defs>`;
-  boxes.forEach(([t],i)=>{
-    const x=x0+i*(bw+gap);
-    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="9" fill="#1c2330" stroke="#58a6ff"/>`;
-    const lines=t.split("\n");
-    lines.forEach((ln,li)=>s+=`<text x="${x+bw/2}" y="${y+bh/2+5+(li-(lines.length-1)/2)*15}" fill="#e6edf3" font-size="13" text-anchor="middle">${ln}</text>`);
-    if(i<boxes.length-1) s+=`<line x1="${x+bw}" y1="${y+bh/2}" x2="${x+bw+gap-3}" y2="${y+bh/2}" stroke="#58a6ff" stroke-width="2" marker-end="url(#arr)"/>`;
-  });
-  const cx1=x0+5*(bw+gap)+bw/2, cx2=x0+1*(bw+gap)+bw/2;
+  const c=$("#pipeline"); if(!c) return;
+  const svg=document.createElementNS(NS,"svg"); svg.setAttribute("viewBox","0 0 1120 160"); svg.style.width="100%"; svg.style.height="100%";
+  c.style.display="none"; c.parentNode.insertBefore(svg,c);
+  const boxes=["artifact","IR typed graph","math layers","V(x) field","LLM agent","Z3 verifier"];
+  const bw=150,bh=54,gap=30,x0=24,y=38;
+  let s=`<defs><marker id="a1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#58a6ff"/></marker></defs>`;
+  boxes.forEach((t,i)=>{const x=x0+i*(bw+gap);
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="10" fill="#161d27" stroke="#58a6ff"/>`;
+    const ws=t.split(" "); ws.forEach((w,wi)=>s+=`<text x="${x+bw/2}" y="${y+bh/2+5+(wi-(ws.length-1)/2)*16}" fill="#e6edf3" font-size="13" text-anchor="middle">${w}</text>`);
+    if(i<boxes.length-1) s+=`<line x1="${x+bw}" y1="${y+bh/2}" x2="${x+bw+gap-3}" y2="${y+bh/2}" stroke="#58a6ff" stroke-width="2" marker-end="url(#a1)"/>`;});
+  const cx1=x0+5*(bw+gap)+bw/2, cx2=x0+(bw+gap)+bw/2;
   s+=`<path d="M${cx1},${y+bh} L${cx1},${y+bh+58} L${cx2},${y+bh+58} L${cx2},${y+bh}" fill="none" stroke="#8b949e" stroke-dasharray="5 4"/>`;
   s+=`<text x="${(cx1+cx2)/2}" y="${y+bh+50}" fill="#8b949e" font-size="11" text-anchor="middle">re-embed (confirm / refute)</text>`;
   svg.innerHTML=s;
@@ -230,218 +261,134 @@ $("#cards").innerHTML = cards.map(([k,v,s])=>`<div class="card"><div class="k">$
     ["Directed","Chung Laplacian · SCC + Perron","directed λ₂","directed"],
   ];
   $("#layers").innerHTML=layers.map(([n,d,sig,key])=>{
-    let badge="", cls="";
-    if(a[key]){const v=a[key].auc; const good=v>0.7, bad=v<0.45; cls=good?"var(--green)":(bad?"var(--red)":"var(--muted)");
-      badge=`<span class="badge" style="color:${cls}">AUC ${v.toFixed(3)}</span>`;}
-    else {badge=`<span class="badge">defined</span>`;}
-    return `<div class="card"><div class="k">${n}</div><div style="font-size:13px;margin-top:6px">${d}</div>
-      <div class="s" style="margin-top:6px">signal: ${sig} &nbsp; ${badge}</div></div>`;
+    let badge=`<span class="pill">defined</span>`;
+    if(a[key]){const v=a[key].auc; const c=v>0.7?"var(--topological)":(v<0.45?"var(--algebraic)":"var(--muted)");
+      badge=`<span class="pill" style="color:${c}">AUC ${v.toFixed(3)}</span>`;}
+    return `<div class="card"><div class="kicker" style="color:var(--${key})">${n}</div>
+      <div class="text-xs mt-2">${d}</div><div class="text-[11px] mt-2" style="color:var(--muted)">signal: ${sig} · ${badge}</div></div>`;
   }).join("");
 })();
 
 // ---------- methodology: protocol ----------
 (function(){
-  const svg=$("#protocol"); const W=560; const steps=[
-    ["enumerate all sink candidates","(source → sink reachability)"],
-    ["rank candidates","DFS · raw taint · V(x) · random"],
-    ["metrics","MRR · R@1 · NDCG@k · cost curve"],
-    ["Z3 arbiter","SAT + concrete witness"],
-  ];
-  const bh=56,gap=22,y0=16,bw=440,x=(W-bw)/2;
-  let s=`<defs><marker id="arr2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#8b949e"/></marker></defs>`;
-  steps.forEach(([t,sub],i)=>{
-    const y=y0+i*(bh+gap);
-    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="9" fill="#161b22" stroke="#30363d"/>`;
-    s+=`<text x="${W/2}" y="${y+24}" fill="#e6edf3" font-size="13" text-anchor="middle">${t}</text>`;
-    s+=`<text x="${W/2}" y="${y+42}" fill="#8b949e" font-size="11" text-anchor="middle">${sub}</text>`;
-    if(i<steps.length-1) s+=`<line x1="${W/2}" y1="${y+bh}" x2="${W/2}" y2="${y+bh+gap-3}" stroke="#8b949e" stroke-width="2" marker-end="url(#arr2)"/>`;
-  });
+  const c=$("#protocol"); if(!c) return;
+  const svg=document.createElementNS(NS,"svg"); svg.setAttribute("viewBox","0 0 560 360"); svg.style.width="100%"; svg.style.height="100%";
+  c.style.display="none"; c.parentNode.insertBefore(svg,c);
+  const steps=[["enumerate all sink candidates","(source → sink reachability)"],["rank candidates","DFS · raw taint · V(x) · random"],["metrics","MRR · R@1 · NDCG@k · cost curve"],["Z3 arbiter","SAT + concrete witness"]];
+  const W=560,bh=56,gap=22,bw=440,xx=(W-bw)/2;
+  let s=`<defs><marker id="a2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#8b949e"/></marker></defs>`;
+  steps.forEach(([t,sub],i)=>{const yy=10+i*(bh+gap);
+    s+=`<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="10" fill="#11161d" stroke="#26303c"/>`;
+    s+=`<text x="${W/2}" y="${yy+24}" fill="#e6edf3" font-size="13" text-anchor="middle">${t}</text><text x="${W/2}" y="${yy+42}" fill="#8b949e" font-size="11" text-anchor="middle">${sub}</text>`;
+    if(i<steps.length-1) s+=`<line x1="${W/2}" y1="${yy+bh}" x2="${W/2}" y2="${yy+bh+gap-3}" stroke="#8b949e" stroke-width="2" marker-end="url(#a2)"/>`;});
   svg.innerHTML=s;
 })();
 
 // ---------- methodology: mapping laws ----------
 (function(){
-  const a=auc;
-  const aucOf=k=>a[k]?a[k].auc:null;
-  const laws=[
-    ["H1","chokepoint: curvature κ ≪ 0","privilege escalation","geometric"],
-    ["H2","persistent H₁ generator","reentrancy / recursion","topological"],
-    ["H3","Fiedler spectral cut","injection across trust","spectral"],
-    ["H4","taint crossing an `auth` edge","auth-invariant violation","","definitional (Prop. 2)"],
-    ["H5","persistence outlier","real vs. spurious feature","topological"],
-    ["H6","SAT(φ_bad) (formal reachability)","model witness (encoded semantics)","formal"],
-  ];
-  const rows=laws.map(([id,f,c,k,override])=>{
-    const v=aucOf(k);
-    let status=override||"—";
-    if(!override && v!==null){ status = v>0.7 ? `<span style="color:var(--green)">supported (AUC ${v.toFixed(3)})</span>`
-      : (v<0.45 ? `<span style="color:var(--red)">not supported (AUC ${v.toFixed(3)})</span>`
-      : `<span style="color:var(--amber)">at chance (AUC ${v.toFixed(3)})</span>`); }
-    return [id,f,c,status];
-  });
+  const aucOf=k=>auc[k]?auc[k].auc:null;
+  const laws=[["H1","chokepoint: curvature κ ≪ 0","privilege escalation","geometric"],["H2","persistent H₁ generator","reentrancy / recursion","topological"],["H3","Fiedler spectral cut","injection across trust","spectral"],["H4","taint crossing an `auth` edge","auth-invariant violation",""],["H5","persistence outlier","real vs. spurious feature","topological"],["H6","SAT(φ_bad) (formal reachability)","model witness","formal"]];
+  const rows=laws.map(([id,f,c,k])=>{const v=aucOf(k);
+    let status="—";
+    if(k && v!==null){ status = v>0.7 ? `<span style="color:var(--topological)">supported (AUC ${v.toFixed(3)})</span>`
+      : (v<0.45 ? `<span style="color:var(--algebraic)">not supported (AUC ${v.toFixed(3)})</span>`
+      : `<span style="color:var(--geometric)">at chance (AUC ${v.toFixed(3)})</span>`); }
+    if(!k) status="definitional (Prop. 2)";
+    return [id,f,c,status];});
   $("#laws").innerHTML=table(rows,["hypothesis","feature","class","status on OWASP Benchmark"]);
 })();
 
-
-// ---------- line chart ----------
-function lineChart(svg, series, opts){
-  const W=560,H=320, m={l:56,r:16,t:20,b:40};
-  const xs=[].concat(...series.map(s=>s.pts.map(p=>p[0])));
-  const ys=[].concat(...series.map(s=>s.pts.map(p=>p[1])));
-  const xlog=opts.xlog, ylog=opts.ylog;
-  const xmin=Math.min(...xs), xmax=Math.max(...xs);
-  const ymin=Math.min(...ys), ymax=Math.max(...ys);
-  const X=x=>{const t=xlog?(Math.log10(x)-Math.log10(xmin))/((Math.log10(xmax)-Math.log10(xmin))||1):(x-xmin)/((xmax-xmin)||1);return m.l+t*(W-m.l-m.r);};
-  const Y=y=>{const t=ylog?(Math.log10(y)-Math.log10(ymin))/((Math.log10(ymax)-Math.log10(ymin))||1):(y-ymin)/((ymax-ymin)||1);return H-m.b-t*(H-m.t-m.b);};
-  let s=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="none" stroke="#30363d"/>`;
-  for(let i=0;i<=4;i++){const gy=m.t+i*(H-m.t-m.b)/4; s+=`<line x1="${m.l}" y1="${gy}" x2="${W-m.r}" y2="${gy}" stroke="#21262d"/>`;}
-  s+=`<text x="${(W)/2}" y="${H-8}" fill="#8b949e" font-size="11" text-anchor="middle">${opts.xlabel||""}</text>`;
-  s+=`<text x="14" y="${H/2}" fill="#8b949e" font-size="11" text-anchor="middle" transform="rotate(-90 14 ${H/2})">${opts.ylabel||""}</text>`;
-  series.forEach(ser=>{
-    const d=ser.pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
-    s+=`<path d="${d}" fill="none" stroke="${ser.color}" stroke-width="2" ${ser.dash?`stroke-dasharray="${ser.dash}"`:""}/>`;
-    ser.pts.forEach(p=>{s+=`<circle cx="${X(p[0]).toFixed(1)}" cy="${Y(p[1]).toFixed(1)}" r="2.6" fill="${ser.color}"/>`;});
-  });
-  let ly=m.t+6;
-  series.forEach(ser=>{s+=`<text x="${W-m.r-4}" y="${ly}" fill="${ser.color}" font-size="11" text-anchor="end">${ser.name}</text>`;ly+=13;});
-  svg.innerHTML=s;
-}
-
-// ---------- cost curve ----------
-const curves = o.curves||{};
-const palette={dfs:"#8b949e",taint:"#3fb950",field:"#58a6ff",random:"#f85149"};
-const series=Object.keys(curves).map(k=>({name:k,color:palette[k]||"#999",dash:k==="random"?"4 3":"",
-  pts:curves[k].map((v,i)=>[i+1,v])}));
-lineChart($("#cost"), series, {xlabel:"verification budget", ylabel:"cumulative recall"});
-
-// ---------- AUC bars ----------
+// ---------- oracle charts ----------
 (function(){
-  const svg=$("#auc"); const W=560,H=320,m={l:90,r:20,t:20,b:30};
-  const keys=Object.keys(auc);
-  const bh=(H-m.t-m.b)/Math.max(keys.length,1);
-  svg.innerHTML=`<text x="${W/2}" y="${H-8}" fill="#8b949e" font-size="11" text-anchor="middle">AUC (0.5 = chance)</text>`;
-  keys.forEach((k,i)=>{
-    const a=auc[k].auc, w=(W-m.l-m.r)*a, y=m.t+i*bh+bh*0.15;
-    const col=a>0.7?"#3fb950":(a>=0.45?"#d29922":"#f85149");
-    svg.innerHTML+=`<text x="${m.l-8}" y="${y+12}" fill="#e6edf3" font-size="11" text-anchor="end">${k}</text>`;
-    svg.innerHTML+=`<rect x="${m.l}" y="${y}" width="${w}" height="${bh*0.7}" fill="${col}" rx="3"/>`;
-    svg.innerHTML+=`<line x1="${m.l+(W-m.l-m.r)*0.5}" y1="${m.t}" x2="${m.l+(W-m.l-m.r)*0.5}" y2="${H-m.b}" stroke="#8b949e" stroke-dasharray="3 3"/>`;
-    svg.innerHTML+=`<text x="${m.l+w+6}" y="${y+12}" fill="#8b949e" font-size="11">${a.toFixed(3)}</text>`;
-  });
+  const pal={dfs:"#8b949e",taint:"#ff7b72",field:"#58a6ff",random:"#f85149"};
+  const curves=o.curves||{};
+  mkLine("cost",Object.keys(curves).map(k=>({label:k,color:pal[k]||"#999",pts:curves[k].map((v,i)=>[i+1,v])})),"verification budget","cumulative recall");
+  if(window.Chart){ const labels=Object.keys(auc), vals=labels.map(k=>auc[k].auc); mkBar("auc",labels,vals); }
+
+  const m=o.metrics||{};
+  $("#oracle-table").innerHTML=table(Object.keys(m).map(k=>[k,m[k].mrr,m[k]["recall@1"],m[k].mean_rank,m[k]["ndcg@5"]]),["ranking","MRR","R@1","mean rank","NDCG@5"]);
+  const pt=m.taint_vs_field;
+  $("#oracle-table").innerHTML += (pt?`<div class="text-xs mt-2" style="color:var(--muted)">paired test taint−field: ${pt.mean_diff>=0?'+':''}${pt.mean_diff.toFixed(4)} CI95=[${pt.ci95[0].toFixed(4)}, ${pt.ci95[1].toFixed(4)}] p=${pt.p_value}</div>`:"");
 })();
 
 // ---------- tables ----------
-function table(rows, cols){
-  return `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`+
-    rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;
-}
-(function(){
-  const m=o.metrics||{};
-  const rows=Object.keys(m).map(k=>[k,m[k].mrr,m[k]["recall@1"],m[k].mean_rank,m[k]["ndcg@5"]]);
-  $("#oracle-table").innerHTML=table(rows,["ranking","MRR","R@1","mean rank","NDCG@5"]);
-  const pt=m.taint_vs_field; const g=o.global||{};
-  const grows=Object.keys(g).map(k=>[k,g[k].average_precision,g[k]["precision@10"],g[k].queries_to_90_recall]);
-  $("#oracle-table").innerHTML += (pt?`<div class="small" style="margin:8px 0">paired test taint-field: ${pt.mean_diff.toFixed(4)} p=${pt.p_value}</div>`:"")
-    + (grows.length?`<h3 style="font-size:12px;color:#8b949e">global pool</h3>`+table(grows,["ranking","AP","P@10","queries@90%recall"]):"");
-})();
-
 (function(){
   const ow=DATA.owasp||{};
-  function block(title, obj){
-    if(!obj) return "";
-    const rows=Object.keys(obj).filter(k=>k!=="overall").sort().map(k=>{
-      const v=obj[k]; const fpr=v.fp/(v.fp+v.tn||1); const j=(v.recall-fpr);
-      return [k,v.tp,v.fp,v.fn,v.tn,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3),j.toFixed(3)];
-    });
-    const ov=obj.overall; const fpr=ov.fp/(ov.fp+ov.tn||1);
-    rows.push(["<b>overall</b>",ov.tp,ov.fp,ov.fn,ov.tn,ov.precision.toFixed(3),ov.recall.toFixed(3),ov.f1.toFixed(3),(ov.recall-fpr).toFixed(3)]);
-    return `<h3 style="font-size:13px;color:#8b949e">${title}</h3>`+table(rows,["category","TP","FP","FN","TN","P","R","F1","J"]);
-  }
-  $("#owasp-tables").innerHTML =
-    block("adapter — all 11 categories", ow.adapter_all) +
-    block("adapter — 7 taint categories", ow.adapter_taint) +
-    block("adapter + Z3 verifier — 7 taint categories", ow.z3_taint);
+  function block(title,obj){if(!obj)return "";
+    const rows=Object.keys(obj).filter(k=>k!=="overall").sort().map(k=>{const v=obj[k];const fpr=v.fp/(v.fp+v.tn||1);return[k,v.tp,v.fp,v.fn,v.tn,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3),(v.recall-fpr).toFixed(3)];});
+    const ov=obj.overall,fpr=ov.fp/(ov.fp+ov.tn||1);rows.push(["<b>overall</b>",ov.tp,ov.fp,ov.fn,ov.tn,ov.precision.toFixed(3),ov.recall.toFixed(3),ov.f1.toFixed(3),(ov.recall-fpr).toFixed(3)]);
+    return `<div class="kicker mt-3">${title}</div>`+table(rows,["category","TP","FP","FN","TN","P","R","F1","J"]);}
+  $("#owasp-tables").innerHTML=block("adapter — all 11 categories",ow.adapter_all)+block("adapter — 7 taint categories",ow.adapter_taint)+block("adapter + Z3 verifier — 7 taint categories",ow.z3_taint);
 })();
-
-(function(){
-  const ab=DATA.ablation||{};
-  const rows=Object.keys(ab).map(k=>{const v=ab[k];return [k,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3)];});
-  $("#ablation-table").innerHTML=table(rows,["variant","precision","recall","F1"]);
-})();
-
-(function(){
-  const crows=[];
-  (DATA.cves||[]).forEach(c=>(c.files||[]).forEach(f=>{
-    const res=f.resolved.length?`<span style="color:var(--green)">resolved</span>`:(f.persisting.length?`<span style="color:var(--amber)">persisting</span>`:"—");
-    crows.push([c.cve,f.file,f.vuln_findings,f.patched_findings,res]);}));
-  $("#cve-table").innerHTML=crows.length?table(crows,["CVE","file","vuln","patched","result"]):"<div class='small'>no data</div>";
-})();
-
-(function(){
-  const llm=DATA.llm||{}; const rows=[];
-  (llm.results||[]).forEach(r=>rows.push([r.file,r.confirmed_offline,r.confirmed_online,r.llm_generated,r.stable?"stable":"varies"]));
-  $("#llm-table").innerHTML=rows.length?table(rows,["file","confirmed offline","confirmed online","llm hypotheses","stability"]):"<div class='small'>no data</div>";
-})();
+(function(){const ab=DATA.ablation||{}; $("#ablation-table").innerHTML=table(Object.keys(ab).map(k=>[k,ab[k].precision.toFixed(3),ab[k].recall.toFixed(3),ab[k].f1.toFixed(3)]),["variant","precision","recall","F1"]);})();
+(function(){const crows=[];(DATA.cves||[]).forEach(c=>(c.files||[]).forEach(f=>{const res=f.resolved.length?`<span style="color:var(--topological)">resolved</span>`:(f.persisting.length?`<span style="color:var(--geometric)">persisting</span>`:"—");crows.push([c.cve,f.file,f.vuln_findings,f.patched_findings,res]);}));
+  $("#cve-table").innerHTML=crows.length?table(crows,["CVE","file","vuln","patched","result"]):"<div class='text-xs' style='color:var(--muted)'>no data</div>";})();
+(function(){const llm=DATA.llm||{};const rows=[];(llm.results||[]).forEach(r=>rows.push([r.file,r.confirmed_offline,r.confirmed_online,r.llm_generated,r.stable?"stable":"varies"]));
+  $("#llm-table").innerHTML=rows.length?table(rows,["file","offline","online","llm","stability"]):"<div class='text-xs' style='color:var(--muted)'>no data</div>";})();
 
 // ---------- scale chart ----------
 (function(){
-  const by={};
-  DATA.scale.forEach(r=>{(by[r.kernel]=by[r.kernel]||[]).push([r.edges,r.ms]);});
-  const colors={forman:"#3fb950",mapper:"#58a6ff",homology:"#f85149",sinkhorn:"#d29922",
-    ollivier_exact:"#bc8cff",spectral_fiedler:"#79c0ff",directed_laplacian:"#ffa657"};
-  const ser=Object.keys(by).map(k=>({name:k,color:colors[k]||"#999",pts:by[k].sort((a,b)=>a[0]-b[0])}));
-  const svg=$("#scale"); const W=900,H=340,m={l:70,r:150,t:20,b:40};
-  const xs=[].concat(...ser.map(s=>s.pts.map(p=>p[0]))), ys=[].concat(...ser.map(s=>s.pts.map(p=>p[1])));
-  const lx=v=>Math.log10(v), ly=v=>Math.log10(v);
-  const x0=lx(Math.min(...xs)),x1=lx(Math.max(...xs)),y0=ly(Math.min(...ys)),y1=ly(Math.max(...ys));
-  const X=x=>m.l+(lx(x)-x0)/(x1-x0)*(W-m.l-m.r), Y=y=>H-m.b-(ly(y)-y0)/(y1-y0)*(H-m.t-m.b);
-  let s=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="none" stroke="#30363d"/>`;
-  s+=`<text x="${W/2}" y="${H-8}" fill="#8b949e" font-size="11" text-anchor="middle">edges |E| (log)</text>`;
-  s+=`<text x="16" y="${H/2}" fill="#8b949e" font-size="11" text-anchor="middle" transform="rotate(-90 16 ${H/2})">time ms (log)</text>`;
-  ser.forEach((z,i)=>{const d=z.pts.map((p,j)=>(j?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
-    s+=`<path d="${d}" fill="none" stroke="${z.color}" stroke-width="2"/>`;
-    s+=`<text x="${W-m.r+8}" y="${m.t+14+i*16}" fill="${z.color}" font-size="11">${z.name}</text>`;});
-  svg.innerHTML=s;
+  const by={}; DATA.scale.forEach(r=>{(by[r.kernel]=by[r.kernel]||[]).push([r.edges,r.ms]);});
+  const colors={forman:"#3fb950",mapper:"#58a6ff",homology:"#f85149",sinkhorn:"#d29922",ollivier_exact:"#bc8cff",spectral_fiedler:"#79c0ff",directed_laplacian:"#ffa657"};
+  const ser=Object.keys(by).map(k=>({label:k,color:colors[k]||"#999",pts:by[k].sort((a,b)=>a[0]-b[0])}));
+  if(ser.length) mkLine("scale",ser,"edges |E| (log)","time ms (log)",{log:true});
 })();
 
-// ---------- valen explorer ----------
+// ---------- valen explorer (interactive) ----------
 const COLORS={source:"#f85149",sink:"#d29922",function:"#58a6ff",gate:"#bc8cff",module:"#30363d",
   assign:"#a5d6ff",call:"#bc8cff",statement:"#8b949e",block:"#8b949e",variable:"#79c0ff",parameter:"#79c0ff"};
 const ECOL={taint:"#f85149",call:"#58a6ff",data:"#3fb950",control:"#6e7681",trust:"#bc8cff",auth:"#d2a8ff"};
 function renderCase(idx){
-  const ex=DATA.examples[idx]; const svg=$("#map"); const W=1000,H=460;
-  const nodes=ex.nodes.map(n=>({...n,x:Math.random()*W,y:Math.random()*H}));
-  const by={}; nodes.forEach(n=>by[n.id]=n);
-  const N=nodes.length;
-  for(let it=0;it<Math.max(60,400-N*2);it++){
-    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){let dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y;let d2=dx*dx+dy*dy+0.01,d=Math.sqrt(d2),f=900/d2;dx/=d;dy/=d;
-      nodes[i].x+=dx*f;nodes[i].y+=dy*f;nodes[j].x-=dx*f;nodes[j].y-=dy*f;}
-    ex.edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;let dx=b.x-a.x,dy=b.y-a.y,d=Math.sqrt(dx*dx+dy*dy)||0.01,f=(d-90)*0.015;a.x+=dx/d*f;a.y+=dy/d*f;b.x-=dx/d*f;b.y-=dy/d*f;});
-    nodes.forEach(n=>{n.x+=(W/2-n.x)*0.02;n.y+=(H/2-n.y)*0.02;n.x=Math.max(20,Math.min(W-20,n.x));n.y=Math.max(20,Math.min(H-20,n.y));});
-  }
-  let s="";
-  ex.edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;
-    s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${ECOL[e.kind]||"#6e7681"}" stroke-width="${e.kind==="taint"?2.5:1}" stroke-opacity="0.55"/>`;});
-  nodes.forEach(n=>{const r=n.tainted?14:6+Math.min(10,(n.fiedler||0)*8);
-    s+=`<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="${COLORS[n.kind]||"#8b949e"}" ${n.tainted?'stroke="#f85149" stroke-width="1.5"':""}/>`;
-    s+=`<text x="${n.x}" y="${n.y-r-4}" fill="#e6edf3" font-size="10" text-anchor="middle">${n.label}</text>`;});
-  svg.innerHTML=s;
+  const ex=DATA.examples[idx]; const svg=$("#map"); svg.innerHTML="";
+  const W=1000,H=460; svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const world=document.createElementNS(NS,"g"); svg.appendChild(world);
+  let view={x:0,y:0,k:1};
+  const apply=()=>world.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.k})`);
+  const r=n=>n.tainted?14:6+Math.min(10,(n.fiedler||0)*8);
+  const nodes=ex.nodes.map((n,i)=>({...n,r:r(n),x:W/2+Math.cos(i*2.39996)*30*Math.sqrt(i+1),y:H/2+Math.sin(i*2.39996)*30*Math.sqrt(i+1),vx:0,vy:0,fixed:false}));
+  const by={}; nodes.forEach(n=>by[n.id]=n); const edges=ex.edges.slice(); const N=nodes.length;
+  const edgeEls=edges.map(e=>{const l=document.createElementNS(NS,"line"); l.setAttribute("stroke",ECOL[e.kind]||"#6e7681"); l.setAttribute("stroke-width",e.kind==="taint"?2.5:1); l.setAttribute("stroke-opacity","0.55"); world.appendChild(l); return l;});
+  const nodeEls=new Map(); const neigh=new Map();
+  nodes.forEach(n=>{const g=document.createElementNS(NS,"g"); g.setAttribute("class","node");
+    const c=document.createElementNS(NS,"circle"); c.setAttribute("r",n.r); c.setAttribute("fill",COLORS[n.kind]||"#8b949e"); if(n.tainted)c.setAttribute("stroke","#f85149");
+    const t=document.createElementNS(NS,"text"); t.setAttribute("y",-n.r-4); t.setAttribute("text-anchor","middle"); t.setAttribute("fill","#e6edf3"); t.setAttribute("font-size","10"); t.textContent=n.label;
+    const t2=document.createElementNS(NS,"text"); t2.setAttribute("y",n.r+13); t2.setAttribute("text-anchor","middle"); t2.setAttribute("fill","#8b949e"); t2.setAttribute("font-size","8"); t2.textContent=n.kind;
+    const ti=document.createElementNS(NS,"title"); ti.textContent=`${n.kind} ${n.label} (line ${n.line})${n.tainted?" [tainted]":""}`;
+    g.append(c,t,t2,ti); world.appendChild(g); nodeEls.set(n.id,g);
+    const s=new Set([n.id]); edges.forEach(e=>{if(e.src===n.id)s.add(e.dst);if(e.dst===n.id)s.add(e.src);}); neigh.set(n.id,s);});
+  let hovered=null;
+  function hl(){const f=hovered?neigh.get(hovered):null; nodes.forEach(n=>nodeEls.get(n.id).setAttribute("opacity",f&&!f.has(n.id)?"0.15":"1")); edgeEls.forEach((l,i)=>{const e=edges[i];l.setAttribute("stroke-opacity",f?(f.has(e.src)&&f.has(e.dst)?"0.9":"0.06"):"0.55");});}
+  function draw(){nodes.forEach(n=>nodeEls.get(n.id).setAttribute("transform",`translate(${n.x},${n.y})`)); edgeEls.forEach((l,i)=>{const e=edges[i],a=by[e.src],b=by[e.dst]; if(a&&b){l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",b.x);l.setAttribute("y2",b.y);}});}
+  let alpha=1,running=true; const K=1200*Math.sqrt(N);
+  function tick(){for(let i=0;i<N;i++){const a=nodes[i];for(let j=i+1;j<N;j++){const b=nodes[j];let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy;const mn=a.r+b.r+22,m2=mn*mn;if(d2<m2){d2=m2;dx*=mn/Math.sqrt(dx*dx+dy*dy+1e-6);dy*=mn/Math.sqrt(dx*dx+dy*dy+1e-6);}const dd=Math.sqrt(d2),f=K/d2;a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;}}
+    edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;let dx=b.x-a.x,dy=b.y-a.y,dd=Math.sqrt(dx*dx+dy*dy)||1;const rest=a.r+b.r+50,f=(dd-rest)*0.06;a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;});
+    nodes.forEach(n=>{n.vx+=(W/2-n.x)*0.0025;n.vy+=(H/2-n.y)*0.0025;}); nodes.forEach(n=>{if(n.fixed){n.vx=0;n.vy=0;return;}n.vx*=0.6;n.vy*=0.6;n.x+=n.vx;n.y+=n.vy;}); alpha=Math.max(0.01,alpha*0.975);}
+  function loop(){if(running){const st=N>600?1:3;for(let i=0;i<st;i++)tick();draw();if(alpha>0.0105)requestAnimationFrame(loop);else running=false;}}
+  function reheat(){alpha=1;if(!running){running=true;loop();}}
+  let pan=null;
+  svg.addEventListener("pointerdown",e=>{if(e.target.closest(".node"))return;pan={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};svg.setPointerCapture(e.pointerId);});
+  svg.addEventListener("pointermove",e=>{if(pan){view.x=pan.vx+(e.clientX-pan.x);view.y=pan.vy+(e.clientY-pan.y);apply();}});
+  svg.addEventListener("pointerup",()=>pan=null);
+  svg.addEventListener("wheel",e=>{e.preventDefault();const r=svg.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;const k1=Math.max(0.05,Math.min(8,view.k*(e.deltaY<0?1.12:0.89)));view.x=mx-(mx-view.x)*(k1/view.k);view.y=my-(my-view.y)*(k1/view.k);view.k=k1;apply();},{passive:false});
+  function toW(cx,cy){const r=svg.getBoundingClientRect();return [(cx-r.left-view.x)/view.k,(cy-r.top-view.y)/view.k];}
+  nodes.forEach(n=>{const el=nodeEls.get(n.id);let dr=null;
+    el.addEventListener("pointerdown",e=>{e.stopPropagation();dr={n};n.fixed=true;el.setPointerCapture(e.pointerId);reheat();});
+    el.addEventListener("pointermove",e=>{if(dr){const [x,y]=toW(e.clientX,e.clientY);n.x=x;n.y=y;draw();}});
+    el.addEventListener("pointerup",()=>{if(dr){dr=null;n.fixed=false;reheat();}});
+    el.addEventListener("pointerenter",()=>{hovered=n.id;hl();});
+    el.addEventListener("pointerleave",()=>{if(hovered===n.id){hovered=null;hl();}});
+    el.addEventListener("click",()=>{const f=neigh.get(n.id);nodes.forEach(m=>nodeEls.get(m.id).setAttribute("opacity",f.has(m.id)?"1":"0.15"));edgeEls.forEach((l,i)=>{const e=edges[i];l.setAttribute("stroke-opacity",f.has(e.src)&&f.has(e.dst)?"0.9":"0.06");});});});
+  svg.addEventListener("pointerleave",()=>{hovered=null;hl();});
+  if(N){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;nodes.forEach(n=>{x0=Math.min(x0,n.x-n.r);y0=Math.min(y0,n.y-n.r);x1=Math.max(x1,n.x+n.r);y1=Math.max(y1,n.y+n.r);});
+    const r=svg.getBoundingClientRect();const k=Math.min(r.width/(x1-x0||1),r.height/(y1-y0||1))*0.9;view.k=Math.max(0.05,Math.min(4,k));view.x=r.width/2-((x0+x1)/2)*view.k;view.y=r.height/2-((y0+y1)/2)*view.k;apply();}
+  apply();draw();alpha=1;running=true;loop();
   $("#case-meta").textContent = `${ex.adapter} · ${ex.nodes.length} nodes · ${ex.findings.length} findings`;
-  const f=ex.findings.map(x=>`<div><span class="sw" style="background:var(--red)"></span>${x.severity} ${x.category} — ${x.sink} (line ${x.line})</div>`).join("");
-  $("#mlegend").innerHTML = Object.keys(COLORS).map(k=>`<span><span class="sw" style="background:${COLORS[k]}"></span>${k}</span>`).join(" &nbsp; ") + (f?`<div style="margin-top:6px">${f}</div>`:"");
+  const f=ex.findings.map(x=>`<div><span class="dot" style="background:var(--algebraic)"></span>${x.severity} ${x.category} — ${x.sink} (line ${x.line})</div>`).join("");
+  $("#mlegend").innerHTML = Object.keys(COLORS).map(k=>`<span class="pill"><span class="dot" style="background:${COLORS[k]}"></span>${k}</span>`).join("") + (f?`<div class="mt-3">${f}</div>`:"");
 }
-(function(){
-  const sel=$("#case");
-  DATA.examples.forEach((e,i)=>{const o=document.createElement("option");o.value=i;o.textContent=e.name;sel.appendChild(o);});
-  sel.onchange=()=>renderCase(+sel.value);
-  if(DATA.examples.length) renderCase(0);
-})();
+(function(){const sel=$("#case");DATA.examples.forEach((e,i)=>{const o=document.createElement("option");o.value=i;o.textContent=e.name;sel.appendChild(o);});sel.onchange=()=>renderCase(+sel.value);if(DATA.examples.length)renderCase(0);})();
 
-// ---------- recipes ----------
 $("#recipes").textContent = DATA.recipes;
-</script>
-</body>
-</html>
 """
 
 _RECIPES = """# 1. Dashboard (this page)
@@ -452,27 +399,25 @@ python -m valen.cli examples/python/sqli.py --agent --viz /tmp/sqli.html
 python -m valen.cli Foo.java --adapter java
 python -m valen.cli /path/to/binary --adapter angr-binary
 
-# 3. OWASP Benchmark 1.2 (the corpus behind the numbers)
+# 3. Dynamic analysis (sandboxed execution + static/dynamic triangulation)
+python -m valen.cli your_script.py --dynamic --argv "untrusted input"
+
+# 4. OWASP Benchmark 1.2 (the corpus behind the numbers)
 python benchmarks/run_owasp.py \\
   --testcode BenchmarkJava/src/main/java/org/owasp/benchmark/testcode \\
   --csv expectedresults-1.2.csv          # add --verify for the Z3 arbiter
 
-# 4. Prioritization oracle (main experiment) + figures
+# 5. Prioritization oracle (main experiment) + figures
 python benchmarks/run_oracle.py --testcode <testcode> --csv <csv> --budget 6 --seeds 20
 python scripts/make_figures.py
 
-# 5. Ablation + scalability
+# 6. Ablation + scalability
 python benchmarks/ablation.py --testcode <testcode> --csv <csv>
 cargo run --release --manifest-path core/Cargo.toml --bin scale
 
-# 6. Juliet / external corpora
+# 7. Juliet / external corpora
 python benchmarks/run_juliet.py --root /path/to/juliet-test-suite
 python benchmarks/run_external.py <manifest.json | dir> --adapter python
-
-# 7. Your own code: point the CLI at it, or load a labeled corpus
-python -m valen.cli your_project/file.py --agent --viz out.html
-#   manifest:  [{"file": "a.py", "vulnerable": true}, ...]
-#   directory: root/vulnerable/*  +  root/safe/*
 
 # 8. Everything at once (reproducible artifact)
 ./scripts/reproduce.sh --fetch-owasp"""
@@ -481,7 +426,10 @@ python -m valen.cli your_project/file.py --agent --viz out.html
 def build_html(data: Dict[str, Any]) -> str:
     data = dict(data)
     data["recipes"] = _RECIPES
-    return _TEMPLATE.replace("__DATA__", json.dumps(data))
+    html = _TEMPLATE.replace("__DATA__", json.dumps(data))
+    html = html.replace("__HEAD__", head("VALEN — dashboard"))
+    html = html.replace("__JS__", _JS)
+    return html
 
 
 def write_dashboard(path: str) -> None:

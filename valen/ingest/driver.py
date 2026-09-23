@@ -33,6 +33,21 @@ def _load_languages() -> Dict[str, Language]:
         langs["solidity"] = Language(tree_sitter_solidity.language())
     except ImportError:  # pragma: no cover
         pass
+    for name, mod in (
+        ("c", "tree_sitter_c"),
+        ("cpp", "tree_sitter_cpp"),
+        ("rust", "tree_sitter_rust"),
+        ("csharp", "tree_sitter_c_sharp"),
+        ("go", "tree_sitter_go"),
+        ("php", "tree_sitter_php"),
+        ("ruby", "tree_sitter_ruby"),
+    ):
+        try:
+            m = __import__(mod, fromlist=["language"])
+            lang_fn = getattr(m, "language", None) or getattr(m, f"language_{name}", None)
+            langs[name] = Language(lang_fn())
+        except Exception:  # pragma: no cover - grammar missing or API differs
+            pass
     return langs
 
 

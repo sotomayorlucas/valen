@@ -1,153 +1,257 @@
 """Web UI for VALEN: a single-page app served by the stdlib HTTP server.
 
-The page talks to `/api/*` endpoints (see `valen/server.py`) to analyze code
+The page talks to ``/api/*`` endpoints (see ``valen/server.py``) to analyze code
 live, browse the bundled examples, and render the experiment dashboard and the
-methodology diagrams. Everything is self-contained (no external JS/CSS).
+methodology diagrams. The *analysis* core has no external dependencies; this
+presentation shell uses Tailwind + Chart.js + D3 via CDN for a polished,
+"modern terminal" look (the page still works offline with a graceful fallback).
 """
 
 from __future__ import annotations
 
+from .theme import head
+
 PAGE = r"""<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>VALEN — web UI</title>
-<style>
-:root{--bg:#0d1117;--panel:#161b22;--panel2:#1c2330;--text:#e6edf3;--muted:#8b949e;--border:#30363d;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--amber:#d29922;--purple:#bc8cff;}
-*{box-sizing:border-box;}
-body{margin:0;font-family:system-ui,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);}
-header{padding:14px 22px;border-bottom:1px solid var(--border);background:linear-gradient(120deg,#161b22,#0d1117);display:flex;align-items:center;gap:18px;flex-wrap:wrap;}
-header h1{margin:0;font-size:20px;} header .sub{color:var(--muted);font-size:12px;}
-nav{display:flex;gap:6px;}
-nav button{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;cursor:pointer;font-size:13px;}
-nav button.on{background:var(--panel2);color:var(--text);border-color:var(--accent);}
-main{padding:18px 22px;max-width:1300px;margin:0 auto;}
-.tab{display:none;} .tab.on{display:block;}
-h2{font-size:15px;border-left:3px solid var(--accent);padding-left:10px;margin:0 0 12px;}
-.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;}
-.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
-select,button,input,textarea{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:7px 10px;font-size:13px;}
-textarea{width:100%;height:240px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;line-height:1.5;}
-button.primary{background:var(--accent);color:#08111c;font-weight:700;border-color:var(--accent);cursor:pointer;}
-label.chk{display:flex;gap:6px;align-items:center;color:var(--muted);font-size:12.5px;}
-.two{display:grid;grid-template-columns:1fr 1fr;gap:16px;} @media(max-width:900px){.two{grid-template-columns:1fr;}}
-table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:12.5px;}
-th,td{padding:6px 9px;text-align:right;border-bottom:1px solid var(--border);} th:first-child,td:first-child{text-align:left;}
-th{background:var(--panel2);color:var(--muted);font-weight:600;}
-.finding{border-left:3px solid var(--red);background:#0b0f14;border-radius:6px;padding:8px 10px;margin-bottom:7px;}
-.finding .sev{font-size:10px;text-transform:uppercase;font-weight:700;}
-.finding.critical{border-color:var(--red)} .finding.high{border-color:var(--amber)} .finding.medium{border-color:var(--accent)}
-.card{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px;}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;}
-.small{font-size:11px;color:var(--muted);}
-pre{background:#0b0f14;border:1px solid var(--border);border-radius:8px;padding:12px;overflow:auto;font-size:12px;}
-#map{width:100%;height:440px;background:radial-gradient(circle at 50% 50%,#161b22,#0d1117);border:1px solid var(--border);border-radius:10px;}
-.badge{font-size:11px;padding:1px 7px;border-radius:10px;background:var(--panel2);color:var(--muted);}
-.mode{cursor:pointer;padding:4px 10px;}
-.mode.on{background:var(--accent);color:#08111c;font-weight:700;}
-.resolved{color:var(--green);} .introduced{color:var(--red);} .persisting{color:var(--amber);}
-.bar{height:8px;background:var(--panel2);border-radius:4px;overflow:hidden;} .bar>i{display:block;height:100%;background:var(--accent);}
-</style>
+__HEAD__
 </head>
-<body>
-<header>
-  <h1>VALEN</h1>
-  <span class="sub">web UI — analyze, explore, reproduce</span>
-  <nav>
-    <button data-tab="analyze" class="on">Analyze</button>
-    <button data-tab="experiments">Experiments</button>
-    <button data-tab="methodology">Methodology</button>
-  </nav>
+<body class="min-h-screen">
+<header class="sticky top-0 z-40 backdrop-blur border-b" style="border-color:var(--border);background:rgba(10,14,20,.85)">
+  <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-5 flex-wrap">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg grid place-items-center glow" style="background:linear-gradient(135deg,var(--spectral),var(--formal));color:#08111c;font-weight:800;font-family:var(--mono)">V</div>
+      <div>
+        <h1 class="text-lg font-bold leading-none tracking-tight">VALEN</h1>
+        <div class="text-[11px]" style="color:var(--muted)">Verification And Active Logic Engine — neuro-symbolic</div>
+      </div>
+    </div>
+    <nav class="flex gap-1.5 ml-auto">
+      <button data-tab="analyze" class="on px-4 py-1.5 rounded-lg text-[13px]">Analyze</button>
+      <button data-tab="dynamic" class="px-4 py-1.5 rounded-lg text-[13px]">Dynamic</button>
+      <button data-tab="pentest" class="px-4 py-1.5 rounded-lg text-[13px]">Pentest</button>
+      <button data-tab="experiments" class="px-4 py-1.5 rounded-lg text-[13px]">Experiments</button>
+      <button data-tab="methodology" class="px-4 py-1.5 rounded-lg text-[13px]">Methodology</button>
+    </nav>
+  </div>
 </header>
-<main>
 
-<!-- ANALYZE -->
+<main class="max-w-[1400px] mx-auto px-6 py-6">
+
+<!-- ================= ANALYZE ================= -->
 <section class="tab on" id="tab-analyze">
-  <div class="row">
-    <select id="example"></select>
-    <select id="adapter">
-      <option value="">auto</option>
-      <option>python</option><option>java</option><option>java-interproc</option><option>binary</option>
-      <option>angr-binary</option><option>web</option><option>llm-agent</option>
-    </select>
-    <input id="path" placeholder="path (optional)" style="width:200px"/>
-    <label class="chk"><input type="checkbox" id="verify"/> verify (Z3)</label>
-    <label class="chk"><input type="checkbox" id="agent"/> agent</label>
-    <button class="primary" id="run">Analyze</button>
-    <span class="badge" id="status"></span>
-  </div>
-  <div class="row">
-    <span class="mode on" id="mode-single">Single</span>
-    <span class="mode" id="mode-compare">Compare (vulnerable vs patched)</span>
-  </div>
-  <div id="single-pane">
-    <textarea id="code" spellcheck="false"></textarea>
-  </div>
-  <div id="compare-pane" style="display:none">
-    <div class="row">
-      <select id="cve-pair"><option value="">— load a real CVE fix pair —</option></select>
-      <span class="badge" id="cve-meta"></span>
+  <div class="grid lg:grid-cols-2 gap-5">
+    <!-- left: input -->
+    <div class="panel p-4">
+      <div class="flex items-center gap-2 flex-wrap mb-3">
+        <select id="example" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border" style="border-color:var(--border)"></select>
+        <select id="adapter" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border" style="border-color:var(--border)">
+          <option value="">auto</option>
+          <option>python</option><option>java</option><option>java-interproc</option>
+          <option>c</option><option>cpp</option><option>rust</option><option>csharp</option>
+          <option>go</option><option>php</option><option>ruby</option><option>javascript</option>
+          <option>binary</option><option>angr-binary</option><option>web</option>
+          <option>llm-agent</option><option>iam</option>
+        </select>
+        <input id="path" placeholder="path (optional)" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1 min-w-[140px]" style="border-color:var(--border)"/>
+      </div>
+      <div class="flex items-center gap-4 flex-wrap mb-3">
+        <span class="mode on" id="mode-single">Single</span>
+        <span class="mode" id="mode-compare">Compare (vuln vs patched)</span>
+        <label class="flex items-center gap-2 text-xs" style="color:var(--muted)"><input type="checkbox" id="verify" class="accent-blue-500"/> verify (Z3)</label>
+        <label class="flex items-center gap-2 text-xs" style="color:var(--muted)"><input type="checkbox" id="agent" class="accent-blue-500"/> agent</label>
+        <span class="ml-auto"><span class="pill" id="status">idle</span></span>
+      </div>
+      <div id="single-pane">
+        <textarea id="code" spellcheck="false" class="mono w-full h-64 bg-[#0b0f14] border rounded-xl p-4 text-[12.5px] leading-relaxed" style="border-color:var(--border)"></textarea>
+      </div>
+      <div id="compare-pane" style="display:none" class="space-y-2">
+        <div class="flex items-center gap-2">
+          <select id="cve-pair" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1" style="border-color:var(--border)"><option value="">— load a real CVE fix pair —</option></select>
+          <span class="pill" id="cve-meta"></span>
+        </div>
+        <textarea id="code-vuln" spellcheck="false" class="mono w-full h-40 bg-[#0b0f14] border rounded-xl p-3 text-[12.5px]" style="border-color:var(--border)"></textarea>
+        <textarea id="code-patched" spellcheck="false" class="mono w-full h-40 bg-[#0b0f14] border rounded-xl p-3 text-[12.5px]" style="border-color:var(--border)"></textarea>
+      </div>
+      <button class="primary w-full mt-3 py-2.5 rounded-xl font-bold" id="run">Analyze</button>
+      <div class="flex gap-2 mt-2">
+        <button class="flex-1 py-2 rounded-xl text-[13px]" id="viz" style="border:1px solid var(--border);color:var(--muted)">Export valen HTML</button>
+        <button class="flex-1 py-2 rounded-xl text-[13px]" id="json" style="border:1px solid var(--border);color:var(--muted)">Copy IR JSON</button>
+      </div>
+      <div class="text-[11px] mt-2" style="color:var(--muted)">Drag &amp; drop a file onto an editor. Static analysis — your code is never executed.</div>
     </div>
-    <div class="two">
-      <div><textarea id="code-vuln" spellcheck="false"></textarea><div class="small">vulnerable version</div></div>
-      <div><textarea id="code-patched" spellcheck="false"></textarea><div class="small">patched version</div></div>
-    </div>
-  </div>
-  <div class="small" style="margin-top:6px">Drag &amp; drop a file onto an editor to load it. Static analysis — your code is never executed.</div>
 
-  <h2 style="margin-top:16px">Findings</h2>
-  <div id="findings" class="small">Run an analysis to see results.</div>
-  <div id="diff-block"></div>
-  <div class="two" style="margin-top:14px">
-    <div><h2 style="font-size:13px">V(x) ranking (top nodes)</h2><div id="top" class="small"></div><div id="topology" class="small" style="margin-top:10px"></div></div>
-    <div><div id="verify-block"></div><div id="agent-block"></div></div>
+    <!-- right: results -->
+    <div class="panel p-4 space-y-4">
+      <div>
+        <div class="kicker">Findings</div>
+        <div id="findings" class="mt-2 space-y-2"></div>
+      </div>
+      <div id="diff-block"></div>
+      <div class="grid grid-cols-2 gap-4">
+        <div><div class="kicker">V(x) ranking</div><div id="top" class="mt-2 space-y-1"></div></div>
+        <div><div class="kicker">Topology</div><div id="topology" class="mt-2 text-xs" style="color:var(--muted)"></div></div>
+      </div>
+      <div id="verify-block" class="text-xs" style="color:var(--muted)"></div>
+      <div id="agent-block" class="text-xs" style="color:var(--muted)"></div>
+    </div>
   </div>
-  <h2 style="margin-top:18px">Valen</h2>
-  <svg id="map" viewBox="0 0 1000 440" preserveAspectRatio="xMidYMid meet"></svg>
-  <div class="small" id="mlegend" style="margin-top:6px"></div>
+
+  <div class="panel p-4 mt-5">
+    <div class="flex items-center gap-3 mb-3">
+      <div class="kicker">Valen — interactive vulnerability graph</div>
+      <span class="text-[11px]" style="color:var(--muted)">wheel zoom · drag pan · drag node · hover highlights neighbours</span>
+    </div>
+    <svg id="map" class="w-full rounded-xl border" style="height:440px;border-color:var(--border);background:radial-gradient(circle at 50% 50%,#10161f,#0a0e14)"></svg>
+    <div class="flex flex-wrap gap-2 mt-3" id="mlegend"></div>
+  </div>
 </section>
 
-<!-- EXPERIMENTS -->
+<!-- ================= DYNAMIC ================= -->
+<section class="tab" id="tab-dynamic">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="panel p-4">
+      <div class="kicker">Sandboxed dynamic run (python)</div>
+      <div class="text-[11px] mt-1" style="color:var(--muted)">CLI parity: <span class="mono">valen --dynamic --argv … --timeout …</span> — executes the target in an isolated child process and triangulates the runtime trace against the static IR. Your code IS executed here (sandboxed).</div>
+      <textarea id="dyn-code" spellcheck="false" class="mono w-full h-64 bg-[#0b0f14] border rounded-xl p-4 text-[12.5px] leading-relaxed mt-3" style="border-color:var(--border)"></textarea>
+      <div class="flex items-center gap-3 mt-3 flex-wrap">
+        <input id="dyn-argv" placeholder="--argv (space-separated)" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1 min-w-[180px]" style="border-color:var(--border)"/>
+        <label class="text-xs" style="color:var(--muted)">timeout
+          <input id="dyn-timeout" type="number" value="30" min="1" max="120" class="bg-[#161d27] text-sm rounded-lg px-2 py-2 border w-20 ml-1" style="border-color:var(--border)"/>
+        </label>
+        <button class="primary py-2 px-5 rounded-xl font-bold" id="dyn-run">Run</button>
+        <span class="ml-auto"><span class="pill" id="dyn-status">idle</span></span>
+      </div>
+      <div id="dyn-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+    </div>
+    <div class="panel p-4 space-y-4">
+      <div class="grid grid-cols-3 gap-3">
+        <div class="card"><div class="kicker">exit</div><div class="metric" id="dyn-exit">—</div></div>
+        <div class="card"><div class="kicker">coverage</div><div class="metric" id="dyn-cov" style="color:var(--spectral)">—</div></div>
+        <div class="card"><div class="kicker">lines</div><div class="metric" id="dyn-lines" style="color:var(--topological)">—</div></div>
+      </div>
+      <div>
+        <div class="kicker">Agreement (static ↔ dynamic)</div>
+        <div id="dyn-agree" class="mt-2 space-y-2"></div>
+      </div>
+      <div>
+        <div class="kicker">Dynamic-only sinks (static missed)</div>
+        <div id="dyn-only" class="mt-2 text-xs mono" style="color:var(--muted)"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PENTEST ================= -->
+<section class="tab" id="tab-pentest">
+  <div class="panel p-4">
+    <div class="kicker">Autonomous red-team engagement (crAPI lab)</div>
+    <div class="text-[11px] mt-1" style="color:var(--muted)">CLI parity: <span class="mono">valen pentest --scope … --goal … --authorize --profile … --max-requests …</span>. Intrusive operators only run with explicit authorization.</div>
+    <div class="flex items-end gap-3 mt-4 flex-wrap">
+      <label class="text-xs" style="color:var(--muted)">scope
+        <div><input id="pt-scope" placeholder="http://127.0.0.1:8888" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-64 mt-1" style="border-color:var(--border)"/></div>
+      </label>
+      <label class="text-xs" style="color:var(--muted)">goal
+        <select id="pt-goal" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border mt-1" style="border-color:var(--border)">
+          <option value="all">all (18 challenges)</option>
+        </select>
+      </label>
+      <label class="text-xs" style="color:var(--muted)">profile
+        <select id="pt-profile" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border mt-1" style="border-color:var(--border)">
+          <option>paranoid</option><option selected>sneaky</option><option>polite</option><option>active</option>
+        </select>
+      </label>
+      <label class="text-xs" style="color:var(--muted)">max requests
+        <input id="pt-max" type="number" value="40" min="1" max="500" class="bg-[#161d27] text-sm rounded-lg px-2 py-2 border w-24 mt-1" style="border-color:var(--border)"/>
+      </label>
+      <label class="flex items-center gap-2 text-xs pb-2" style="color:var(--algebraic)">
+        <input type="checkbox" id="pt-authorize" class="accent-red-500"/> --authorize (intrusive)
+      </label>
+      <button class="primary py-2 px-5 rounded-xl font-bold" id="pt-run">Engage</button>
+      <span class="pb-2"><span class="pill" id="pt-status">idle</span></span>
+    </div>
+    <div id="pt-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="flex items-center gap-3">
+      <div class="kicker">Challenges</div>
+      <span class="pill" id="pt-score"></span>
+    </div>
+    <div id="pt-results" class="mt-3 space-y-2"></div>
+  </div>
+</section>
+
+<!-- ================= EXPERIMENTS ================= -->
 <section class="tab" id="tab-experiments">
-  <h2>Summary</h2><div class="cards" id="cards"></div>
-  <h2 style="margin-top:18px">Prioritization oracle</h2>
-  <div class="two">
-    <div class="panel"><svg id="cost" viewBox="0 0 560 300"></svg></div>
-    <div class="panel"><svg id="auc" viewBox="0 0 560 300"></svg></div>
+  <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3" id="cards"></div>
+  <div class="grid lg:grid-cols-2 gap-5 mt-5">
+    <div class="panel p-4"><div class="kicker">Prioritization oracle — cost curve</div><div class="h-72 mt-2"><canvas id="cost"></canvas></div></div>
+    <div class="panel p-4"><div class="kicker">Signal AUC (0.5 = chance)</div><div class="h-72 mt-2"><canvas id="auc"></canvas></div></div>
   </div>
-  <div id="oracle-table" style="margin-top:12px"></div>
-  <h2 style="margin-top:18px">OWASP Benchmark 1.2</h2><div id="owasp-tables"></div>
-  <h2 style="margin-top:18px">Real CVE fixes</h2><div id="cve-table"></div>
-  <h2 style="margin-top:18px">LLM ablation (LiteLLM)</h2><div id="llm-table"></div>
-  <h2 style="margin-top:18px">Ablation</h2><div id="ablation-table"></div>
-  <h2 style="margin-top:18px">Scalability</h2><div class="panel"><svg id="scale" viewBox="0 0 900 320"></svg></div>
+  <div class="panel p-4 mt-5"><div class="kicker">Oracle metrics</div><div id="oracle-table" class="mt-2"></div></div>
+  <div class="panel p-4 mt-5"><div class="kicker">OWASP Benchmark 1.2</div><div id="owasp-tables" class="mt-2"></div></div>
+  <div class="grid lg:grid-cols-2 gap-5 mt-5">
+    <div class="panel p-4"><div class="kicker">Real CVE fixes</div><div id="cve-table" class="mt-2"></div></div>
+    <div class="panel p-4"><div class="kicker">LLM ablation</div><div id="llm-table" class="mt-2"></div></div>
+  </div>
+  <div class="panel p-4 mt-5"><div class="kicker">Ablation (Java adapter)</div><div id="ablation-table" class="mt-2"></div></div>
+  <div class="panel p-4 mt-5"><div class="kicker">Scalability (log-log)</div><div class="h-80 mt-2"><canvas id="scale"></canvas></div></div>
 </section>
 
-<!-- METHODOLOGY -->
+<!-- ================= METHODOLOGY ================= -->
 <section class="tab" id="tab-methodology">
-  <h2>Pipeline</h2><div class="panel"><svg id="pipeline" viewBox="0 0 1120 160"></svg></div>
-  <div class="two" style="margin-top:16px">
-    <div><h2>Mathematical layers &rarr; signal &rarr; evidence</h2><div class="cards" id="layers"></div></div>
-    <div><h2>Evaluation protocol</h2><div class="panel"><svg id="protocol" viewBox="0 0 560 360"></svg></div></div>
+  <div class="panel p-4">
+    <div class="kicker">Pipeline</div>
+    <div class="h-40 mt-2"><canvas id="pipeline"></canvas></div>
   </div>
-  <h2 style="margin-top:16px">Mapping hypotheses</h2><div id="laws"></div>
+  <div class="grid lg:grid-cols-2 gap-5 mt-5">
+    <div class="panel p-4">
+      <div class="kicker">Mathematical layers → signal → evidence</div>
+      <div class="grid grid-cols-2 gap-3 mt-3" id="layers"></div>
+    </div>
+    <div class="panel p-4">
+      <div class="kicker">Evaluation protocol</div>
+      <div class="h-80 mt-2"><canvas id="protocol"></canvas></div>
+    </div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="kicker">Mapping hypotheses (feature → vulnerability class)</div>
+    <div id="laws" class="mt-2"></div>
+  </div>
 </section>
 
 </main>
+
+<footer class="max-w-[1400px] mx-auto px-6 pb-8 text-[11px]" style="color:var(--muted)">
+  <span class="mono">VALEN</span> — neuro-symbolic structural-invariant verifier · static (taint) + symbolic (Z3) + dynamic (sandboxed trace) triangulation.
+</footer>
+
 <script>
+__SHELL__
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+</body>
+</html>
+"""
+
+# -- the page JS (tailwind classes on nav/mode are applied via inline style) --
+SHELL_JS = r"""
 const $=s=>document.querySelector(s), NS="http://www.w3.org/2000/svg";
 let RESULTS=null;
 
-// ---- tabs ----
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+// nav + tab styling (manual, no tailwind runtime dependency)
+const NAVON="background:var(--spectral);color:#08111c;font-weight:700;border:1px solid var(--spectral)";
+const NAVOFF="background:transparent;color:var(--muted);border:1px solid var(--border)";
+document.querySelectorAll("nav button").forEach(b=>{b.style.cssText=NAVOFF; b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.style.cssText=NAVOFF);
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
-  b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
+  b.style.cssText=NAVON; b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
   if(b.dataset.tab!=="analyze" && !RESULTS) loadResults();
-});
+};});
+document.querySelector("nav button[data-tab=analyze]").style.cssText=NAVON;
 
-// ---- examples ----
+// examples
 async function loadExamples(){
   const ex=await (await fetch("/api/examples")).json();
   const sel=$("#example"); sel.innerHTML=`<option value="">— example —</option>`;
@@ -157,7 +261,7 @@ async function loadExamples(){
 }
 loadExamples();
 
-// ---- CVE pairs ----
+// CVE pairs
 async function loadCves(){
   let pairs=[]; try{ pairs=await (await fetch("/api/cves")).json(); }catch(e){}
   const sel=$("#cve-pair");
@@ -165,20 +269,22 @@ async function loadCves(){
   sel.onchange=()=>{ if(sel.value==="")return; const p=pairs[+sel.value];
     setMode("compare"); $("#code-vuln").value=p.vulnerable; $("#code-patched").value=p.patched;
     $("#adapter").value=p.adapter; $("#path").value=p.file;
-    $("#cve-meta").textContent=`${p.cve} · ${p.repo} · ${p.resolved?"resolved by the patch":"—"}`; };
+    $("#cve-meta").textContent=`${p.cve} · ${p.resolved?"resolved":"—"}`; };
 }
 loadCves();
 
-// ---- mode + drag & drop ----
+// mode + drag & drop
 let MODE="single";
 function setMode(m){ MODE=m;
-  $("#mode-single").classList.toggle("on",m==="single");
-  $("#mode-compare").classList.toggle("on",m==="compare");
+  $("#mode-single").style.cssText=m==="single"?"background:var(--spectral);color:#08111c;font-weight:700":"";
+  $("#mode-compare").style.cssText=m==="compare"?"background:var(--spectral);color:#08111c;font-weight:700":"";
   $("#single-pane").style.display=m==="single"?"":"none";
   $("#compare-pane").style.display=m==="compare"?"":"none";
   $("#diff-block").innerHTML=""; }
+document.querySelectorAll(".mode").forEach(m=>m.style.cssText="padding:4px 10px;border-radius:8px;cursor:pointer;border:1px solid var(--border)");
 $("#mode-single").onclick=()=>setMode("single");
 $("#mode-compare").onclick=()=>setMode("compare");
+setMode("single");
 
 function makeDrop(el){
   el.addEventListener("dragover",e=>{e.preventDefault();el.style.borderColor="#58a6ff";});
@@ -188,13 +294,15 @@ function makeDrop(el){
     const r=new FileReader();
     r.onload=()=>{el.value=r.result;
       const ext=(f.name.split(".").pop()||"").toLowerCase();
-      const map={py:"python",java:"java",asm:"binary"}; if(map[ext])$("#adapter").value=map[ext];
+      const map={py:"python",java:"java",asm:"binary",c:"c",h:"c",cpp:"cpp",cc:"cpp",cxx:"cpp",
+        rs:"rust",cs:"csharp",go:"go",php:"php",rb:"ruby",js:"javascript",mjs:"javascript",
+        cjs:"javascript",jsx:"javascript",ts:"javascript",tsx:"javascript"}; if(map[ext])$("#adapter").value=map[ext];
       $("#path").value=f.name;};
     r.readAsText(f);});
 }
 ["#code","#code-vuln","#code-patched"].forEach(s=>makeDrop($(s)));
 
-// ---- analyze ----
+// analyze
 $("#run").onclick=async()=>{
   $("#status").textContent="analyzing…";
   const common={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,verify:$("#verify").checked,agent:$("#agent").checked};
@@ -214,31 +322,111 @@ $("#run").onclick=async()=>{
   }catch(e){$("#status").textContent="error: "+e;}
 };
 
+// export viz HTML (POST /api/viz -> download)
+$("#viz").onclick=async()=>{
+  const body={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,
+    code:MODE==="compare"?$("#code-vuln").value:$("#code").value};
+  $("#status").textContent="rendering valen…";
+  try{
+    const r=await fetch("/api/viz",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+    if(!r.ok){$("#status").textContent="viz error "+r.status;return;}
+    const html=await r.text();
+    const a=document.createElement("a");
+    a.href=URL.createObjectURL(new Blob([html],{type:"text/html"}));
+    a.download=(body.path.replace(/[^\w.-]+/g,"_")||"valen")+".html";
+    a.click(); URL.revokeObjectURL(a.href);
+    $("#status").textContent="valen exported";
+  }catch(e){$("#status").textContent="error: "+e;}
+};
+$("#json").onclick=async()=>{
+  const body={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,
+    code:MODE==="compare"?$("#code-vuln").value:$("#code").value};
+  try{
+    const d=await (await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    if(d.error){$("#status").textContent="error: "+d.error;return;}
+    await navigator.clipboard.writeText(JSON.stringify({nodes:d.nodes,edges:d.edges,findings:d.findings},null,2));
+    $("#status").textContent="IR JSON copied";
+  }catch(e){$("#status").textContent="error: "+e;}
+};
+
+// ---- dynamic panel ----
+$("#dyn-run").onclick=async()=>{
+  $("#dyn-error").textContent="";
+  $("#dyn-status").textContent="running…";
+  const argv=($("#dyn-argv").value||"").trim();
+  const body={code:$("#dyn-code").value,adapter:"python",
+    argv:argv?argv.split(/\s+/):null,
+    timeout:parseFloat($("#dyn-timeout").value)||30};
+  try{
+    const d=await (await fetch("/api/dynamic",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    if(d.error){$("#dyn-status").textContent="error";$("#dyn-error").textContent=d.error;return;}
+    const cov=d.coverage||{};
+    $("#dyn-exit").textContent=d.exit_code;
+    $("#dyn-cov").textContent=(cov.ratio!=null?Math.round(cov.ratio*100)+"%":"—");
+    $("#dyn-lines").textContent=cov.lines!=null?cov.lines:"—";
+    const SEV={confirmed:"var(--topological)",hit:"var(--geometric)",unexecuted:"var(--muted)"};
+    const TAG={confirmed:"CONFIRMED",hit:"HIT",unexecuted:"UNEXECUTED"};
+    $("#dyn-agree").innerHTML=(d.agreement||[]).length? d.agreement.map(a=>`<div class="card" style="padding:8px;border-left:3px solid ${SEV[a.dynamic]||'var(--muted)'}">
+      <div class="mono text-[11px]"><span style="color:${SEV[a.dynamic]}">[${TAG[a.dynamic]||a.dynamic}]</span> line ${a.line}: ${a.sink_name}${a.matched_value?` · <span style="color:var(--geometric)">${String(a.matched_value).slice(0,80)}</span>`:""}</div></div>`).join("")
+      : `<div class="text-xs" style="color:var(--muted)">no static sinks to triangulate</div>`;
+    $("#dyn-only").innerHTML=(d.dynamic_only_sinks||[]).length? d.dynamic_only_sinks.map(s=>`<div>line ${s.line}: ${s.name} (${s.category})</div>`).join("") : "—";
+    $("#dyn-status").textContent=`exit ${d.exit_code} · ${(cov.ratio!=null?Math.round(cov.ratio*100):0)}% cov`;
+  }catch(e){$("#dyn-status").textContent="error";$("#dyn-error").textContent=String(e);}
+};
+
+// ---- pentest panel ----
+async function loadChallenges(){
+  try{
+    const list=await (await fetch("/api/challenges")).json();
+    const sel=$("#pt-goal");
+    (list||[]).forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.id;sel.appendChild(o);});
+  }catch(e){}
+}
+loadChallenges();
+$("#pt-run").onclick=async()=>{
+  $("#pt-error").textContent="";
+  $("#pt-status").textContent="engaging…";
+  const body={scope:$("#pt-scope").value.trim(),goal:$("#pt-goal").value,
+    authorize:$("#pt-authorize").checked,profile:$("#pt-profile").value,
+    max_requests:parseInt($("#pt-max").value)||40};
+  try{
+    const d=await (await fetch("/api/pentest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    if(d.error){$("#pt-status").textContent="error";$("#pt-error").textContent=d.error;return;}
+    $("#pt-score").textContent=`${d.solved}/${d.total} solved`;
+    $("#pt-results").innerHTML=(d.challenges||[]).map(r=>`<div class="card" style="padding:10px;border-left:3px solid ${r.solved?'var(--topological)':'var(--muted)'}">
+      <div class="flex items-center gap-2">
+        <span class="mono text-[12px]">${r.challenge}</span>
+        <span class="pill" style="color:${r.solved?'var(--topological)':'var(--muted)'}">${r.solved?'SOLVED':'not solved'}</span>
+        <span class="text-[11px] ml-auto" style="color:var(--muted)">${r.requests} req · ${r.seconds}s</span>
+      </div></div>`).join("");
+    $("#pt-status").textContent=`${d.solved}/${d.total}`;
+  }catch(e){$("#pt-status").textContent="error";$("#pt-error").textContent=String(e);}
+};
+
+const SEV={critical:"var(--algebraic)",high:"var(--geometric)",medium:"var(--spectral)",low:"var(--muted)"};
 function findingsHtml(d){
-  return d.findings.length? d.findings.map(f=>`<div class="finding ${f.severity}">
-    <div class="sev" style="color:var(--${f.severity==='critical'?'red':(f.severity==='high'?'amber':'accent')})">${f.severity} · ${f.category}</div>
-    <div>${f.title}</div><div class="small">line ${f.line} · sink ${f.sink_name} · sources ${(f.source_names||[]).join(", ")}</div></div>`).join("")
-    : `<div class="small">no findings</div>`;
+  return d.findings.length? d.findings.map(f=>`<div class="card" style="padding:10px;border-left:3px solid ${SEV[f.severity]||'var(--muted)'}">
+    <div class="kicker" style="color:${SEV[f.severity]||'var(--muted)'}">${f.severity} · ${f.category}</div>
+    <div class="font-medium text-sm mt-1">${f.title}</div>
+    <div class="text-[11px] mono mt-1" style="color:var(--muted)">line ${f.line} · sink ${f.sink_name} · sources ${(f.source_names||[]).join(", ")}</div></div>`).join("")
+    : `<div class="text-xs" style="color:var(--muted)">no findings</div>`;
 }
 function topHtml(d){
   return (d.top||[]).map(t=>{const w=Math.max(2,Math.round(t.value*100));
-    return `<div style="margin-bottom:5px"><div class="small">${t.label||t.id}</div><div class="bar"><i style="width:${w}%"></i></div></div>`;}).join("") || "<div class='small'>—</div>";
+    return `<div style="margin-bottom:5px"><div class="text-[11px] mono truncate">${t.label||t.id}</div><div class="bar" style="height:6px;background:var(--panel2);border-radius:3px;overflow:hidden"><i style="display:block;height:100%;width:${w}%;background:var(--spectral)"></i></div></div>`;}).join("") || "<div class='text-xs' style='color:var(--muted)'>—</div>";
 }
 function verifyHtml(d){
   if(!d.verifications) return "";
-  return `<h2 style="font-size:13px">Z3 verifications</h2>`+ (d.verifications.length? d.verifications.map(v=>`<div class="small">✓ ${v.category} · ${v.sink_name} (line ${v.line}) ${v.witness?('· witness '+JSON.stringify(v.witness)):''}</div>`).join("") : "<div class='small'>none confirmed</div>");
+  return `<div class="kicker">Z3 verifications</div>`+ (d.verifications.length? d.verifications.map(v=>`<div class="mono text-[11px]" style="color:var(--topological)">✓ ${v.category} · ${v.sink_name} (line ${v.line}) ${v.witness?('· '+JSON.stringify(v.witness)):''}</div>`).join("") : "<div class='text-xs' style='color:var(--muted)'>none confirmed</div>");
 }
 function agentHtml(d){
   if(!d.agent) return "";
-  return `<h2 style="font-size:13px">Agent report</h2>`+ (d.agent.length? d.agent.map(a=>`<div class="small">[${a.status}] ${a.cwe} ${a.title} — ${a.signal}</div>`).join("") : "<div class='small'>no findings</div>");
+  return `<div class="kicker">Agent report</div>`+ (d.agent.length? d.agent.map(a=>`<div class="mono text-[11px]">[${a.status}] ${a.cwe} ${a.title} — ${a.signal}</div>`).join("") : "<div class='text-xs' style='color:var(--muted)'>no findings</div>");
 }
 function topologyHtml(d){
   if(!d.topology) return "";
   const t=d.topology;
-  return `<div style="margin-top:4px"><b>Topology (call graph)</b><br>
-    undirected β1 = ${t.undirected_beta1}<br>
-    directed (GLMY) β1 = ${t.directed_beta1}
-    <span class="small">(β0=${t.directed_beta0})</span></div>`;
+  return `<div class="mono">undirected β₁ = ${t.undirected_beta1}<br>directed (GLMY) β₁ = ${t.directed_beta1} <span style="color:var(--muted)">(β₀=${t.directed_beta0})</span></div>`;
 }
 function render(d){
   $("#findings").innerHTML=findingsHtml(d);
@@ -249,10 +437,12 @@ function render(d){
   renderMap(d);
 }
 function renderCompare(d){
-  const rows=(k,cls)=>`<div class="${cls}"><b>${k}</b>: ${d.diff[k].length? d.diff[k].map(x=>x[0]+":"+x[1]).join(", ") : "—"}</div>`;
-  $("#diff-block").innerHTML=`<h2 style="margin-top:14px">Diff (vulnerable → patched)</h2>
-    ${rows("resolved","resolved")}${rows("persisting","persisting")}${rows("introduced","introduced")}`;
-  $("#findings").innerHTML=`<b>vulnerable</b>`+findingsHtml(d.vulnerable)+`<h2 style="font-size:13px;margin-top:12px">patched</h2>`+findingsHtml(d.patched);
+  const rows=(k,cls)=>`<div class="text-sm"><b>${k}</b>: ${d.diff[k].length? d.diff[k].map(x=>x[0]+":"+x[1]).join(", ") : "—"}</div>`;
+  $("#diff-block").innerHTML=`<div class="card" style="padding:10px"><div class="kicker">Diff (vulnerable → patched)</div>
+    <div class="mt-1" style="color:var(--topological)">${rows("resolved","resolved")}</div>
+    <div style="color:var(--geometric)">${rows("persisting","persisting")}</div>
+    <div style="color:var(--algebraic)">${rows("introduced","introduced")}</div></div>`;
+  $("#findings").innerHTML=`<b class="text-sm">vulnerable</b>`+findingsHtml(d.vulnerable)+`<b class="text-sm">patched</b>`+findingsHtml(d.patched);
   $("#top").innerHTML=topHtml(d.vulnerable);
   $("#topology").innerHTML=topologyHtml(d.vulnerable);
   $("#verify-block").innerHTML=verifyHtml(d.vulnerable);
@@ -263,15 +453,10 @@ function renderCompare(d){
 const COLORS={source:"#f85149",sink:"#d29922",function:"#58a6ff",gate:"#bc8cff",module:"#30363d",
   assign:"#a5d6ff",call:"#bc8cff",statement:"#8b949e",block:"#8b949e",variable:"#79c0ff",parameter:"#79c0ff"};
 const ECOL={taint:"#f85149",call:"#58a6ff",data:"#3fb950",control:"#6e7681",trust:"#bc8cff",auth:"#d2a8ff"};
-const NS="http://www.w3.org/2000/svg";
 
-// Interactive valen graph: pan/zoom, drag nodes, live force sim, hover-neighbour
-// highlight and click-to-pin. Replaced the old one-shot static layout (which
-// clumped into an unreadable blob on large graphs).
 function renderMap(d){
-  const svg=$("#map"); const W=1000,H=440;
-  svg.innerHTML="";
-  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const svg=$("#map"); svg.innerHTML="";
+  const W=1000,H=440; svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
   const world=document.createElementNS(NS,"g"); svg.appendChild(world);
   let view={x:0,y:0,k:1};
   const apply=()=>world.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.k})`);
@@ -279,10 +464,9 @@ function renderMap(d){
   const nodes=d.nodes.map((n,i)=>({...n,r:r(n),x:600+Math.cos(i*2.39996)*30*Math.sqrt(i+1),y:220+Math.sin(i*2.39996)*30*Math.sqrt(i+1),vx:0,vy:0,fixed:false}));
   const by={}; nodes.forEach(n=>by[n.id]=n);
   const edges=d.edges.slice(); const N=nodes.length;
-
   const edgeEls=edges.map(e=>{const l=document.createElementNS(NS,"line");
     l.setAttribute("stroke",ECOL[e.kind]||"#6e7681"); l.setAttribute("stroke-width",e.kind==="taint"?2.5:1); l.setAttribute("stroke-opacity","0.55");
-    l.setAttribute("data-src",e.src); l.setAttribute("data-dst",e.dst); world.appendChild(l); return l;});
+    world.appendChild(l); return l;});
   const nodeEls=new Map(); const neigh=new Map();
   nodes.forEach(n=>{
     const g=document.createElementNS(NS,"g"); g.setAttribute("class","node");
@@ -294,7 +478,6 @@ function renderMap(d){
     g.append(c,t,t2,ti); world.appendChild(g); nodeEls.set(n.id,g);
     const s=new Set([n.id]); edges.forEach(e=>{if(e.src===n.id)s.add(e.dst);if(e.dst===n.id)s.add(e.src);}); neigh.set(n.id,s);
   });
-
   let hovered=null;
   function hl(){
     const f=hovered?neigh.get(hovered):null;
@@ -305,7 +488,6 @@ function renderMap(d){
     nodes.forEach(n=>nodeEls.get(n.id).setAttribute("transform",`translate(${n.x},${n.y})`));
     edgeEls.forEach((l,i)=>{const e=edges[i],a=by[e.src],b=by[e.dst]; if(a&&b){l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",b.x);l.setAttribute("y2",b.y);}});
   }
-
   let alpha=1,running=true; const K=1200*Math.sqrt(N);
   function tick(){
     for(let i=0;i<N;i++){const a=nodes[i]; for(let j=i+1;j<N;j++){const b=nodes[j];
@@ -319,8 +501,6 @@ function renderMap(d){
   }
   function loop(){if(running){const st=N>600?1:3;for(let i=0;i<st;i++)tick();draw();if(alpha>0.0105)requestAnimationFrame(loop);else running=false;}}
   function reheat(){alpha=1;if(!running){running=true;loop();}}
-
-  // interactions
   let pan=null;
   svg.addEventListener("pointerdown",e=>{if(e.target.closest(".node"))return;pan={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};svg.setPointerCapture(e.pointerId);});
   svg.addEventListener("pointermove",e=>{if(pan){view.x=pan.vx+(e.clientX-pan.x);view.y=pan.vy+(e.clientY-pan.y);apply();}});
@@ -338,99 +518,133 @@ function renderMap(d){
     el.addEventListener("click",()=>{const f=neigh.get(n.id);nodes.forEach(m=>nodeEls.get(m.id).setAttribute("opacity",f.has(m.id)?"1":"0.15"));edgeEls.forEach((l,i)=>{const e=edges[i];l.setAttribute("stroke-opacity",f.has(e.src)&&f.has(e.dst)?"0.9":"0.06");});});
   });
   svg.addEventListener("pointerleave",()=>{hovered=null;hl();});
-
-  // fit-to-view on render
   if(N){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;nodes.forEach(n=>{x0=Math.min(x0,n.x-n.r);y0=Math.min(y0,n.y-n.r);x1=Math.max(x1,n.x+n.r);y1=Math.max(y1,n.y+n.r);});
     const r=svg.getBoundingClientRect();const k=Math.min(r.width/(x1-x0||1),r.height/(y1-y0||1))*0.9;view.k=Math.max(0.05,Math.min(4,k));view.x=r.width/2-((x0+x1)/2)*view.k;view.y=r.height/2-((y0+y1)/2)*view.k;apply();}
   apply();draw();alpha=1;running=true;loop();
-
-  $("#mlegend").innerHTML=Object.keys(COLORS).map(k=>`<span class="badge" style="margin-right:5px">${COLORS[k]} ${k}</span>`).join("");
+  $("#mlegend").innerHTML=Object.keys(COLORS).map(k=>`<span class="pill"><span class="dot" style="background:${COLORS[k]}"></span>${k}</span>`).join("");
 }
 
 // ---- experiments ----
 async function loadResults(){ RESULTS=await (await fetch("/api/results")).json(); renderExperiments(RESULTS); renderMethodology(RESULTS); }
-function lineChart(svg, series, opts){
-  const W=560,H=300,m={l:56,r:16,t:16,b:38};
-  const xs=[].concat(...series.map(s=>s.pts.map(p=>p[0]))), ys=[].concat(...series.map(s=>s.pts.map(p=>p[1])));
-  const xlog=opts.xlog,ylog=opts.ylog,xmin=Math.min(...xs),xmax=Math.max(...xs),ymin=Math.min(...ys),ymax=Math.max(...ys);
-  const X=x=>m.l+((xlog?(Math.log10(x)-Math.log10(xmin))/(Math.log10(xmax)-Math.log10(xmin)||1):(x-xmin)/((xmax-xmin)||1)))*(W-m.l-m.r);
-  const Y=y=>H-m.b-((ylog?(Math.log10(y)-Math.log10(ymin))/(Math.log10(ymax)-Math.log10(ymin)||1):(y-ymin)/((ymax-ymin)||1)))*(H-m.t-m.b);
-  let s=`<rect x="${m.l}" y="${m.t}" width="${W-m.l-m.r}" height="${H-m.t-m.b}" fill="none" stroke="#30363d"/>`;
-  s+=`<text x="${W/2}" y="${H-6}" fill="#8b949e" font-size="11" text-anchor="middle">${opts.xlabel||""}</text>`;
-  s+=`<text x="12" y="${H/2}" fill="#8b949e" font-size="11" text-anchor="middle" transform="rotate(-90 12 ${H/2})">${opts.ylabel||""}</text>`;
-  series.forEach(ser=>{const dd=ser.pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
-    s+=`<path d="${dd}" fill="none" stroke="${ser.color}" stroke-width="2"/>`;
-    let ly=m.t+10+series.indexOf(ser)*13; s+=`<text x="${W-m.r-4}" y="${ly}" fill="${ser.color}" font-size="11" text-anchor="end">${ser.name}</text>`;});
-  svg.innerHTML=s;
-}
-function table(rows,cols){return `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`+rows.map(r=>`<tr>${r.map(c=>`<td>${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;}
+
+function chartDefaults(){ if(!window.Chart) return null;
+  Chart.defaults.color="#8b949e"; Chart.defaults.borderColor="#26303c";
+  Chart.defaults.font.family="system-ui"; }
+
+function table(rows,cols){return `<table><thead><tr>${cols.map(c=>`<th>${c}</th>`).join("")}</tr></thead><tbody>`+rows.map(r=>`<tr>${r.map(c=>`<td class="num">${c}</td>`).join("")}</tr>`).join("")+`</tbody></table>`;}
+
 function renderExperiments(R){
+  chartDefaults();
   const o=R.oracle||{}, a=o.signals_auc||{}, m=o.metrics||{};
-  const cards=[["taint MRR",m.taint?m.taint.mrr:"-","prioritization"],["field MRR",m.field?m.field.mrr:"-","V(x) fused"],
-    ["taint AUC",a.taint?a.taint.auc:"-","predict sink"],["geometric AUC",a.geometric?a.geometric.auc:"-","below chance"],
-    ["adapter F1","0.681","OWASP all"],["Youden J","0.168","adapter"]];
-  $("#cards").innerHTML=cards.map(([k,v,s])=>`<div class="card"><div class="small">${k}</div><div style="font-size:22px;font-weight:700">${v}</div><div class="small">${s}</div></div>`).join("");
-  const pal={dfs:"#8b949e",taint:"#3fb950",field:"#58a6ff",random:"#f85149"};
+  const cards=[["taint MRR",m.taint?m.taint.mrr:"-","prioritization (main)","taint"],["field MRR",m.field?m.field.mrr:"-","V(x) fused","spectral"],
+    ["taint AUC",a.taint?a.taint.auc:"-","predict sink","taint"],["geometric AUC",a.geometric?a.geometric.auc:"-","below chance","geometric"],
+    ["adapter F1","0.681","OWASP all","topological"],["Youden J","0.168","adapter","formal"]];
+  $("#cards").innerHTML=cards.map(([k,v,s,col])=>`<div class="card"><div class="kicker">${k}</div>
+    <div class="metric" style="color:var(--${col})">${v}</div><div class="text-[11px]" style="color:var(--muted)">${s}</div></div>`).join("");
+
+  const pal={dfs:"#8b949e",taint:"#ff7b72",field:"#58a6ff",random:"#f85149"};
   const curves=o.curves||{};
-  lineChart($("#cost"),Object.keys(curves).map(k=>({name:k,color:pal[k]||"#999",pts:curves[k].map((v,i)=>[i+1,v])})),{xlabel:"verification budget",ylabel:"cumulative recall"});
-  (function(){const svg=$("#auc");const W=560,H=300,mm={l:90,r:20,t:16,b:28};const keys=Object.keys(a);const bh=(H-mm.t-mm.b)/Math.max(keys.length,1);
-    let s=`<text x="${W/2}" y="${H-6}" fill="#8b949e" font-size="11" text-anchor="middle">AUC (0.5 = chance)</text>`;
-    keys.forEach((k,i)=>{const v=a[k].auc,w=(W-mm.l-mm.r)*v,y=mm.t+i*bh+bh*0.15,col=v>0.7?"#3fb950":(v>=0.45?"#d29922":"#f85149");
-      s+=`<text x="${mm.l-8}" y="${y+12}" fill="#e6edf3" font-size="11" text-anchor="end">${k}</text>`;
-      s+=`<rect x="${mm.l}" y="${y}" width="${w}" height="${bh*0.7}" fill="${col}" rx="3"/>`;
-      s+=`<line x1="${mm.l+(W-mm.l-mm.r)*0.5}" y1="${mm.t}" x2="${mm.l+(W-mm.l-mm.r)*0.5}" y2="${H-mm.b}" stroke="#8b949e" stroke-dasharray="3 3"/>`;
-      s+=`<text x="${mm.l+w+6}" y="${y+12}" fill="#8b949e" font-size="11">${v.toFixed(3)}</text>`;});
-    svg.innerHTML=s;})();
+  mkLine("cost",Object.keys(curves).map(k=>({label:k,color:pal[k]||"#999",pts:curves[k].map((v,i)=>[i+1,v])})),"verification budget","cumulative recall");
+
+  if(window.Chart && a){
+    const labels=Object.keys(a), vals=labels.map(k=>a[k].auc);
+    mkBar("auc",labels,vals);
+  }
   $("#oracle-table").innerHTML=table(Object.keys(m).map(k=>[k,m[k].mrr,m[k]["recall@1"],m[k].mean_rank,m[k]["ndcg@5"]]),["ranking","MRR","R@1","mean rank","NDCG@5"]);
   const pt=m.taint_vs_field;
-  const g=o.global||{};
-  const grows=Object.keys(g).map(k=>[k,g[k].average_precision,g[k]["precision@10"],g[k]["recall@10"],g[k].queries_to_90_recall]);
-  $("#oracle-table").innerHTML+= (pt?`<div class="small" style="margin:8px 0">paired test taint−field: ${pt.mean_diff>=0?'+':''}${pt.mean_diff.toFixed(4)} CI95=[${pt.ci95[0].toFixed(4)}, ${pt.ci95[1].toFixed(4)}] p=${pt.p_value}</div>`:"")
-    + (grows.length?`<h3 style="font-size:12px;color:#8b949e">global pool (all candidates)</h3>`+table(grows,["ranking","AP","P@10","R@10","queries@90%recall"]):"");
+  $("#oracle-table").innerHTML+= (pt?`<div class="text-xs mt-2" style="color:var(--muted)">paired test taint−field: ${pt.mean_diff>=0?'+':''}${pt.mean_diff.toFixed(4)} CI95=[${pt.ci95[0].toFixed(4)}, ${pt.ci95[1].toFixed(4)}] p=${pt.p_value}</div>`:"");
+
   const ow=R.owasp||{};
   function block(t,obj){if(!obj)return "";const rows=Object.keys(obj).filter(k=>k!=="overall").sort().map(k=>{const v=obj[k];const fpr=v.fp/(v.fp+v.tn||1);return[k,v.tp,v.fp,v.fn,v.tn,v.precision.toFixed(3),v.recall.toFixed(3),v.f1.toFixed(3),(v.recall-fpr).toFixed(3)];});
     const ov=obj.overall,fpr=ov.fp/(ov.fp+ov.tn||1);rows.push(["<b>overall</b>",ov.tp,ov.fp,ov.fn,ov.tn,ov.precision.toFixed(3),ov.recall.toFixed(3),ov.f1.toFixed(3),(ov.recall-fpr).toFixed(3)]);
-    return `<h3 style="font-size:12px;color:#8b949e">${t}</h3>`+table(rows,["category","TP","FP","FN","TN","P","R","F1","J"]);}
+    return `<div class="kicker mt-3">${t}</div>`+table(rows,["category","TP","FP","FN","TN","P","R","F1","J"]);}
   $("#owasp-tables").innerHTML=block("adapter — all categories",ow.adapter_all)+block("adapter — taint",ow.adapter_taint)+block("adapter + Z3 — taint",ow.z3_taint);
   const ab=R.ablation||{}; $("#ablation-table").innerHTML=table(Object.keys(ab).map(k=>[k,ab[k].precision.toFixed(3),ab[k].recall.toFixed(3),ab[k].f1.toFixed(3)]),["variant","P","R","F1"]);
   const cves=R.cves||[]; const crows=[];
-  cves.forEach(c=>{(c.files||[]).forEach(f=>{
-    const res=f.resolved.length?`<span style="color:var(--green)">resolved</span>`:(f.persisting.length?`<span style="color:var(--amber)">persisting</span>`:"—");
-    crows.push([c.cve, f.file, f.vuln_findings, f.patched_findings, res]);});});
-  $("#cve-table").innerHTML = crows.length? table(crows,["CVE","file","vuln","patched","result"]) : "<div class='small'>no CVE data (run benchmarks/run_cves.py)</div>";
+  cves.forEach(c=>{(c.files||[]).forEach(f=>{const res=f.resolved.length?`<span style="color:var(--topological)">resolved</span>`:(f.persisting.length?`<span style="color:var(--geometric)">persisting</span>`:"—");crows.push([c.cve,f.file,f.vuln_findings,f.patched_findings,res]);});});
+  $("#cve-table").innerHTML=crows.length?table(crows,["CVE","file","vuln","patched","result"]):"<div class='text-xs' style='color:var(--muted)'>no CVE data</div>";
   const llm=R.llm||{}; const lrows=[];
-  (llm.results||[]).forEach(r=>lrows.push([r.file, r.confirmed_offline, r.confirmed_online, r.llm_generated, r.stable?"stable":"varies"]));
-  $("#llm-table").innerHTML = lrows.length? `<div class="small">LLM configured: ${llm.live}</div>`+table(lrows,["file","confirmed offline","confirmed online","llm hypotheses","stability"]) : "<div class='small'>no LLM data (run benchmarks/run_llm.py)</div>";
+  (llm.results||[]).forEach(r=>lrows.push([r.file,r.confirmed_offline,r.confirmed_online,r.llm_generated,r.stable?"stable":"varies"]));
+  $("#llm-table").innerHTML=lrows.length?table(lrows,["file","offline","online","llm","stability"]):"<div class='text-xs' style='color:var(--muted)'>no LLM data</div>";
+
   (function(){const by={};R.scale.forEach(r=>{(by[r.kernel]=by[r.kernel]||[]).push([r.edges,r.ms]);});
     const col={forman:"#3fb950",mapper:"#58a6ff",homology:"#f85149",sinkhorn:"#d29922",ollivier_exact:"#bc8cff",spectral_fiedler:"#79c0ff",directed_laplacian:"#ffa657"};
-    const ser=Object.keys(by).map(k=>({name:k,color:col[k]||"#999",pts:by[k].sort((x,y)=>x[0]-y[0])}));
-    if(ser.length) lineChart($("#scale"),ser,{xlog:true,ylog:true,xlabel:"edges |E| (log)",ylabel:"ms (log)"});})();
+    const ser=Object.keys(by).map(k=>({label:k,color:col[k]||"#999",pts:by[k].sort((x,y)=>x[0]-y[0])}));
+    if(ser.length) mkLine("scale",ser,"edges |E| (log)","time ms (log)",{log:true});})();
 }
+
+function mkLine(id, series, xl, yl, opts={}){
+  const c=document.getElementById(id); if(!c || !window.Chart) return;
+  new Chart(c,{type:"line",data:{datasets:series.map(s=>({label:s.label,data:s.pts.map(p=>({x:p[0],y:p[1]})),borderColor:s.color,backgroundColor:s.color,borderWidth:2,pointRadius:2.5,tension:0.15}))},
+    options:{scales:{x:{type:opts.log?"logarithmic":"linear",title:{display:true,text:xl}},y:{type:opts.log?"logarithmic":"linear",title:{display:true,text:yl},beginAtZero:!opts.log}},plugins:{legend:{labels:{color:"#8b949e"}}}}});
+}
+function mkBar(id, labels, vals){
+  const c=document.getElementById(id); if(!c || !window.Chart) return;
+  new Chart(c,{type:"bar",data:{labels,datasets:[{data:vals,backgroundColor:vals.map(v=>v>0.7?"#3fb950":(v>=0.45?"#d29922":"#f85149")),borderRadius:4}]},
+    options:{indexAxis:"y",plugins:{legend:{display:false}},scales:{x:{min:0,max:1,title:{display:true,text:"AUC (0.5 = chance)"}}}}});
+}
+
 // ---- methodology ----
 function renderMethodology(R){
-  const svg=$("#pipeline");const boxes=[["artifact",""],["IR\ntyped graph",""],["math\nlayers",""],["V(x)\nfield",""],["LLM\nagent",""],["Z3\nverifier",""]];
-  const bw=150,bh=54,gap=30,x0=24,y=38;let s=`<defs><marker id="a1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#58a6ff"/></marker></defs>`;
-  boxes.forEach(([t],i)=>{const x=x0+i*(bw+gap);s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="9" fill="#1c2330" stroke="#58a6ff"/>`;
-    t.split("\n").forEach((ln,li)=>s+=`<text x="${x+bw/2}" y="${y+bh/2+5+(li-0.5)*15}" fill="#e6edf3" font-size="13" text-anchor="middle">${ln}</text>`);
-    if(i<5)s+=`<line x1="${x+bw}" y1="${y+bh/2}" x2="${x+bw+gap-3}" y2="${y+bh/2}" stroke="#58a6ff" stroke-width="2" marker-end="url(#a1)"/>`;});
-  const c1=x0+5*(bw+gap)+bw/2,c2=x0+(bw+gap)+bw/2;s+=`<path d="M${c1},${y+bh} L${c1},${y+bh+52} L${c2},${y+bh+52} L${c2},${y+bh}" fill="none" stroke="#8b949e" stroke-dasharray="5 4"/><text x="${(c1+c2)/2}" y="${y+bh+46}" fill="#8b949e" font-size="11" text-anchor="middle">re-embed</text>`;
-  svg.innerHTML=s;
-  const proto=$("#protocol");const steps=[["enumerate sink candidates","source→sink reachability"],["rank candidates","DFS · taint · V(x) · random"],["metrics","MRR · R@1 · NDCG@k · cost curve"],["Z3 arbiter","SAT + concrete witness"]];
-  const W=560,bh2=56,g2=22,bw2=440,xx=(W-bw2)/2;let p=`<defs><marker id="a2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#8b949e"/></marker></defs>`;
-  steps.forEach(([t,sub],i)=>{const yy=16+i*(bh2+g2);p+=`<rect x="${xx}" y="${yy}" width="${bw2}" height="${bh2}" rx="9" fill="#161b22" stroke="#30363d"/><text x="${W/2}" y="${yy+24}" fill="#e6edf3" font-size="13" text-anchor="middle">${t}</text><text x="${W/2}" y="${yy+42}" fill="#8b949e" font-size="11" text-anchor="middle">${sub}</text>`;
-    if(i<3)p+=`<line x1="${W/2}" y1="${yy+bh2}" x2="${W/2}" y2="${yy+bh2+g2-3}" stroke="#8b949e" stroke-width="2" marker-end="url(#a2)"/>`;});
-  proto.innerHTML=p;
+  chartDefaults();
+  mkPipe("pipeline",["artifact","IR typed graph","math layers","V(x) field","LLM agent","Z3 verifier"]);
+  mkProto("protocol",[["enumerate sink candidates","source→sink reachability"],["rank candidates","DFS · taint · V(x) · random"],["metrics","MRR · R@1 · NDCG@k · cost curve"],["Z3 arbiter","SAT + concrete witness"]]);
+
   const a=(R.oracle||{}).signals_auc||{};
   const layers=[["Spectral","L=D−A · Fiedler · embedding","|Fiedler|","spectral"],["Topological","persistent H₀/H₁ · Mapper","H₁ membership","topological"],["Geometric","Ollivier/Forman Ricci · Sinkhorn","curvature κ","geometric"],["Algebraic","taint lattice · Galois · auth functor","taint tags","taint"],["Formal","symbolic exec + SMT (Z3)","SAT(φ_bad)","formal"],["Directed","Chung Laplacian · SCC+Perron","directed λ₂","directed"]];
-  $("#layers").innerHTML=layers.map(([n,d,sig,k])=>{let b=`<span class="badge">defined</span>`;if(a[k]){const v=a[k].auc;const c=v>0.7?"var(--green)":(v<0.45?"var(--red)":"var(--muted)");b=`<span class="badge" style="color:${c}">AUC ${v.toFixed(3)}</span>`;}
-    return `<div class="card"><div class="small">${n}</div><div style="font-size:12.5px;margin-top:5px">${d}</div><div class="small" style="margin-top:5px">${sig} · ${b}</div></div>`;}).join("");
+  $("#layers").innerHTML=layers.map(([n,d,sig,k])=>{let b=`<span class="pill">defined</span>`;
+    if(a[k]){const v=a[k].auc;const c=v>0.7?"var(--topological)":(v<0.45?"var(--algebraic)":"var(--muted)");b=`<span class="pill" style="color:${c}">AUC ${v.toFixed(3)}</span>`;}
+    return `<div class="card"><div class="kicker" style="color:var(--${k})">${n}</div><div class="text-xs mt-2">${d}</div><div class="text-[11px] mt-2" style="color:var(--muted)">signal: ${sig} · ${b}</div></div>`;}).join("");
+
   const laws=[["H1","curvature κ≪0","priv. escalation","geometric"],["H2","persistent H₁","reentrancy","topological"],["H3","Fiedler cut","injection/trust","spectral"],["H4","taint crossing auth","auth-invariant viol.",""],["H5","persistence outlier","real vs spurious","topological"],["H6","SAT(φ_bad)","model witness","formal"]];
-  const rows=laws.map(([id,f,c,k])=>{const v=k&&a[k]?a[k].auc:null;let st=k? "—" : "definitional (Prop. 2)";
-    if(v!==null) st=v>0.7?`<span style="color:var(--green)">supported (${v.toFixed(3)})</span>`:(v<0.45?`<span style="color:var(--red)">not supported (${v.toFixed(3)})</span>`:`<span style="color:var(--amber)">at chance (${v.toFixed(3)})</span>`);
+  const rows=laws.map(([id,f,c,k])=>{const v=k&&a[k]?a[k].auc:null;let st=k?"—":"definitional (Prop. 2)";
+    if(v!==null) st=v>0.7?`<span style="color:var(--topological)">supported (${v.toFixed(3)})</span>`:(v<0.45?`<span style="color:var(--algebraic)">not supported (${v.toFixed(3)})</span>`:`<span style="color:var(--geometric)">at chance (${v.toFixed(3)})</span>`);
     return [id,f,c,st];});
-  $("#laws").innerHTML=table(rows,["law","feature","class","status on OWASP"]);
+  $("#laws").innerHTML=table(rows,["hypothesis","feature","class","status on OWASP"]);
 }
-</script>
-</body>
-</html>
+function mkPipe(id, boxes){
+  const c=document.getElementById(id); if(!c||!window.Chart) return;
+  // custom pipeline drawing (Chart.js block plugin not worth it; use raw canvas)
+  const cv=c; cv.style.display="none";
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox","0 0 1120 160"); svg.style.width="100%"; svg.style.height="100%";
+  c.parentNode.insertBefore(svg,c);
+  const bw=150,bh=54,gap=30,x0=24,y=38;
+  let s=`<defs><marker id="p1" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#58a6ff"/></marker></defs>`;
+  boxes.forEach((t,i)=>{const x=x0+i*(bw+gap);
+    s+=`<rect x="${x}" y="${y}" width="${bw}" height="${bh}" rx="10" fill="#161d27" stroke="#58a6ff"/>`;
+    t.split(" ").forEach((w,wi)=>s+=`<text x="${x+bw/2}" y="${y+bh/2+5+(wi-(t.split(' ').length-1)/2)*16}" fill="#e6edf3" font-size="13" text-anchor="middle">${w}</text>`);
+    if(i<boxes.length-1) s+=`<line x1="${x+bw}" y1="${y+bh/2}" x2="${x+bw+gap-3}" y2="${y+bh/2}" stroke="#58a6ff" stroke-width="2" marker-end="url(#p1)"/>`;});
+  const cx1=x0+5*(bw+gap)+bw/2, cx2=x0+(bw+gap)+bw/2;
+  s+=`<path d="M${cx1},${y+bh} L${cx1},${y+bh+58} L${cx2},${y+bh+58} L${cx2},${y+bh}" fill="none" stroke="#8b949e" stroke-dasharray="5 4"/><text x="${(cx1+cx2)/2}" y="${y+bh+50}" fill="#8b949e" font-size="11" text-anchor="middle">re-embed (confirm / refute)</text>`;
+  svg.innerHTML=s;
+}
+function mkProto(id, steps){
+  const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");
+  svg.setAttribute("viewBox","0 0 560 360"); svg.style.width="100%"; svg.style.height="100%";
+  const c=document.getElementById(id); c.style.display="none"; c.parentNode.insertBefore(svg,c);
+  const W=560,bh=56,gap=22,bw=440,xx=(W-bw)/2;
+  let s=`<defs><marker id="p2" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#8b949e"/></marker></defs>`;
+  steps.forEach(([t,sub],i)=>{const yy=10+i*(bh+gap);
+    s+=`<rect x="${xx}" y="${yy}" width="${bw}" height="${bh}" rx="10" fill="#11161d" stroke="#26303c"/>`;
+    s+=`<text x="${W/2}" y="${yy+24}" fill="#e6edf3" font-size="13" text-anchor="middle">${t}</text><text x="${W/2}" y="${yy+42}" fill="#8b949e" font-size="11" text-anchor="middle">${sub}</text>`;
+    if(i<steps.length-1) s+=`<line x1="${W/2}" y1="${yy+bh}" x2="${W/2}" y2="${yy+bh+gap-3}" stroke="#8b949e" stroke-width="2" marker-end="url(#p2)"/>`;});
+  svg.innerHTML=s;
+}
 """
+
+
+def _render_page() -> str:
+    return PAGE.replace("__HEAD__", head("VALEN — web UI", extra=_SHELL_HEAD)).replace(
+        "__SHELL__", SHELL_JS
+    )
+
+
+_SHELL_HEAD = (
+    '<link rel="preconnect" href="https://fonts.googleapis.com">'
+    '<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">'
+)
+
+
+# Keep the module importable as `PAGE` for server.py; build it lazily once.
+PAGE = _render_page()

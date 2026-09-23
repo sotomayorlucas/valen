@@ -41,7 +41,9 @@ def _pentest_main(argv: list[str]) -> int:
 def _analyze_main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(prog="valen", description="Analyze a target for vulnerabilities.")
     parser.add_argument("target", help="source / OpenAPI JSON / agent JSON / disassembly to analyze")
-    parser.add_argument("--adapter", help="adapter: python, binary, angr-binary, web, llm-agent")
+    parser.add_argument("--adapter",
+                        help="adapter: python, java, java-interproc, c, cpp, rust, csharp, "
+                             "go, php, ruby, javascript, binary, angr-binary, web, llm-agent, iam")
     parser.add_argument("--json", action="store_true", help="emit the IR graph as JSON")
     parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
     parser.add_argument("--agent", action="store_true", help="run the autonomous agent (python only)")
