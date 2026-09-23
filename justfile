@@ -18,6 +18,9 @@ verify file:       # verificar flujos de taint con Z3 (witness)
 viz file out="valen.html":  # render del grafo de vulnerabilidad
     {{PY}} -m valen.cli {{file}} --viz {{out}}
 
+dynamic file *args:  # ejecuta el target en sandbox y triangula traza vs estático
+    {{PY}} -m valen.cli {{file}} --dynamic --argv {{args}}
+
 agent file:        # agente autónomo sobre un archivo python
     {{PY}} -m valen.cli {{file}} --agent
 

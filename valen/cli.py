@@ -46,6 +46,12 @@ def _analyze_main(argv: list[str]) -> int:
     parser.add_argument("--verify", action="store_true", help="formally verify taint flows (Z3)")
     parser.add_argument("--agent", action="store_true", help="run the autonomous agent (python only)")
     parser.add_argument("--viz", metavar="FILE.html", help="render the vulnerability valen to HTML")
+    parser.add_argument("--dynamic", action="store_true",
+                        help="execute the target in a sandbox and triangulate runtime trace vs static IR (python)")
+    parser.add_argument("--argv", nargs="*", default=None,
+                        help="arguments passed to the target as sys.argv[1:] (dynamic)")
+    parser.add_argument("--timeout", type=float, default=30.0,
+                        help="dynamic run timeout in seconds")
     args = parser.parse_args(argv)
 
     path = Path(args.target)
@@ -122,6 +128,37 @@ def _analyze_main(argv: list[str]) -> int:
             subtitle=f"{path} ({adapter}) — {result.graph.node_count} nodes, {result.graph.edge_count} edges",
         )
         print(f"== valen written to {args.viz}")
+
+    if args.dynamic:
+        if adapter != "python":
+            print("error: --dynamic is only supported for python targets", file=sys.stderr)
+            return 1
+        from .dynamic import run_module, triangulate
+
+        print("== dynamic analysis (sandboxed execution) ==")
+        try:
+            dyn = run_module(str(path), argv=args.argv, timeout=args.timeout)
+        except Exception as exc:  # noqa: BLE001
+            print(f"error: dynamic run failed: {exc}", file=sys.stderr)
+            return 1
+        report = triangulate(result, dyn)
+        cov = report["coverage"]
+        print(f"  exit_code={report['exit_code']} timed_out={report['timed_out']} "
+              f"coverage={cov['nodes']}/{cov['total_nodes']} nodes "
+              f"({cov['ratio']:.0%}) · {cov['lines']} lines")
+        for a in report["agreement"]:
+            tag = {"confirmed": "CONFIRMED", "hit": "HIT", "unexecuted": "UNEXECUTED"}[a["dynamic"]]
+            print(f"  [{tag:>10}] line {a['line']}: {a['sink_name']}")
+            if a["matched_value"]:
+                print(f"      value: {a['matched_value']}")
+        if not report["agreement"]:
+            print("  (no static sinks to triangulate)")
+        if report["dynamic_only_sinks"]:
+            print("  dynamic-only sinks (static missed):")
+            for s in report["dynamic_only_sinks"]:
+                print(f"      line {s['line']}: {s['name']} ({s['category']})")
+        if args.json:
+            print(json.dumps(report, indent=2))
     return 0
 
 
