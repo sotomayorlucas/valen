@@ -263,23 +263,87 @@ function renderCompare(d){
 const COLORS={source:"#f85149",sink:"#d29922",function:"#58a6ff",gate:"#bc8cff",module:"#30363d",
   assign:"#a5d6ff",call:"#bc8cff",statement:"#8b949e",block:"#8b949e",variable:"#79c0ff",parameter:"#79c0ff"};
 const ECOL={taint:"#f85149",call:"#58a6ff",data:"#3fb950",control:"#6e7681",trust:"#bc8cff",auth:"#d2a8ff"};
+const NS="http://www.w3.org/2000/svg";
+
+// Interactive valen graph: pan/zoom, drag nodes, live force sim, hover-neighbour
+// highlight and click-to-pin. Replaced the old one-shot static layout (which
+// clumped into an unreadable blob on large graphs).
 function renderMap(d){
   const svg=$("#map"); const W=1000,H=440;
-  const nodes=d.nodes.map(n=>({...n,x:Math.random()*W,y:Math.random()*H})); const by={}; nodes.forEach(n=>by[n.id]=n);
-  const N=nodes.length;
-  for(let it=0;it<Math.max(60,400-N*2);it++){
-    for(let i=0;i<N;i++)for(let j=i+1;j<N;j++){let dx=nodes[i].x-nodes[j].x,dy=nodes[i].y-nodes[j].y,d2=dx*dx+dy*dy+0.01,d=Math.sqrt(d2),f=900/d2;dx/=d;dy/=d;
-      nodes[i].x+=dx*f;nodes[i].y+=dy*f;nodes[j].x-=dx*f;nodes[j].y-=dy*f;}
-    d.edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;let dx=b.x-a.x,dy=b.y-a.y,dd=Math.sqrt(dx*dx+dy*dy)||0.01,f=(dd-90)*0.015;a.x+=dx/dd*f;a.y+=dy/dd*f;b.x-=dx/dd*f;b.y-=dy/dd*f;});
-    nodes.forEach(n=>{n.x+=(W/2-n.x)*0.02;n.y+=(H/2-n.y)*0.02;n.x=Math.max(20,Math.min(W-20,n.x));n.y=Math.max(20,Math.min(H-20,n.y));});
+  svg.innerHTML="";
+  svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const world=document.createElementNS(NS,"g"); svg.appendChild(world);
+  let view={x:0,y:0,k:1};
+  const apply=()=>world.setAttribute("transform",`translate(${view.x},${view.y}) scale(${view.k})`);
+  const r=n=>n.tainted?14:6+Math.min(10,(n.fiedler||0)*8);
+  const nodes=d.nodes.map((n,i)=>({...n,r:r(n),x:600+Math.cos(i*2.39996)*30*Math.sqrt(i+1),y:220+Math.sin(i*2.39996)*30*Math.sqrt(i+1),vx:0,vy:0,fixed:false}));
+  const by={}; nodes.forEach(n=>by[n.id]=n);
+  const edges=d.edges.slice(); const N=nodes.length;
+
+  const edgeEls=edges.map(e=>{const l=document.createElementNS(NS,"line");
+    l.setAttribute("stroke",ECOL[e.kind]||"#6e7681"); l.setAttribute("stroke-width",e.kind==="taint"?2.5:1); l.setAttribute("stroke-opacity","0.55");
+    l.setAttribute("data-src",e.src); l.setAttribute("data-dst",e.dst); world.appendChild(l); return l;});
+  const nodeEls=new Map(); const neigh=new Map();
+  nodes.forEach(n=>{
+    const g=document.createElementNS(NS,"g"); g.setAttribute("class","node");
+    const c=document.createElementNS(NS,"circle"); c.setAttribute("r",n.r); c.setAttribute("fill",COLORS[n.kind]||"#8b949e");
+    if(n.tainted) c.setAttribute("stroke","#f85149");
+    const t=document.createElementNS(NS,"text"); t.setAttribute("y",-n.r-4); t.setAttribute("text-anchor","middle"); t.setAttribute("fill","#e6edf3"); t.setAttribute("font-size","10"); t.textContent=n.label;
+    const t2=document.createElementNS(NS,"text"); t2.setAttribute("y",n.r+13); t2.setAttribute("text-anchor","middle"); t2.setAttribute("fill","#8b949e"); t2.setAttribute("font-size","8"); t2.textContent=n.kind;
+    const ti=document.createElementNS(NS,"title"); ti.textContent=`${n.kind} ${n.label} (line ${n.line})${n.tainted?" [tainted]":""}`;
+    g.append(c,t,t2,ti); world.appendChild(g); nodeEls.set(n.id,g);
+    const s=new Set([n.id]); edges.forEach(e=>{if(e.src===n.id)s.add(e.dst);if(e.dst===n.id)s.add(e.src);}); neigh.set(n.id,s);
+  });
+
+  let hovered=null;
+  function hl(){
+    const f=hovered?neigh.get(hovered):null;
+    nodes.forEach(n=>{const el=nodeEls.get(n.id); el.setAttribute("opacity",f&&!f.has(n.id)?"0.15":"1");});
+    edgeEls.forEach((l,i)=>{const e=edges[i]; l.setAttribute("stroke-opacity",f?(f.has(e.src)&&f.has(e.dst)?"0.9":"0.06"):"0.55");});
   }
-  let s="";
-  d.edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;
-    s+=`<line x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}" stroke="${ECOL[e.kind]||"#6e7681"}" stroke-width="${e.kind==="taint"?2.5:1}" stroke-opacity="0.55"/>`;});
-  nodes.forEach(n=>{const r=n.tainted?14:6+Math.min(10,(n.fiedler||0)*8);
-    s+=`<circle cx="${n.x}" cy="${n.y}" r="${r}" fill="${COLORS[n.kind]||"#8b949e"}" ${n.tainted?'stroke="#f85149" stroke-width="1.5"':""}/>`;
-    s+=`<text x="${n.x}" y="${n.y-r-4}" fill="#e6edf3" font-size="10" text-anchor="middle">${n.label}</text>`;});
-  svg.innerHTML=s;
+  function draw(){
+    nodes.forEach(n=>nodeEls.get(n.id).setAttribute("transform",`translate(${n.x},${n.y})`));
+    edgeEls.forEach((l,i)=>{const e=edges[i],a=by[e.src],b=by[e.dst]; if(a&&b){l.setAttribute("x1",a.x);l.setAttribute("y1",a.y);l.setAttribute("x2",b.x);l.setAttribute("y2",b.y);}});
+  }
+
+  let alpha=1,running=true; const K=1200*Math.sqrt(N);
+  function tick(){
+    for(let i=0;i<N;i++){const a=nodes[i]; for(let j=i+1;j<N;j++){const b=nodes[j];
+      let dx=a.x-b.x,dy=a.y-b.y,d2=dx*dx+dy*dy; const mn=a.r+b.r+22,m2=mn*mn;
+      if(d2<m2){d2=m2;dx*=mn/Math.sqrt(dx*dx+dy*dy+1e-6);dy*=mn/Math.sqrt(dx*dx+dy*dy+1e-6);}
+      const dd=Math.sqrt(d2),f=K/d2;a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;}}
+    edges.forEach(e=>{const a=by[e.src],b=by[e.dst];if(!a||!b)return;let dx=b.x-a.x,dy=b.y-a.y,dd=Math.sqrt(dx*dx+dy*dy)||1;const rest=a.r+b.r+50,f=(dd-rest)*0.06;a.vx+=dx/dd*f;a.vy+=dy/dd*f;b.vx-=dx/dd*f;b.vy-=dy/dd*f;});
+    nodes.forEach(n=>{n.vx+=(600-n.x)*0.0025;n.vy+=(220-n.y)*0.0025;});
+    nodes.forEach(n=>{if(n.fixed){n.vx=0;n.vy=0;return;}n.vx*=0.6;n.vy*=0.6;n.x+=n.vx;n.y+=n.vy;});
+    alpha=Math.max(0.01,alpha*0.975);
+  }
+  function loop(){if(running){const st=N>600?1:3;for(let i=0;i<st;i++)tick();draw();if(alpha>0.0105)requestAnimationFrame(loop);else running=false;}}
+  function reheat(){alpha=1;if(!running){running=true;loop();}}
+
+  // interactions
+  let pan=null;
+  svg.addEventListener("pointerdown",e=>{if(e.target.closest(".node"))return;pan={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};svg.setPointerCapture(e.pointerId);});
+  svg.addEventListener("pointermove",e=>{if(pan){view.x=pan.vx+(e.clientX-pan.x);view.y=pan.vy+(e.clientY-pan.y);apply();}});
+  svg.addEventListener("pointerup",()=>pan=null);
+  svg.addEventListener("wheel",e=>{e.preventDefault();const r=svg.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
+    const k1=Math.max(0.05,Math.min(8,view.k*(e.deltaY<0?1.12:0.89)));view.x=mx-(mx-view.x)*(k1/view.k);view.y=my-(my-view.y)*(k1/view.k);view.k=k1;apply();},{passive:false});
+  function toW(cx,cy){const r=svg.getBoundingClientRect();return [(cx-r.left-view.x)/view.k,(cy-r.top-view.y)/view.k];}
+  nodes.forEach(n=>{
+    const el=nodeEls.get(n.id); let dr=null;
+    el.addEventListener("pointerdown",e=>{e.stopPropagation();dr={n};n.fixed=true;el.setPointerCapture(e.pointerId);reheat();});
+    el.addEventListener("pointermove",e=>{if(dr){const [x,y]=toW(e.clientX,e.clientY);n.x=x;n.y=y;draw();}});
+    el.addEventListener("pointerup",()=>{if(dr){dr=null;n.fixed=false;reheat();}});
+    el.addEventListener("pointerenter",()=>{hovered=n.id;hl();});
+    el.addEventListener("pointerleave",()=>{if(hovered===n.id){hovered=null;hl();}});
+    el.addEventListener("click",()=>{const f=neigh.get(n.id);nodes.forEach(m=>nodeEls.get(m.id).setAttribute("opacity",f.has(m.id)?"1":"0.15"));edgeEls.forEach((l,i)=>{const e=edges[i];l.setAttribute("stroke-opacity",f.has(e.src)&&f.has(e.dst)?"0.9":"0.06");});});
+  });
+  svg.addEventListener("pointerleave",()=>{hovered=null;hl();});
+
+  // fit-to-view on render
+  if(N){let x0=1e9,y0=1e9,x1=-1e9,y1=-1e9;nodes.forEach(n=>{x0=Math.min(x0,n.x-n.r);y0=Math.min(y0,n.y-n.r);x1=Math.max(x1,n.x+n.r);y1=Math.max(y1,n.y+n.r);});
+    const r=svg.getBoundingClientRect();const k=Math.min(r.width/(x1-x0||1),r.height/(y1-y0||1))*0.9;view.k=Math.max(0.05,Math.min(4,k));view.x=r.width/2-((x0+x1)/2)*view.k;view.y=r.height/2-((y0+y1)/2)*view.k;apply();}
+  apply();draw();alpha=1;running=true;loop();
+
   $("#mlegend").innerHTML=Object.keys(COLORS).map(k=>`<span class="badge" style="margin-right:5px">${COLORS[k]} ${k}</span>`).join("");
 }
 
