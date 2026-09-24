@@ -213,10 +213,32 @@ function refresh(){ fetch('/api/redteam').then(r=>r.json()).then(d=>{Object.assi
 document.getElementById('app').innerHTML =
   `<div style="grid-column:1/-1;text-align:right">
     <button onclick="refresh()">Refresh</button>
-    <button onclick="location.href='benchmarks/report.html'" class="ghost">Report HTML</button>
-    <button onclick="location.href='benchmarks/report.pdf'" class="ghost">Report PDF</button>
+    <button onclick="dl('html')" class="ghost">Report HTML</button>
+    <button onclick="dl('md')" class="ghost">Report MD</button>
+    <button onclick="dl('json')" class="ghost">Report JSON</button>
+    <button onclick="dl('sarif')" class="ghost">Report SARIF</button>
+    <button onclick="dl('pdf')" class="ghost">Report PDF</button>
   </div>` +
   toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + pentestCard() + solidityCard() + llmCard() + planCard() + pocsCard();
+
+async function dl(fmt){
+  try{
+    const r = await fetch('/api/report/download?format=' + fmt);
+    if(!r.ok){ alert('report error ' + r.status); return; }
+    if(fmt === 'pdf'){
+      // PDF generation returns JSON status; regenerate HTML and tell the user
+      const d = await r.json();
+      alert(d.ok ? 'PDF written to benchmarks/report.pdf' : 'chrome headless unavailable — use HTML/MD');
+      return;
+    }
+    const body = await r.text();
+    const ct = {'html':'text/html','md':'text/markdown','json':'application/json','sarif':'application/json'}[fmt] || 'text/plain';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([body], {type: ct}));
+    a.download = 'valen-report.' + (fmt === 'markdown' ? 'md' : fmt);
+    a.click(); URL.revokeObjectURL(a.href);
+  }catch(e){ alert('report error: ' + e); }
+}
 </script>
 <script type="application/json" id="data">__DATA__</script>
 </body>

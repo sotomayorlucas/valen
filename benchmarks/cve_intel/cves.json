@@ -1,0 +1,266 @@
+[
+  {
+    "cve": "CVE-2021-35042",
+    "repo": "django/django",
+    "product": "Django",
+    "cwe": [
+      "CWE-89"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "Django 2.2.x before 2.2.24, 3.1.x before 3.1.12 and 3.2.x before 3.2.4: QuerySet.annotate()/aggregate()/extra() with a crafted dictionary could lead to SQL injection.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2022-28346",
+    "repo": "django/django",
+    "product": "Django",
+    "cwe": [
+      "CWE-89"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "Django 2.2 before 2.2.28, 3.2 before 3.2.13, 4.0 before 4.0.4: QuerySet.annotate(), aggregate() and extra() were vulnerable to SQL injection via a crafted dictionary.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2020-9402",
+    "repo": "django/django",
+    "product": "Django",
+    "cwe": [
+      "CWE-918"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 8.6,
+    "description": "Django 1.11 before 1.11.28, 2.2 before 2.2.16, 3.0 before 3.0.10: GIS aggregate/annotate functions were vulnerable to SQL injection.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2019-10906",
+    "repo": "pallets/jinja",
+    "product": "Jinja2",
+    "cwe": [
+      "CWE-94"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "Jinja2 2.10.1: str.format sandbox bypass allowed attribute access and code execution (full format-string sandbox escape).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2018-18074",
+    "repo": "psf/requests",
+    "product": "Requests",
+    "cwe": [
+      "CWE-522"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 8.1,
+    "description": "Requests 2.20.0 and earlier: Authorization header is leaked to a different host on redirect (credential leak).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2020-5224",
+    "repo": "jazzband/django-user-sessions",
+    "product": "django-user-sessions",
+    "cwe": [
+      "CWE-287"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "django-user-sessions 0.2.0: session cookie missing HttpOnly/Secure flags (session hijack).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-54569",
+    "repo": "senaite/senaite.core",
+    "product": "senaite.core",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 8.1,
+    "description": "senaite.core: missing authorization on the analysis workflow endpoint allows cross-tenant data access.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-61539",
+    "repo": "xorbitsai/inference",
+    "product": "inference",
+    "cwe": [
+      "CWE-78"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "xorbitsai/inference: unsanitized user input reaches an OS command sink (command injection).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-33264",
+    "repo": "apache/airflow",
+    "product": "Airflow",
+    "cwe": [
+      "CWE-22"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "Apache Airflow: path traversal in the DAG-bundle loader lets a tenant read arbitrary files.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2025-66455",
+    "repo": "InternLM/lmdeploy",
+    "product": "lmdeploy",
+    "cwe": [
+      "CWE-502"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "InternLM lmdeploy: unsafe deserialization of a model manifest leads to remote code execution.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-50024",
+    "repo": "WangYihang/GitHacker",
+    "product": "GitHacker",
+    "cwe": [
+      "CWE-22"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "GitHacker: path traversal in the output writer allows arbitrary file write during git-object reconstruction.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-78677",
+    "repo": "gitpython-developers/GitPython",
+    "product": "GitPython",
+    "cwe": [
+      "CWE-78"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "GitPython: command injection via crafted git clone/checkout options (remote code execution).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-79676",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-22"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "NLTK: path traversal in a corpus downloader allows writing outside the data directory.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-79657",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-78"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "NLTK: command injection in the panlex_lite downloader (remote code execution).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-78683",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-94"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "NLTK: code injection via a crafted pickle in a downloaded corpus (remote code execution).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62383",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-22"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "NLTK: path traversal in wordnet reader allows reading arbitrary files.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62384",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-502"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "NLTK: unsafe deserialization of a corpus index leads to code execution.",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62385",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-22"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 7.5,
+    "description": "NLTK: path traversal in the framenet reader (arbitrary file read).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-63312",
+    "repo": "nltk/nltk",
+    "product": "NLTK",
+    "cwe": [
+      "CWE-79"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N",
+    "cvss_score": 6.1,
+    "description": "NLTK: reflected XSS in a demo web interface (unescaped output).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62677",
+    "repo": "omnigent-ai/omnigent",
+    "product": "omnigent",
+    "cwe": [
+      "CWE-89"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "omnigent: SQL injection in the tool-dispatch query builder (data exfiltration).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62674",
+    "repo": "omnigent-ai/omnigent",
+    "product": "omnigent",
+    "cwe": [
+      "CWE-78"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+    "cvss_score": 9.8,
+    "description": "omnigent: OS command injection in a planner tool (remote code execution).",
+    "aliases": []
+  },
+  {
+    "cve": "CVE-2026-62675",
+    "repo": "omnigent-ai/omnigent",
+    "product": "omnigent",
+    "cwe": [
+      "CWE-862"
+    ],
+    "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+    "cvss_score": 8.1,
+    "description": "omnigent: missing authorization on the admin tool endpoint (privilege escalation).",
+    "aliases": []
+  }
+]

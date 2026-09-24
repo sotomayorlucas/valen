@@ -1,0 +1,20 @@
+[
+  {
+    "cve": "CVE-2022-28346",
+    "vendor": "Django",
+    "product": "Django",
+    "date_added": "2022-04-25",
+    "due_date": "2022-05-16",
+    "ransomware_campaign": false,
+    "required_action": "Apply updates"
+  },
+  {
+    "cve": "CVE-2026-78677",
+    "vendor": "GitPython",
+    "product": "GitPython",
+    "date_added": "2026-03-10",
+    "due_date": "2026-03-31",
+    "ransomware_campaign": false,
+    "required_action": "Apply updates"
+  }
+]

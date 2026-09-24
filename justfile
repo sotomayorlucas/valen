@@ -46,8 +46,17 @@ autopentest:       # benchmark 18 challenges (lab en docker)
 exploit:           # JWT forge -> account takeover + IDOR (crAPI vivo)
     {{PY}} benchmarks/run_exploit.py --base-url {{SCOPE}} --authorize
 
-report:            # report.html + report.pdf (CVSS 3.1)
-    {{PY}} -m valen.redteam.report
+report format="all": # reporte pentest (all = html+md+json+sarif)  e.g. just report md
+    {{PY}} -m valen.redteam.report --format {{format}}
+
+report-info client="" scope="" author="": # reporte con metadata de engagement
+    {{PY}} -m valen.redteam.report --format all --client "{{client}}" --scope "{{scope}}" --author "{{author}}"
+
+cvss vector="": # score de un vector CVSS (3.1/4.0) o --category NAME
+    {{PY}} -m valen.cli cvss {{vector}}
+
+cve-sync:       # refresca el snapshot KEV/EPSS/NVD (requiere red)
+    {{PY}} benchmarks/cve_intel/build_snapshot.py
 
 # --- benchmarks ------------------------------------------------------------
 

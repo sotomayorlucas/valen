@@ -1,0 +1,452 @@
+{
+  "$schema": "https://json.schemastore.org/sarif-2.1.0.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "VALEN",
+          "informationUri": "https://github.com/anomalyco/valen",
+          "version": "0.1",
+          "rules": [
+            {
+              "id": "CWE-287",
+              "name": "account_takeover",
+              "shortDescription": {
+                "text": "JWT forgery -> account takeover (kid_path_traversal)"
+              },
+              "fullDescription": {
+                "text": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
+              },
+              "properties": {
+                "cwe": [
+                  "CWE-287",
+                  "CWE-347"
+                ],
+                "owasp": "A07:2021 – Identification and Authentication Failures",
+                "mitre_tactic": "TA0006"
+              }
+            },
+            {
+              "id": "CWE-639",
+              "name": "idor",
+              "shortDescription": {
+                "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/1"
+              },
+              "fullDescription": {
+                "text": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+              },
+              "properties": {
+                "cwe": [
+                  "CWE-639"
+                ],
+                "owasp": "A01:2021 – Broken Access Control",
+                "mitre_tactic": "TA0009"
+              }
+            },
+            {
+              "id": "CWE-94",
+              "name": "code_execution",
+              "shortDescription": {
+                "text": "HIGH · Apache 2.4.49 Path Traversal"
+              },
+              "fullDescription": {
+                "text": "Never eval/exec dynamic content. Replace with safe interpreters (ast.literal_eval, JSON, safe templates)."
+              },
+              "properties": {
+                "cwe": [
+                  "CWE-94",
+                  "CWE-95"
+                ],
+                "owasp": "A03:2021 – Injection",
+                "mitre_tactic": "TA0002"
+              }
+            },
+            {
+              "id": "CWE-89",
+              "name": "sql",
+              "shortDescription": {
+                "text": "MEDIUM · Exposed Admin Panel"
+              },
+              "fullDescription": {
+                "text": "Use parameterized queries / prepared statements; never concatenate untrusted input into SQL."
+              },
+              "properties": {
+                "cwe": [
+                  "CWE-89"
+                ],
+                "owasp": "A03:2021 – Injection",
+                "mitre_tactic": "TA0006"
+              }
+            }
+          ]
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CWE-287",
+          "level": "error",
+          "message": {
+            "text": "JWT forgery -> account takeover (kid_path_traversal)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "cvss_score": 9.8,
+            "severity": "Critical",
+            "category": "account_takeover",
+            "cwe": [
+              "CWE-287",
+              "CWE-347"
+            ],
+            "owasp": "A07:2021 – Identification and Authentication Failures",
+            "mitre_tactic": "TA0006",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "forge JWT via kid_path_traversal, call /identity/api/v2/user/dashboard",
+            "evidence": "{\"id\":580,\"name\":\"Victim\",\"email\":\"victim-2ee0bc47@example.com\",\"number\":\"9407515461\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+            "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
+          }
+        },
+        {
+          "ruleId": "CWE-287",
+          "level": "error",
+          "message": {
+            "text": "JWT forgery -> account takeover (invalid_signature)"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "cvss_score": 9.8,
+            "severity": "Critical",
+            "category": "account_takeover",
+            "cwe": [
+              "CWE-287",
+              "CWE-347"
+            ],
+            "owasp": "A07:2021 – Identification and Authentication Failures",
+            "mitre_tactic": "TA0006",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "forge JWT via invalid_signature, call /identity/api/v2/user/dashboard",
+            "evidence": "{\"id\":580,\"name\":\"Victim\",\"email\":\"victim-2ee0bc47@example.com\",\"number\":\"9407515461\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+            "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/1"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/1",
+            "evidence": "{\"order\":{\"id\":1,\"user\":{\"email\":\"adam007@example.com\",\"number\":\"9876895423\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transact",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/2"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/2",
+            "evidence": "{\"order\":{\"id\":2,\"user\":{\"email\":\"pogba006@example.com\",\"number\":\"9876570006\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transac",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/3"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/3",
+            "evidence": "{\"order\":{\"id\":3,\"user\":{\"email\":\"robot001@example.com\",\"number\":\"9876570001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transac",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/4"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/4",
+            "evidence": "{\"order\":{\"id\":4,\"user\":{\"email\":\"test@example.com\",\"number\":\"9876540001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transaction",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/5"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/5",
+            "evidence": "{\"order\":{\"id\":5,\"user\":{\"email\":\"admin@example.com\",\"number\":\"9010203040\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transactio",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-639",
+          "level": "warning",
+          "message": {
+            "text": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/6"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+            "cvss_score": 6.5,
+            "severity": "Medium",
+            "category": "idor",
+            "cwe": [
+              "CWE-639"
+            ],
+            "owasp": "A01:2021 – Broken Access Control",
+            "mitre_tactic": "TA0009",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "attacker token -> GET /workshop/api/shop/orders/6",
+            "evidence": "{\"order\":{\"id\":6,\"user\":{\"email\":\"attacker-0826f593@example.com\",\"number\":\"9840174543\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":-1,\"status\":\"delivered",
+            "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+          }
+        },
+        {
+          "ruleId": "CWE-94",
+          "level": "error",
+          "message": {
+            "text": "HIGH · Apache 2.4.49 Path Traversal"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "cvss_score": 8.8,
+            "severity": "High",
+            "category": "code_execution",
+            "cwe": [
+              "CWE-94",
+              "CWE-95"
+            ],
+            "owasp": "A03:2021 – Injection",
+            "mitre_tactic": "TA0002",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)",
+            "evidence": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)",
+            "remediation": "Never eval/exec dynamic content. Replace with safe interpreters (ast.literal_eval, JSON, safe templates)."
+          }
+        },
+        {
+          "ruleId": "CWE-89",
+          "level": "error",
+          "message": {
+            "text": "MEDIUM · Exposed Admin Panel"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "unknown"
+                },
+                "region": {
+                  "startLine": 1
+                }
+              }
+            }
+          ],
+          "properties": {
+            "cvss_vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+            "cvss_score": 8.8,
+            "severity": "High",
+            "category": "sql",
+            "cwe": [
+              "CWE-89"
+            ],
+            "owasp": "A03:2021 – Injection",
+            "mitre_tactic": "TA0006",
+            "cve_ids": [],
+            "kev": false,
+            "epss": null,
+            "repro": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)",
+            "evidence": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)",
+            "remediation": "Use parameterized queries / prepared statements; never concatenate untrusted input into SQL."
+          }
+        }
+      ]
+    }
+  ]
+}

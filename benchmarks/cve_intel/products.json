@@ -1,0 +1,82 @@
+[
+  {
+    "product": "vsftpd",
+    "version": "2.3.4",
+    "cves": [
+      "CVE-2011-2523"
+    ]
+  },
+  {
+    "product": "Apache httpd",
+    "version": "2.4.49",
+    "cves": [
+      "CVE-2021-41773"
+    ]
+  },
+  {
+    "product": "OpenSSH",
+    "version": "7.2",
+    "cves": [
+      "CVE-2016-6210"
+    ]
+  },
+  {
+    "product": "Apache httpd",
+    "version": "2.4.50",
+    "cves": [
+      "CVE-2021-42013"
+    ]
+  },
+  {
+    "product": "Apache Tomcat",
+    "version": "10.1.",
+    "cves": [
+      "CVE-2023-28708"
+    ]
+  },
+  {
+    "product": "nginx",
+    "version": "1.20.",
+    "cves": [
+      "CVE-2021-23017"
+    ]
+  },
+  {
+    "product": "Redis",
+    "version": "6.0.",
+    "cves": [
+      "CVE-2022-0543"
+    ]
+  },
+  {
+    "product": "OpenSSH",
+    "version": "9.",
+    "cves": [
+      "CVE-2024-6387"
+    ]
+  },
+  {
+    "product": "Django",
+    "version": "2.2",
+    "cves": [
+      "CVE-2021-35042",
+      "CVE-2022-28346"
+    ]
+  },
+  {
+    "product": "GitPython",
+    "version": "3.",
+    "cves": [
+      "CVE-2026-78677"
+    ]
+  },
+  {
+    "product": "nltk",
+    "version": "3.",
+    "cves": [
+      "CVE-2026-79676",
+      "CVE-2026-79657",
+      "CVE-2026-78683"
+    ]
+  }
+]

@@ -24,20 +24,12 @@ class LanguageProfile:
 
 
 # Severity ordering per sink category (used to rank findings).
+# Backed by the canonical registry in ``valen.categories``; kept here as a
+# plain dict so existing imports keep working.
+from .. import categories as _categories
+
 CATEGORY_SEVERITY: Dict[str, str] = {
-    "command_execution": "critical",
-    "code_execution": "critical",
-    "deserialization": "critical",
-    "sql": "high",
-    "path_traversal": "high",
-    "buffer_overflow": "high",
-    "format_string": "high",
-    "file_inclusion": "critical",
-    "memory_unsafe": "high",
-    "template_injection": "high",
-    "file_write": "medium",
-    "logging": "medium",
-    "network": "medium",
+    c.name: c.severity for c in _categories.all_categories()
 }
 
 PYTHON = LanguageProfile(

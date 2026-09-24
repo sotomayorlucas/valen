@@ -30,6 +30,9 @@ __HEAD__
       <button data-tab="analyze" class="on px-4 py-1.5 rounded-lg text-[13px]">Analyze</button>
       <button data-tab="dynamic" class="px-4 py-1.5 rounded-lg text-[13px]">Dynamic</button>
       <button data-tab="pentest" class="px-4 py-1.5 rounded-lg text-[13px]">Pentest</button>
+      <button data-tab="cvss" class="px-4 py-1.5 rounded-lg text-[13px]">CVSS</button>
+      <button data-tab="report" class="px-4 py-1.5 rounded-lg text-[13px]">Report</button>
+      <button data-tab="cve" class="px-4 py-1.5 rounded-lg text-[13px]">CVE Intel</button>
       <button data-tab="experiments" class="px-4 py-1.5 rounded-lg text-[13px]">Experiments</button>
       <button data-tab="methodology" class="px-4 py-1.5 rounded-lg text-[13px]">Methodology</button>
     </nav>
@@ -178,6 +181,110 @@ __HEAD__
       <span class="pill" id="pt-score"></span>
     </div>
     <div id="pt-results" class="mt-3 space-y-2"></div>
+  </div>
+</section>
+
+<!-- ================= CVSS CALCULATOR ================= -->
+<section class="tab" id="tab-cvss">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="panel p-4">
+      <div class="flex items-center gap-3 mb-3">
+        <div class="kicker">CVSS calculator (v3.1 + v4.0)</div>
+        <select id="cvss-ver" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border ml-auto" style="border-color:var(--border)">
+          <option value="3.1" selected>CVSS 3.1</option>
+          <option value="4.0">CVSS 4.0</option>
+        </select>
+        <select id="cvss-preset" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border" style="border-color:var(--border)">
+          <option value="">— preset category —</option>
+        </select>
+      </div>
+      <div id="cvss-metrics" class="grid grid-cols-2 gap-2"></div>
+      <div class="mt-3 p-3 rounded-xl" style="border:1px solid var(--border);background:var(--panel2)">
+        <div class="kicker">Vector</div>
+        <div class="mono text-[12px] mt-1" id="cvss-vector" style="word-break:break-all">—</div>
+        <div class="flex items-center gap-3 mt-2">
+          <div class="metric" id="cvss-score" style="color:var(--spectral)">0.0</div>
+          <span class="pill" id="cvss-sev">None</span>
+          <button class="ml-auto py-1.5 px-4 rounded-lg text-[12px]" id="cvss-copy" style="border:1px solid var(--border);color:var(--muted)">Copy vector</button>
+        </div>
+      </div>
+    </div>
+    <div class="panel p-4 space-y-3">
+      <div class="kicker">Parse an existing vector</div>
+      <div class="flex gap-2">
+        <input id="cvss-input" placeholder="CVSS:3.1/AV:N/AC:L/..." class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1" style="border-color:var(--border)"/>
+        <button class="primary py-2 px-4 rounded-xl font-bold" id="cvss-parse">Score</button>
+      </div>
+      <div id="cvss-parse-out" class="text-xs mono" style="color:var(--muted)"></div>
+      <div class="kicker mt-4">Category defaults (edit the vector on the left to adjust per finding)</div>
+      <div id="cvss-cats" class="mt-2 space-y-1 text-[12px]"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= REPORT ================= -->
+<section class="tab" id="tab-report">
+  <div class="panel p-4">
+    <div class="kicker">Engagement metadata</div>
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
+      <label class="text-xs" style="color:var(--muted)">client
+        <input id="rp-client" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs" style="color:var(--muted)">scope
+        <input id="rp-scope" placeholder="https://target.lab" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs" style="color:var(--muted)">author
+        <input id="rp-author" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs" style="color:var(--muted)">start date
+        <input id="rp-start" type="date" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs" style="color:var(--muted)">end date
+        <input id="rp-end" type="date" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+    </div>
+    <label class="text-xs block mt-3" style="color:var(--muted)">rules of engagement
+      <textarea id="rp-roe" class="mono w-full h-16 bg-[#0b0f14] border rounded-xl p-3 text-[12px] mt-1" style="border-color:var(--border)"></textarea></label>
+    <label class="text-xs block mt-2" style="color:var(--muted)">limitations
+      <textarea id="rp-limits" class="mono w-full h-16 bg-[#0b0f14] border rounded-xl p-3 text-[12px] mt-1" style="border-color:var(--border)"></textarea></label>
+    <div class="flex items-center gap-2 mt-4 flex-wrap">
+      <button class="primary py-2 px-5 rounded-xl font-bold" id="rp-generate">Generate</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="rp-html" style="border:1px solid var(--border);color:var(--muted)">HTML</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="rp-md" style="border:1px solid var(--border);color:var(--muted)">Markdown</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="rp-json" style="border:1px solid var(--border);color:var(--muted)">JSON</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="rp-sarif" style="border:1px solid var(--border);color:var(--muted)">SARIF</button>
+      <span class="ml-auto"><span class="pill" id="rp-status">idle</span></span>
+    </div>
+    <div id="rp-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="flex items-center gap-3">
+      <div class="kicker">Preview</div>
+      <span class="text-[11px]" style="color:var(--muted)">HTML render of the generated report</span>
+    </div>
+    <iframe id="rp-preview" class="w-full rounded-xl border mt-3" style="height:560px;border-color:var(--border);background:#0b1020"></iframe>
+  </div>
+</section>
+
+<!-- ================= CVE INTEL ================= -->
+<section class="tab" id="tab-cve">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="panel p-4">
+      <div class="kicker">Lookup a CVE</div>
+      <div class="flex gap-2 mt-3">
+        <input id="cve-q" placeholder="CVE-2022-28346" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1" style="border-color:var(--border)"/>
+        <button class="primary py-2 px-4 rounded-xl font-bold" id="cve-lookup">Lookup</button>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <input id="cve-prod" placeholder="product (e.g. Apache httpd)" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1" style="border-color:var(--border)"/>
+        <input id="cve-ver" placeholder="version" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-32" style="border-color:var(--border)"/>
+        <button class="py-2 px-4 rounded-xl text-[13px]" id="cve-prod-lookup" style="border:1px solid var(--border);color:var(--muted)">Product</button>
+      </div>
+      <div id="cve-out" class="mt-4 space-y-2"></div>
+    </div>
+    <div class="panel p-4">
+      <div class="flex items-center gap-3">
+        <div class="kicker">Offline snapshot (KEV + EPSS + NVD)</div>
+        <button class="ml-auto py-1.5 px-4 rounded-lg text-[12px]" id="cve-all" style="border:1px solid var(--border);color:var(--muted)">Show all</button>
+      </div>
+      <div class="text-[11px] mt-1" style="color:var(--muted)">Refresh with <span class="mono">just cve-sync</span> (requires network). Works offline otherwise.</div>
+      <div id="cve-list" class="mt-3 space-y-1 text-[12px] mono" style="color:var(--muted)"></div>
+    </div>
   </div>
 </section>
 
@@ -401,6 +508,182 @@ $("#pt-run").onclick=async()=>{
       </div></div>`).join("");
     $("#pt-status").textContent=`${d.solved}/${d.total}`;
   }catch(e){$("#pt-status").textContent="error";$("#pt-error").textContent=String(e);}
+};
+
+// ---- CVSS calculator ----
+const CVSS31_METRICS = [
+  ["AV","Attack Vector",["N","A","L","P"],["Network","Adjacent","Local","Physical"]],
+  ["AC","Attack Complexity",["L","H"],["Low","High"]],
+  ["PR","Privileges Required",["N","L","H"],["None","Low","High"]],
+  ["UI","User Interaction",["N","R"],["None","Required"]],
+  ["S","Scope",["U","C"],["Unchanged","Changed"]],
+  ["C","Confidentiality",["H","L","N"],["High","Low","None"]],
+  ["I","Integrity",["H","L","N"],["High","Low","None"]],
+  ["A","Availability",["H","L","N"],["High","Low","None"]],
+];
+const CVSS40_METRICS = [
+  ["AV","Attack Vector",["N","A","L","P"],["Network","Adjacent","Local","Physical"]],
+  ["AC","Attack Complexity",["L","H"],["Low","High"]],
+  ["AT","Attack Requirements",["N","P"],["None","Present"]],
+  ["PR","Privileges Required",["N","L","H"],["None","Low","High"]],
+  ["UI","User Interaction",["N","P","A"],["None","Passive","Active"]],
+  ["VC","Vuln Confidentiality",["H","L","N"],["High","Low","None"]],
+  ["VI","Vuln Integrity",["H","L","N"],["High","Low","None"]],
+  ["VA","Vuln Availability",["H","L","N"],["High","Low","None"]],
+  ["SC","Subs Confidentiality",["H","L","N"],["High","Low","None"]],
+  ["SI","Subs Integrity",["H","L","N"],["High","Low","None"]],
+  ["SA","Subs Availability",["H","L","N"],["High","Low","None"]],
+];
+let CVSS_STATE = {AV:"N",AC:"L",PR:"N",UI:"N",S:"U",C:"H",I:"H",A:"H",
+                  AT:"N",VC:"H",VI:"H",VA:"H",SC:"H",SI:"H",SA:"H"};
+
+function cvssRender(){
+  const ver = $("#cvss-ver").value;
+  const metrics = ver.startsWith("4") ? CVSS40_METRICS : CVSS31_METRICS;
+  $("#cvss-metrics").innerHTML = metrics.map(([k,label,vals,labels])=>`
+    <div class="card" style="padding:8px">
+      <div class="kicker">${label}</div>
+      <div class="flex gap-1 mt-1 flex-wrap">${vals.map((v,i)=>`
+        <span class="cvss-opt" data-k="${k}" data-v="${v}" style="cursor:pointer;padding:3px 8px;border-radius:6px;font-size:11px;border:1px solid var(--border);
+          background:${CVSS_STATE[k]===v?'var(--spectral)':'var(--panel2)'};color:${CVSS_STATE[k]===v?'#08111c':'var(--muted)'}">${labels[i]}</span>`).join("")}
+      </div>
+    </div>`).join("");
+  document.querySelectorAll(".cvss-opt").forEach(el=>{
+    el.onclick=()=>{ CVSS_STATE[el.dataset.k]=el.dataset.v; cvssRender(); };
+  });
+  const body = metrics.map(([k])=>`${k}:${CVSS_STATE[k]}`).join("/");
+  const vector = `CVSS:${ver}/${body}`;
+  $("#cvss-vector").textContent = vector;
+  scoreVector(vector);
+}
+async function scoreVector(vector){
+  try{
+    const d = await (await fetch("/api/cvss",{method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({vector})})).json();
+    if(d.error){$("#cvss-score").textContent="—";$("#cvss-sev").textContent="error";return;}
+    $("#cvss-score").textContent = d.score.toFixed(1);
+    const col = d.severity==="Critical"?"var(--algebraic)":d.severity==="High"?"var(--geometric)":
+      d.severity==="Medium"?"var(--spectral)":"var(--muted)";
+    $("#cvss-score").style.color = col;
+    const sev=$("#cvss-sev"); sev.textContent = d.severity; sev.style.color = col;
+  }catch(e){$("#cvss-score").textContent="—";}
+}
+$("#cvss-ver").onchange=()=>{ cvssRender(); };
+$("#cvss-copy").onclick=()=>{ navigator.clipboard && navigator.clipboard.writeText($("#cvss-vector").textContent); };
+$("#cvss-parse").onclick=async()=>{
+  const v = $("#cvss-input").value.trim();
+  if(!v) return;
+  const d = await (await fetch("/api/cvss",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({vector:v})})).json();
+  $("#cvss-parse-out").textContent = d.error ? "error: "+d.error
+    : `${d.vector}  →  ${d.score.toFixed(1)} (${d.severity})`;
+};
+async function loadCvssPresets(){
+  try{
+    const list = await (await fetch("/api/categories")).json();
+    const sel = $("#cvss-preset");
+    (list||[]).forEach(c=>{
+      const o=document.createElement("option"); o.value=c.name;
+      o.textContent=`${c.name} (${c.severity})`; sel.appendChild(o);
+    });
+    $("#cvss-cats").innerHTML = (list||[]).slice(0,20).map(c=>
+      `<div class="mono truncate">${c.name} · ${c.severity} · ${(c.cwe||[]).join(", ")}</div>`).join("");
+  }catch(e){}
+}
+loadCvssPresets();
+$("#cvss-preset").onchange=async()=>{
+  const name = $("#cvss-preset").value;
+  if(!name) return;
+  const d = await (await fetch("/api/cvss",{method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({category:name})})).json();
+  if(d.error) return;
+  if(d.cvss31){
+    // parse the category's 3.1 vector into state and re-render
+    (d.cvss31.vector.split("/").slice(1)||[]).forEach(p=>{
+      const [k,v] = p.split(":"); if(k && v) CVSS_STATE[k]=v;
+    });
+    $("#cvss-ver").value = "3.1";
+    cvssRender();
+  }
+};
+cvssRender();
+
+// ---- report panel ----
+function engagementPayload(){
+  return {client:$("#rp-client").value, scope:$("#rp-scope").value,
+    author:$("#rp-author").value, date_start:$("#rp-start").value,
+    date_end:$("#rp-end").value, roe:$("#rp-roe").value,
+    limitations:$("#rp-limits").value};
+}
+async function generateReport(fmt){
+  $("#rp-error").textContent="";
+  $("#rp-status").textContent="generating…";
+  const body = {format:fmt||"html", engagement:engagementPayload()};
+  try{
+    const d = await (await fetch("/api/report",{method:"POST",
+      headers:{"Content-Type":"application/json"}, body:JSON.stringify(body)})).json();
+    if(d.error){$("#rp-status").textContent="error";$("#rp-error").textContent=d.error;return null;}
+    $("#rp-status").textContent=`${d.n} findings · ${d.format}`;
+    return d;
+  }catch(e){$("#rp-status").textContent="error";$("#rp-error").textContent=String(e);return null;}
+}
+$("#rp-generate").onclick=async()=>{
+  const d = await generateReport("html");
+  if(d && d.content) $("#rp-preview").srcdoc = d.content;
+};
+function downloadReport(fmt){
+  generateReport(fmt).then(d=>{
+    if(!d || !d.content) return;
+    const ext = fmt==="markdown"?"md":fmt;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([d.content], {type: fmt==="html"?"text/html":"text/plain"}));
+    a.download = "valen-report." + ext;
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+}
+$("#rp-html").onclick=()=>downloadReport("html");
+$("#rp-md").onclick=()=>downloadReport("md");
+$("#rp-json").onclick=()=>downloadReport("json");
+$("#rp-sarif").onclick=()=>downloadReport("sarif");
+
+// ---- CVE intel ----
+function cveCard(r){
+  if(!r || !r.cve) return `<div class="text-xs" style="color:var(--muted)">not found</div>`;
+  const sev = r.cvss_score>=9?"var(--algebraic)":r.cvss_score>=7?"var(--geometric)":
+    r.cvss_score>=4?"var(--spectral)":"var(--muted)";
+  return `<div class="card" style="padding:12px">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="mono font-bold">${r.cve}</span>
+      ${r.kev?`<span class="pill" style="color:var(--algebraic)">KEV</span>`:""}
+      <span class="pill">${(r.product||"").slice(0,24)}</span>
+      <span class="metric ml-auto" style="color:${sev};font-size:18px">${(r.cvss_score||0).toFixed(1)}</span>
+    </div>
+    <div class="text-[11px] mt-2" style="color:var(--muted)">${(r.cwe||[]).join(", ")}${r.epss?` · EPSS ${Number(r.epss).toFixed(3)}`:""}${r.kev_date_added?` · KEV ${r.kev_date_added}`:""}</div>
+    <div class="text-[12px] mt-2" style="color:var(--text)">${(r.description||"").slice(0,240)}</div>
+    <div class="mono text-[10px] mt-2" style="color:var(--muted);word-break:break-all">${r.cvss_vector||""}</div>
+  </div>`;
+}
+$("#cve-lookup").onclick=async()=>{
+  const q = $("#cve-q").value.trim();
+  if(!q) return;
+  const d = await (await fetch("/api/cve?q="+encodeURIComponent(q))).json();
+  $("#cve-out").innerHTML = cveCard(d);
+};
+$("#cve-prod-lookup").onclick=async()=>{
+  const p = $("#cve-prod").value.trim(), v = $("#cve-ver").value.trim();
+  if(!p) return;
+  const url = "/api/cve?product="+encodeURIComponent(p)+(v?"&version="+encodeURIComponent(v):"");
+  const list = await (await fetch(url)).json();
+  $("#cve-out").innerHTML = (list&&list.length)? list.map(cveCard).join("")
+    : `<div class="text-xs" style="color:var(--muted)">no CVEs for this product</div>`;
+};
+$("#cve-all").onclick=async()=>{
+  const list = await (await fetch("/api/cve")).json();
+  $("#cve-list").innerHTML = (list||[]).map(r=>
+    `<div class="truncate">${r.cve} · ${(r.product||"").slice(0,18)} · ${(r.cvss_score||0).toFixed(1)}${r.kev?" ·KEV":""}${r.epss?` ·E ${Number(r.epss).toFixed(2)}`:""}</div>`).join("");
 };
 
 const SEV={critical:"var(--algebraic)",high:"var(--geometric)",medium:"var(--spectral)",low:"var(--muted)"};

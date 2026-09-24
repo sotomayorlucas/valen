@@ -6,6 +6,7 @@
 Endpoints:
     GET  /                 the single-page UI
     GET  /api/adapters     supported analysis adapters
+    GET  /api/categories   vulnerability category registry (CWE/OWASP/CVSS/MITRE)
     GET  /api/examples     list bundled examples
     GET  /api/example      ?name=... -> {name, adapter, code}
     GET  /api/results      experiment artifacts (oracle/owasp/ablation/scale)
@@ -15,6 +16,10 @@ Endpoints:
     POST /api/viz          {code, path?, adapter?} -> text/html valen document
     POST /api/dynamic      {code, path?, argv?, timeout?} -> sandboxed run + triangulation (python)
     POST /api/pentest      {scope, goal?, authorize?, profile?, max_requests?} -> engagement results
+    POST /api/report       {format?, engagement?, ...} -> report in html|md|json|sarif
+    GET  /api/report/download ?format=html|md|json|sarif|pdf -> generated artifact
+    POST /api/cvss         {vector} or {category} -> {vector, score, severity}
+    GET  /api/cve          ?q=CVE-... | ?product=...&version=... -> CVE intelligence
     POST /api/validate     BOLA/IDOR live replay (authorized)
     POST /api/recon        stealth tool command builder
 
@@ -317,6 +322,106 @@ def _challenges() -> List[Dict[str, str]]:
     ]
 
 
+def _report(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Generate a pentest report in the requested format (CLI ``valen report``)."""
+    import tempfile
+
+    from .redteam.report import (
+        _BUILDERS,
+        Engagement,
+        build_html,
+        build_json,
+        build_markdown,
+        build_sarif,
+        collect_report_data,
+        to_pdf,
+    )
+
+    fmt = (payload.get("format") or "html").lower()
+    engagement = Engagement.from_dict(payload.get("engagement"))
+    data = collect_report_data(engagement)
+
+    if fmt in ("html", "md", "markdown", "json", "sarif"):
+        key = "md" if fmt == "markdown" else fmt
+        return {"format": key, "content": _BUILDERS[key](data), "n": len(data["findings"])}
+    if fmt == "pdf":
+        with tempfile.NamedTemporaryFile("w", suffix=".html", delete=False) as fh:
+            fh.write(build_html(data))
+            html_path = Path(fh.name)
+        pdf_path = html_path.with_suffix(".pdf")
+        ok = to_pdf(html_path, pdf_path)
+        body = pdf_path.read_bytes().decode("latin-1") if ok else ""
+        try:
+            html_path.unlink()
+            pdf_path.unlink()
+        except OSError:
+            pass
+        return {"format": "pdf", "ok": ok, "content_b64_len": len(body), "n": len(data["findings"])}
+    return {"error": f"unknown format {fmt!r} (html|md|json|sarif|pdf)"}
+
+
+def _report_download(query: Dict[str, List[str]]) -> Dict[str, Any]:
+    """Serve a freshly generated report artifact (for the console buttons)."""
+    fmt = (query.get("format", ["html"])[0] or "html").lower()
+    out = _report({"format": fmt})
+    return out
+
+
+def _cvss(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Score a CVSS vector or a category's default metrics (CLI ``valen cvss``)."""
+    from . import categories as _categories
+    from .cvss import cvss31_base, cvss40_base, parse_vector, severity_name
+
+    if payload.get("vector"):
+        try:
+            norm, score = parse_vector(str(payload["vector"]))
+        except ValueError as exc:
+            return {"error": str(exc)}
+        return {"vector": norm, "score": score, "severity": severity_name(score)}
+
+    if payload.get("category"):
+        info = _categories.get(str(payload["category"]))
+        v31, s31 = cvss31_base(*info.cvss31)
+        v40, s40 = cvss40_base(*info.cvss40)
+        return {
+            "category": info.name,
+            "cwe": list(info.cwe),
+            "owasp": info.owasp,
+            "mitre_tactic": info.mitre_tactic,
+            "remediation": info.remediation,
+            "severity": info.severity,
+            "cvss31": {"vector": v31, "score": s31},
+            "cvss40": {"vector": v40, "score": s40},
+        }
+
+    # raw metric dict: {"metrics": {AV:..., ...}, "version": "3.1"}
+    metrics = payload.get("metrics") or {}
+    version = str(payload.get("version") or "3.1")
+    if metrics:
+        try:
+            if version.startswith("4"):
+                vec, score = cvss40_base(
+                    metrics.get("AV", "N"), metrics.get("AC", "L"),
+                    metrics.get("AT", "N"), metrics.get("PR", "N"),
+                    metrics.get("UI", "N"), metrics.get("VC", "H"),
+                    metrics.get("VI", "H"), metrics.get("VA", "H"),
+                    metrics.get("SC", "H"), metrics.get("SI", "H"),
+                    metrics.get("SA", "H"),
+                )
+            else:
+                vec, score = cvss31_base(
+                    metrics.get("AV", "N"), metrics.get("AC", "L"),
+                    metrics.get("PR", "N"), metrics.get("UI", "N"),
+                    metrics.get("S", "U"), metrics.get("C", "H"),
+                    metrics.get("I", "H"), metrics.get("A", "H"),
+                )
+        except KeyError as exc:
+            return {"error": f"unknown metric value: {exc}"}
+        return {"vector": vec, "score": score, "severity": severity_name(score)}
+
+    return {"error": "provide 'vector', 'category' or 'metrics'"}
+
+
 def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Autonomous red-team engagement (CLI ``valen pentest``)."""
     from .redteam.challenges import CHALLENGES
@@ -384,8 +489,42 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(_example_index())
         if u.path == "/api/adapters":
             return self._json(_adapters())
+        if u.path == "/api/categories":
+            from . import categories as _categories
+
+            return self._json([
+                {"name": c.name, "severity": c.severity, "cwe": list(c.cwe),
+                 "owasp": c.owasp, "mitre_tactic": c.mitre_tactic,
+                 "cvss31": list(c.cvss31), "cvss40": list(c.cvss40),
+                 "remediation": c.remediation}
+                for c in _categories.all_categories()
+            ])
         if u.path == "/api/challenges":
             return self._json(_challenges())
+        if u.path == "/api/cve":
+            from . import cve_intel
+
+            q = parse_qs(u.query)
+            if q.get("q"):
+                return self._json(cve_intel.lookup(q["q"][0]))
+            if q.get("product"):
+                ids = cve_intel.version_hints(q["product"][0], q.get("version", [""])[0])
+                return self._json([cve_intel.lookup(i) for i in ids])
+            return self._json(cve_intel.all_cves())
+        if u.path == "/api/report/download":
+            q = parse_qs(u.query)
+            out = _report_download(q)
+            fmt = q.get("format", ["html"])[0] or "html"
+            ctype = {
+                "html": "text/html; charset=utf-8",
+                "md": "text/markdown; charset=utf-8",
+                "markdown": "text/markdown; charset=utf-8",
+                "json": "application/json; charset=utf-8",
+                "sarif": "application/json; charset=utf-8",
+            }.get(fmt, "text/plain; charset=utf-8")
+            if fmt in ("html", "md", "markdown", "json", "sarif"):
+                return self._send(200, str(out.get("content", "")), ctype)
+            return self._json(out)
         if u.path == "/api/example":
             name = parse_qs(u.query).get("name", [""])[0]
             try:
@@ -406,7 +545,8 @@ class Handler(BaseHTTPRequestHandler):
     def do_POST(self) -> None:  # noqa: N802
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
-                   "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest")
+                   "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
+                   "/api/report", "/api/cvss")
         if u.path not in allowed:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
@@ -423,6 +563,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_recon(payload))
             if u.path == "/api/pentest":
                 return self._json(_pentest(payload))
+            if u.path == "/api/report":
+                return self._json(_report(payload))
+            if u.path == "/api/cvss":
+                return self._json(_cvss(payload))
             if u.path == "/api/dynamic":
                 return self._json(_dynamic(payload))
             if u.path == "/api/viz":

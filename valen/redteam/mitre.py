@@ -9,21 +9,29 @@ from __future__ import annotations
 
 from typing import Dict, Tuple
 
-# category -> (tactic id, tactic name)
+# ATT&CK tactic id -> display name (Enterprise).
+_TACTIC_NAMES: Dict[str, str] = {
+    "TA0001": "Initial Access",
+    "TA0002": "Execution",
+    "TA0003": "Persistence",
+    "TA0004": "Privilege Escalation",
+    "TA0005": "Defense Evasion",
+    "TA0006": "Credential Access",
+    "TA0007": "Discovery",
+    "TA0008": "Lateral Movement",
+    "TA0009": "Collection",
+    "TA0010": "Exfiltration",
+    "TA0011": "Command and Control",
+    "TA0040": "Impact",
+}
+
+# category -> (tactic id, tactic name) — backed by the canonical
+# ``valen.categories`` registry; kept here as a dict for backwards compatibility.
+from .. import categories as _categories
+
 CATEGORY_TACTICS: Dict[str, Tuple[str, str]] = {
-    "idor": ("TA0009", "Collection"),
-    "missing_authorization": ("TA0004", "Privilege Escalation"),
-    "sql": ("TA0006", "Credential Access"),
-    "command_execution": ("TA0002", "Execution"),
-    "code_execution": ("TA0002", "Execution"),
-    "deserialization": ("TA0002", "Execution"),
-    "file_write": ("TA0002", "Execution"),
-    "path_traversal": ("TA0006", "Credential Access"),
-    "reentrancy": ("TA0040", "Impact"),
-    "state_cycle": ("TA0040", "Impact"),
-    "tool_misuse": ("TA0002", "Execution"),
-    "lateral_movement": ("TA0008", "Lateral Movement"),
-    "privilege_escalation": ("TA0004", "Privilege Escalation"),
+    c.name: (c.mitre_tactic, _TACTIC_NAMES.get(c.mitre_tactic, c.mitre_tactic))
+    for c in _categories.all_categories()
 }
 
 # IAM relation -> (tactic id, tactic name)

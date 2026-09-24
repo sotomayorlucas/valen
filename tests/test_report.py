@@ -31,7 +31,7 @@ def test_severity_name():
     assert severity_name(9.8) == "Critical"
     assert severity_name(7.5) == "High"
     assert severity_name(5.0) == "Medium"
-    assert severity_name(0.0) == "Info"
+    assert severity_name(0.0) == "None"
 
 
 def test_build_report_embeds_findings():
