@@ -40,6 +40,9 @@ console:           # consola red-team autocontenida (valen_console.html)
 pentest goal="all": # pentest autónomo (crAPI 18 challenges)
     {{PY}} -m valen.cli pentest --scope {{SCOPE}} --goal {{goal}} --authorize
 
+lab-reset:         # reinicia el lab crAPI (docker compose down -v + up -d, con override LLM)
+    {{PY}} -m valen.cli pentest --scope {{SCOPE}} --reset --goal ch14_unauthenticated
+
 autopentest:       # benchmark 18 challenges (lab en docker)
     {{PY}} benchmarks/run_autopentest.py --compose /tmp/opencode/crapi/deploy/docker --authorize
 

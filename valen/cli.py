@@ -22,6 +22,10 @@ def _pentest_main(argv: list[str]) -> int:
     parser.add_argument("--authorize", action="store_true", help="execute intrusive operators")
     parser.add_argument("--profile", default="sneaky", help="stealth profile")
     parser.add_argument("--max-requests", type=int, default=40)
+    parser.add_argument("--reset", action="store_true",
+                        help="reset the crAPI lab (docker compose down -v + up -d) before the run")
+    parser.add_argument("--compose", default=None,
+                        help="crAPI compose dir for --reset (default /tmp/opencode/crapi/deploy/docker)")
     args = parser.parse_args(argv)
 
     try:
@@ -32,6 +36,18 @@ def _pentest_main(argv: list[str]) -> int:
     if scope != args.scope.rstrip("/"):
         print(f"note: scope normalized to its origin {scope!r} "
               f"(API paths are appended to it)")
+
+    if args.reset:
+        from .redteam.lab import reset_lab
+
+        print("== resetting the crAPI lab (docker compose down -v + up -d) ==")
+        res = reset_lab(compose=args.compose, scope=scope)
+        for line in res.get("log", []):
+            print(f"  {line}")
+        if not res.get("ok"):
+            print(f"error: lab reset failed: {res.get('error', 'health check timed out')}",
+                  file=sys.stderr)
+            return 1
 
     ids = [args.goal] if args.goal != "all" else list(CHALLENGES)
     results = []

@@ -15,7 +15,8 @@ Endpoints:
     POST /api/compare      {vulnerable, patched, adapter?} -> diff
     POST /api/viz          {code, path?, adapter?} -> text/html valen document
     POST /api/dynamic      {code, path?, argv?, timeout?} -> sandboxed run + triangulation (python)
-    POST /api/pentest      {scope, goal?, authorize?, profile?, max_requests?} -> engagement results
+    POST /api/pentest      {scope, goal?, authorize?, profile?, max_requests?, reset?} -> engagement results
+    POST /api/lab/reset    {compose?, scope?, authorize} -> docker compose down -v + up -d + wait
     POST /api/report       {format?, engagement?, ...} -> report in html|md|json|sarif
     GET  /api/report/download ?format=html|md|json|sarif|pdf -> generated artifact
     POST /api/cvss         {vector} or {category} -> {vector, score, severity}
@@ -423,6 +424,21 @@ def _cvss(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {"error": "provide 'vector', 'category' or 'metrics'"}
 
 
+def _lab_reset(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Reset the crAPI lab: docker compose down -v + up -d (authorized only)."""
+    from .redteam.auth import normalize_scope
+    from .redteam.lab import reset_lab
+
+    if not bool(payload.get("authorize")):
+        return {"error": "lab reset is destructive; set authorize=true"}
+    raw = payload.get("scope") or "http://127.0.0.1:8888"
+    try:
+        scope = normalize_scope(raw)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return reset_lab(compose=payload.get("compose"), scope=scope)
+
+
 def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Autonomous red-team engagement (CLI ``valen pentest``)."""
     from .redteam.auth import normalize_scope
@@ -445,6 +461,13 @@ def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
     authorize = bool(payload.get("authorize"))
     max_requests = int(payload.get("max_requests", 40))
     profile = payload.get("profile", "sneaky")
+    lab_reset = None
+    if payload.get("reset"):
+        from .redteam.lab import reset_lab
+
+        lab_reset = reset_lab(compose=payload.get("compose"), scope=scope)
+        if not lab_reset.get("ok"):
+            return {"error": "lab reset failed", "lab_reset": lab_reset}
 
     if goal != "all" and goal not in CHALLENGES:
         return {"error": f"unknown challenge {goal!r}",
@@ -470,6 +493,8 @@ def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
         "solved": solved,
         "total": len(results),
     }
+    if lab_reset is not None:
+        payload_out["lab_reset"] = lab_reset
     # Persist the engagement so the Report/Console panels pick it up (the report
     # reads benchmarks/autopentest_results.json). Best-effort only.
     try:
@@ -579,7 +604,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
-                   "/api/report", "/api/cvss")
+                   "/api/report", "/api/cvss", "/api/lab/reset")
         if u.path not in allowed:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
@@ -596,6 +621,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(_recon(payload))
             if u.path == "/api/pentest":
                 return self._json(_pentest(payload))
+            if u.path == "/api/lab/reset":
+                return self._json(_lab_reset(payload))
             if u.path == "/api/report":
                 return self._json(_report(payload))
             if u.path == "/api/cvss":

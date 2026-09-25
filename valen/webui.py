@@ -173,7 +173,11 @@ __HEAD__
       <label class="flex items-center gap-2 text-xs pb-2" style="color:var(--algebraic)">
         <input type="checkbox" id="pt-authorize" class="accent-red-500"/> --authorize (intrusive)
       </label>
+      <label class="flex items-center gap-2 text-xs pb-2" style="color:var(--muted)">
+        <input type="checkbox" id="pt-reset" class="accent-blue-500"/> reset lab first
+      </label>
       <button class="primary py-2 px-5 rounded-xl font-bold" id="pt-run">Engage</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="pt-lab-reset" style="border:1px solid var(--border);color:var(--geometric)">Reset lab</button>
       <span class="pb-2"><span class="pill" id="pt-status">idle</span></span>
     </div>
     <div id="pt-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
@@ -187,6 +191,7 @@ __HEAD__
     <div class="flex items-center gap-2 mt-4 flex-wrap">
       <div class="kicker">Next step</div>
       <button class="primary py-2 px-5 rounded-xl font-bold" id="pt-report">Generate report →</button>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="pt-report-dl" style="border:1px solid var(--border);color:var(--spectral)">Download HTML ↓</button>
       <a href="/console" target="_blank" class="py-2 px-4 rounded-xl text-[13px]" style="border:1px solid var(--border);color:var(--muted)">Open red-team console</a>
       <span class="text-[11px]" style="color:var(--muted)">the run is saved to benchmarks/autopentest_results.json and feeds the report + console</span>
     </div>
@@ -517,7 +522,7 @@ $("#pt-run").onclick=async()=>{
   $("#pt-status").textContent="engaging…";
   const body={scope:$("#pt-scope").value.trim(),goal:$("#pt-goal").value,
     authorize:$("#pt-authorize").checked,profile:$("#pt-profile").value,
-    max_requests:parseInt($("#pt-max").value)||40};
+    max_requests:parseInt($("#pt-max").value)||40,reset:$("#pt-reset").checked};
   try{
     const d=await (await fetch("/api/pentest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
     if(d.error){$("#pt-status").textContent="error";$("#pt-error").textContent=d.error;return;}
@@ -541,13 +546,30 @@ $("#pt-run").onclick=async()=>{
   }catch(e){$("#pt-status").textContent="error";$("#pt-error").textContent=String(e);}
 };
 // after solving: hand off to the Report tab, prefilled with the engagement scope
-$("#pt-report").onclick=async()=>{
+function prefillEngagement(){
   const scope=$("#pt-scope").value.trim() || "http://127.0.0.1:8888";
-  document.querySelector("nav button[data-tab=report]").click();
-  await new Promise(r=>setTimeout(r,50));
   if(!$("#rp-scope").value) $("#rp-scope").value=scope;
   if(!$("#rp-client").value) $("#rp-client").value="crAPI lab";
+}
+$("#pt-report").onclick=async()=>{
+  document.querySelector("nav button[data-tab=report]").click();
+  await new Promise(r=>setTimeout(r,50));
+  prefillEngagement();
   $("#rp-generate").click();
+};
+$("#pt-report-dl").onclick=()=>{ prefillEngagement(); downloadReport("html"); };
+$("#pt-lab-reset").onclick=async()=>{
+  if(!confirm("Reset the crAPI lab? This runs `docker compose down -v` (wipes all lab data).")) return;
+  $("#pt-error").style.color="var(--algebraic)"; $("#pt-error").textContent="";
+  $("#pt-status").textContent="resetting lab…";
+  const body={scope:$("#pt-scope").value.trim()||"http://127.0.0.1:8888",authorize:true};
+  try{
+    const d=await (await fetch("/api/lab/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    if(d.error){$("#pt-status").textContent="reset failed";$("#pt-error").textContent=d.error;return;}
+    $("#pt-status").textContent=d.ok?"lab ready":"lab not healthy";
+    $("#pt-error").style.color=d.ok?"var(--topological)":"var(--geometric)";
+    $("#pt-error").textContent=(d.log||[]).join(" · ");
+  }catch(e){$("#pt-status").textContent="error";$("#pt-error").textContent=String(e);}
 };
 
 // ---- CVSS calculator ----
