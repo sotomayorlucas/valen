@@ -12,6 +12,7 @@ from .ingest import analyze, infer_adapter
 
 
 def _pentest_main(argv: list[str]) -> int:
+    from .redteam.auth import normalize_scope
     from .redteam.challenges import CHALLENGES
     from .redteam.executor import AutonomousAgent
 
@@ -23,11 +24,20 @@ def _pentest_main(argv: list[str]) -> int:
     parser.add_argument("--max-requests", type=int, default=40)
     args = parser.parse_args(argv)
 
+    try:
+        scope = normalize_scope(args.scope)
+    except ValueError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 2
+    if scope != args.scope.rstrip("/"):
+        print(f"note: scope normalized to its origin {scope!r} "
+              f"(API paths are appended to it)")
+
     ids = [args.goal] if args.goal != "all" else list(CHALLENGES)
     results = []
     for cid in ids:
         c = dict(CHALLENGES[cid]); c["id"] = cid
-        agent = AutonomousAgent(args.scope, authorize=args.authorize,
+        agent = AutonomousAgent(scope, authorize=args.authorize,
                                 max_steps=args.max_requests)
         r = agent.solve(c)
         results.append(r)

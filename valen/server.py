@@ -425,14 +425,21 @@ def _cvss(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Autonomous red-team engagement (CLI ``valen pentest``)."""
+    from .redteam.auth import normalize_scope
     from .redteam.challenges import CHALLENGES
     from .redteam.executor import AutonomousAgent
 
-    scope = (payload.get("scope") or "").rstrip("/")
-    if not scope:
+    raw_scope = payload.get("scope") or ""
+    if not raw_scope.strip():
         return {"error": "scope required (target base URL, authorized scope)"}
-    if not scope.startswith(("http://", "https://")):
-        return {"error": "scope must be an http(s) base URL"}
+    try:
+        scope = normalize_scope(raw_scope)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    warning = ""
+    if scope != raw_scope.rstrip("/"):
+        warning = (f"scope normalized to its origin {scope!r} "
+                   f"(the agent appends API paths to it)")
 
     goal = payload.get("goal") or "all"
     authorize = bool(payload.get("authorize"))
@@ -456,6 +463,7 @@ def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
     solved = sum(1 for r in results if r.get("solved"))
     return {
         "scope": scope,
+        "warning": warning,
         "profile": profile,
         "authorize": authorize,
         "challenges": results,

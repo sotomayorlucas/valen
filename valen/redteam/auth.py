@@ -9,14 +9,35 @@ For authorized engagements only (point at the local lab, not arbitrary hosts).
 from __future__ import annotations
 
 from typing import Dict, List, Optional
+from urllib.parse import urlsplit, urlunsplit
 
 import requests
 
+DEFAULT_SCOPE = "http://127.0.0.1:8888"
+
+
+def normalize_scope(url: str) -> str:
+    """Reduce a target URL to its origin (``scheme://host[:port]``).
+
+    Operators often paste a deep link from the browser (e.g.
+    ``http://127.0.0.1:8888/login``); the pentest agent appends API paths to the
+    scope, so any path/query/fragment must be dropped or every request is
+    prefixed with the wrong path. Raises ``ValueError`` if it is not an
+    ``http(s)`` origin.
+    """
+    parts = urlsplit((url or "").strip())
+    if parts.scheme not in ("http", "https") or not parts.netloc:
+        raise ValueError(f"invalid scope {url!r} (need http(s)://host[:port])")
+    return urlunsplit((parts.scheme, parts.netloc, "", "", ""))
+
 
 class CrApiClient:
-    def __init__(self, base_url: str = "http://127.0.0.1:8888",
+    def __init__(self, base_url: str = DEFAULT_SCOPE,
                  timeout: float = 10.0, verify_tls: bool = False):
-        self.base_url = base_url.rstrip("/")
+        try:
+            self.base_url = normalize_scope(base_url)
+        except ValueError:
+            self.base_url = base_url.rstrip("/")
         self.timeout = timeout
         self.verify_tls = verify_tls
         self.session = requests.Session()

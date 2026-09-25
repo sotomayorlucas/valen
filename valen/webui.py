@@ -515,6 +515,9 @@ $("#pt-run").onclick=async()=>{
   try{
     const d=await (await fetch("/api/pentest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
     if(d.error){$("#pt-status").textContent="error";$("#pt-error").textContent=d.error;return;}
+    if(d.scope){$("#pt-scope").value=d.scope;}  // server normalizes to the origin
+    if(d.warning){$("#pt-error").style.color="var(--geometric)";$("#pt-error").textContent="note: "+d.warning;}
+    else{$("#pt-error").style.color="var(--algebraic)";$("#pt-error").textContent="";}
     $("#pt-score").textContent=`${d.solved}/${d.total} solved`;
     $("#pt-results").innerHTML=(d.challenges||[]).map(r=>`<div class="card" style="padding:10px;border-left:3px solid ${r.solved?'var(--topological)':'var(--muted)'}">
       <div class="flex items-center gap-2">
