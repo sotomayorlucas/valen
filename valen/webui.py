@@ -17,6 +17,9 @@ PAGE = r"""<!doctype html>
 __HEAD__
 </head>
 <body class="min-h-screen">
+<div id="conn-banner" class="scan" style="display:none;background:#3a1016;color:#ff8c8c;padding:8px 16px;text-align:center;font-size:13px;border-bottom:1px solid #5c1f1f">
+  Cannot reach the VALEN server (API fetch failed). Start it with <span class="mono">just serve</span> and open <span class="mono">http://127.0.0.1:8000</span> — do not open the HTML file directly.
+</div>
 <header class="sticky top-0 z-40 backdrop-blur border-b" style="border-color:var(--border);background:rgba(10,14,20,.85)">
   <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-5 flex-wrap">
     <div class="flex items-center gap-3">
@@ -347,6 +350,19 @@ SHELL_JS = r"""
 const $=s=>document.querySelector(s), NS="http://www.w3.org/2000/svg";
 let RESULTS=null;
 
+// connectivity guard: surface a clear message instead of a cryptic
+// "TypeError: Failed to fetch" when the server is down or the page was opened
+// as a file:// (relative /api/* then cannot resolve).
+function connBanner(show){
+  const b=document.getElementById("conn-banner");
+  if(b) b.style.display = show ? "block" : "none";
+}
+async function ping(){
+  try{ await fetch("/api/adapters",{cache:"no-store"}); connBanner(false); }
+  catch(e){ connBanner(true); }
+}
+ping();
+
 // nav + tab styling (manual, no tailwind runtime dependency)
 const NAVON="background:var(--spectral);color:#08111c;font-weight:700;border:1px solid var(--spectral)";
 const NAVOFF="background:transparent;color:var(--muted);border:1px solid var(--border)";
@@ -360,7 +376,7 @@ document.querySelector("nav button[data-tab=analyze]").style.cssText=NAVON;
 
 // examples
 async function loadExamples(){
-  const ex=await (await fetch("/api/examples")).json();
+  let ex=[]; try{ ex=await (await fetch("/api/examples")).json(); }catch(e){ connBanner(true); return; }
   const sel=$("#example"); sel.innerHTML=`<option value="">— example —</option>`;
   ex.forEach(e=>{const o=document.createElement("option");o.value=e.name;o.textContent=`${e.name}  (${e.adapter})`;sel.appendChild(o);});
   sel.onchange=async()=>{ if(!sel.value)return; const d=await (await fetch("/api/example?name="+encodeURIComponent(sel.value))).json();

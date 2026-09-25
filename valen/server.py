@@ -34,6 +34,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List
@@ -482,6 +483,15 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(obj))
 
     def do_GET(self) -> None:  # noqa: N802
+        # Any unhandled exception in a GET handler would make socketserver close
+        # the connection without a response — the browser would then report
+        # "TypeError: Failed to fetch". Always answer with JSON instead.
+        try:
+            return self._dispatch_get()
+        except Exception as exc:  # noqa: BLE001
+            return self._json({"error": str(exc)}, 500)
+
+    def _dispatch_get(self) -> None:
         u = urlparse(self.path)
         if u.path in ("/", "/index.html"):
             return self._send(200, PAGE, "text/html; charset=utf-8")
@@ -543,6 +553,12 @@ class Handler(BaseHTTPRequestHandler):
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self) -> None:  # noqa: N802
+        try:
+            return self._dispatch_post()
+        except Exception as exc:  # noqa: BLE001
+            return self._json({"error": str(exc)}, 500)
+
+    def _dispatch_post(self) -> None:
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
@@ -577,7 +593,13 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
-    httpd = ThreadingHTTPServer((host, port), Handler)
+    try:
+        httpd = ThreadingHTTPServer((host, port), Handler)
+    except OSError as exc:
+        print(f"error: cannot bind {host}:{port} ({exc}). "
+              f"Is another `valen.server` already running? Try --port 8001.",
+              file=sys.stderr)
+        raise SystemExit(1)
     print(f"VALEN web UI  ->  http://{host}:{port}  (Ctrl+C to stop)")
     try:
         httpd.serve_forever()

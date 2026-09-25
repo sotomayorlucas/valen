@@ -1,5 +1,15 @@
 # VALEN — Penetration Test Report
 
+| | |
+|---|---|
+| Client | OWASP crAPI (lab) |
+| Scope | http://127.0.0.1:8888 |
+| Author | VALEN autonomous agent |
+| Start | 2026-09-24 |
+| End | 2026-09-24 |
+| Rules of engagement | Authorized self-test against the local crAPI lab only (127.0.0.1). |
+| Limitations | Local Docker lab; findings validated against crAPI 1.1.5. |
+
 ## Executive summary
 
 - **10** findings (4 critical/high)
@@ -39,7 +49,7 @@
 - **Reproduction:** forge JWT via kid_path_traversal, call /identity/api/v2/user/dashboard
 
 ```
-{"id":532,"name":"Victim","email":"victim-ac2cfa51@example.com","number":"9421688809","picture_url":null,"video_url":null,"video_name":null,"available_credit":100.0,"video_id":0,"role":"ROLE_USER"}
+{"id":653,"name":"Victim","email":"victim-f68cf0a8@example.com","number":"9007492817","picture_url":null,"video_url":null,"video_name":null,"available_credit":100.0,"video_id":0,"role":"ROLE_USER"}
 ```
 
 - **Remediation:** Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion.
@@ -52,7 +62,7 @@
 - **Reproduction:** forge JWT via invalid_signature, call /identity/api/v2/user/dashboard
 
 ```
-{"id":532,"name":"Victim","email":"victim-ac2cfa51@example.com","number":"9421688809","picture_url":null,"video_url":null,"video_name":null,"available_credit":100.0,"video_id":0,"role":"ROLE_USER"}
+{"id":653,"name":"Victim","email":"victim-f68cf0a8@example.com","number":"9007492817","picture_url":null,"video_url":null,"video_name":null,"available_credit":100.0,"video_id":0,"role":"ROLE_USER"}
 ```
 
 - **Remediation:** Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion.
@@ -359,37 +369,37 @@ print("BOLA confirmed: attacker reached the victim's resource")
 
 ## Autonomous pentest results
 
-**16/18** challenges solved.
+**18/18** challenges solved.
 
 | Challenge | Result | Requests | Seconds |
 |---|---|---|---|
-| ch1_bola_vehicle | SOLVED | 7 | 0.68 |
-| ch2_bola_report | SOLVED | 6 | 0.5 |
-| ch3_password_reset | SOLVED | 7 | 0.46 |
-| ch4_excessive_exposure | SOLVED | 7 | 0.33 |
-| ch5_video_internal_prop | SOLVED | 3 | 0.37 |
-| ch6_rate_limit | SOLVED | 18 | 1.32 |
-| ch7_bfla_delete_video | SOLVED | 5 | 0.43 |
-| ch8_mass_assignment_free | SOLVED | 3 | 0.25 |
-| ch9_mass_assignment_balance | SOLVED | 3 | 0.2 |
-| ch10_update_video_props | SOLVED | 3 | 0.17 |
-| ch11_ssrf | SOLVED | 3 | 0.19 |
-| ch12_nosqli_coupon | SOLVED | 3 | 0.16 |
-| ch13_sqli_coupon | SOLVED | 6 | 1.23 |
+| ch1_bola_vehicle | SOLVED | 7 | 0.49 |
+| ch2_bola_report | SOLVED | 6 | 0.73 |
+| ch3_password_reset | SOLVED | 7 | 0.68 |
+| ch4_excessive_exposure | SOLVED | 7 | 0.36 |
+| ch5_video_internal_prop | SOLVED | 3 | 0.3 |
+| ch6_rate_limit | SOLVED | 18 | 1.34 |
+| ch7_bfla_delete_video | SOLVED | 5 | 0.56 |
+| ch8_mass_assignment_free | SOLVED | 3 | 0.38 |
+| ch9_mass_assignment_balance | SOLVED | 3 | 0.32 |
+| ch10_update_video_props | SOLVED | 3 | 0.35 |
+| ch11_ssrf | SOLVED | 3 | 0.36 |
+| ch12_nosqli_coupon | SOLVED | 3 | 0.27 |
+| ch13_sqli_coupon | SOLVED | 6 | 1.44 |
 | ch14_unauthenticated | SOLVED | 1 | 0.01 |
-| ch15_jwt_forge | SOLVED | 6 | 0.34 |
-| ch16_llm_prompt_injection | not solved | 3 | 1.27 |
-| ch17_llm_extract_creds | not solved | 3 | 1.39 |
-| ch18_llm_act_as_user | SOLVED | 4 | 1.95 |
+| ch15_jwt_forge | SOLVED | 6 | 0.54 |
+| ch16_llm_prompt_injection | SOLVED | 3 | 2.98 |
+| ch17_llm_extract_creds | SOLVED | 3 | 4.9 |
+| ch18_llm_act_as_user | SOLVED | 4 | 2.43 |
 
 ## Reconnaissance — CVE hypotheses
 
 | Host | Hint | CVEs |
 |---|---|---|
-| 10.0.0.1 |  | CVE-2016-6210 |
-| 10.0.0.5 |  | CVE-2021-41773 |
-| 10.0.0.5 |  | CVE-2021-41773 |
-| 10.0.0.10 |  | CVE-2011-2523 |
+| 10.0.0.1:22 | OpenSSH 7.2 | CVE-2016-6210 |
+| 10.0.0.5:80 | Apache httpd 2.4.49 | CVE-2021-41773 |
+| 10.0.0.5:443 | Apache httpd 2.4.49 | CVE-2021-41773 |
+| 10.0.0.10:21 | vsftpd 2.3.4 | CVE-2011-2523 |
 
 ## Reconnaissance
 

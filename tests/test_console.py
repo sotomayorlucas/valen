@@ -1,6 +1,7 @@
 """Tests for the VALEN red-team console, tool bootstrap, and server routes."""
 
 import json
+import re
 import subprocess
 import sys
 import threading
@@ -94,3 +95,59 @@ def test_server_redteam_routes_ephemeral_port():
     finally:
         httpd.shutdown()
         httpd.server_close()
+
+
+# ---------------------------------------------------------------------------
+# Regression: the console's inline JS must parse and render.
+# ---------------------------------------------------------------------------
+def _main_script(html: str) -> str:
+    scripts = re.findall(r"<script>(.*?)</script>", html, re.S)
+    assert scripts, "console must embed a script"
+    return scripts[-1]
+
+
+def test_console_js_has_no_raw_newline_in_join():
+    # ``_PAGE`` must be a raw string: a Python-interpreted \n in the JS template
+    # (e.g. join('\n')) breaks the whole script with a syntax error.
+    html = build_console()
+    assert "join('\\n')" in html, "the backslash-n sequence must survive as two chars"
+
+
+def test_console_data_script_precedes_main_script():
+    # The main script reads document.getElementById('data'); the data island
+    # must therefore appear before it, or the page renders nothing.
+    html = build_console()
+    i_data = html.find('id="data"')
+    i_main = html.find("<script>", html.find("</style>"))
+    assert 0 <= i_data < i_main, "data island must come before the main script"
+
+
+def test_console_cards_reference_app_div():
+    html = build_console()
+    assert 'id="app"' in html
+    assert "document.getElementById('app').innerHTML" in html
+    assert "toolsCard()" in html and "pocsCard()" in html
+
+
+def test_console_report_buttons_use_dl():
+    html = build_console()
+    for fmt in ("html", "md", "json", "sarif", "pdf"):
+        assert f"dl('{fmt}')" in html
+
+
+def test_console_file_protocol_fallback_present():
+    html = build_console()
+    assert "location.protocol === 'file:'" in html
+
+
+def test_console_js_parses_with_node(tmp_path):
+    """If node is available, syntax-check the embedded script."""
+    import shutil
+    if not shutil.which("node"):
+        return
+    script = _main_script(build_console())
+    f = tmp_path / "console.js"
+    f.write_text(script)
+    proc = subprocess.run(["node", "--check", str(f)],
+                          capture_output=True, text=True)
+    assert proc.returncode == 0, proc.stderr

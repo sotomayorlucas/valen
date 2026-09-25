@@ -116,7 +116,7 @@
             "kev": false,
             "epss": null,
             "repro": "forge JWT via kid_path_traversal, call /identity/api/v2/user/dashboard",
-            "evidence": "{\"id\":580,\"name\":\"Victim\",\"email\":\"victim-2ee0bc47@example.com\",\"number\":\"9407515461\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+            "evidence": "{\"id\":653,\"name\":\"Victim\",\"email\":\"victim-f68cf0a8@example.com\",\"number\":\"9007492817\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
             "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
           }
         },
@@ -153,7 +153,7 @@
             "kev": false,
             "epss": null,
             "repro": "forge JWT via invalid_signature, call /identity/api/v2/user/dashboard",
-            "evidence": "{\"id\":580,\"name\":\"Victim\",\"email\":\"victim-2ee0bc47@example.com\",\"number\":\"9407515461\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
+            "evidence": "{\"id\":653,\"name\":\"Victim\",\"email\":\"victim-f68cf0a8@example.com\",\"number\":\"9007492817\",\"picture_url\":null,\"video_url\":null,\"video_name\":null,\"available_credit\":100.0,\"video_id\":0,\"role\":\"ROLE_USER\"}",
             "remediation": "Pin the signature algorithm, verify signatures on every token, and reject alg=none / key-confusion."
           }
         },

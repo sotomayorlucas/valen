@@ -44,7 +44,7 @@ def collect() -> Dict[str, Any]:
     }
 
 
-_PAGE = """<!doctype html>
+_PAGE = r"""<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -105,6 +105,7 @@ details{margin:6px 0} summary{cursor:pointer;color:var(--accent);font-size:13px}
   <div class="acro">recon → IR → hypotheses → PoC → live validation → kill-chain plan</div>
 </header>
 <div class="wrap" id="app"></div>
+<script type="application/json" id="data">__DATA__</script>
 <script>
 const DATA = JSON.parse(document.getElementById('data').textContent);
 const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
@@ -222,6 +223,14 @@ document.getElementById('app').innerHTML =
   toolsCard() + reconCard() + enumCard() + bolaCard() + exploitCard() + pentestCard() + solidityCard() + llmCard() + planCard() + pocsCard();
 
 async function dl(fmt){
+  const ext = (fmt === 'markdown') ? 'md' : fmt;
+  // Static file opened with file:// : relative /api calls cannot work, so fall
+  // back to the pre-generated report artifacts (run `just report` first).
+  if(location.protocol === 'file:'){
+    const target = (fmt === 'pdf') ? 'benchmarks/report.pdf' : 'benchmarks/report.' + ext;
+    window.open(target, '_blank');
+    return;
+  }
   try{
     const r = await fetch('/api/report/download?format=' + fmt);
     if(!r.ok){ alert('report error ' + r.status); return; }
@@ -235,12 +244,11 @@ async function dl(fmt){
     const ct = {'html':'text/html','md':'text/markdown','json':'application/json','sarif':'application/json'}[fmt] || 'text/plain';
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([body], {type: ct}));
-    a.download = 'valen-report.' + (fmt === 'markdown' ? 'md' : fmt);
+    a.download = 'valen-report.' + ext;
     a.click(); URL.revokeObjectURL(a.href);
-  }catch(e){ alert('report error: ' + e); }
+  }catch(e){ alert('report error: ' + e + ' — if you opened this file directly, run `just serve` and use http://127.0.0.1:8000/console'); }
 }
 </script>
-<script type="application/json" id="data">__DATA__</script>
 </body>
 </html>
 """

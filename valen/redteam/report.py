@@ -496,8 +496,11 @@ def build_markdown(data: Dict) -> str:
             cves = h.get("cves") or h.get("cve_ids") or []
             if isinstance(cves, str):
                 cves = [cves]
-            lines.append(f"| {h.get('host', h.get('ip', ''))} | {h.get('hint', h.get('service', ''))} "
-                         f"| {', '.join(cves) or '—'} |")
+            host = h.get("host", h.get("ip", ""))
+            label = h.get("version") or h.get("hypothesis") or h.get("service", "")
+            port = h.get("port")
+            host_cell = f"{host}:{port}" if port else str(host)
+            lines.append(f"| {host_cell} | {label} | {', '.join(cves) or '—'} |")
         lines.append("")
 
     hosts = data.get("recon_hosts", [])
