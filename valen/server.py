@@ -461,7 +461,7 @@ def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
         results.append(r)
 
     solved = sum(1 for r in results if r.get("solved"))
-    return {
+    payload_out = {
         "scope": scope,
         "warning": warning,
         "profile": profile,
@@ -470,6 +470,15 @@ def _pentest(payload: Dict[str, Any]) -> Dict[str, Any]:
         "solved": solved,
         "total": len(results),
     }
+    # Persist the engagement so the Report/Console panels pick it up (the report
+    # reads benchmarks/autopentest_results.json). Best-effort only.
+    try:
+        (BENCH / "autopentest_results.json").write_text(
+            json.dumps({"solved": solved, "n": len(results), "results": results}, indent=2)
+        )
+    except Exception:
+        pass
+    return payload_out
 
 
 # --------------------------------------------------------------------------

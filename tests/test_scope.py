@@ -37,7 +37,7 @@ def test_pentest_server_normalizes_scope():
     assert "error" in _pentest({"scope": "ftp://x"})
 
 
-def test_pentest_warning_reported(monkeypatch):
+def test_pentest_warning_reported(monkeypatch, tmp_path):
     import valen.server as srv
 
     class _FakeAgent:
@@ -49,6 +49,33 @@ def test_pentest_warning_reported(monkeypatch):
 
     import valen.redteam.executor as ex
     monkeypatch.setattr(ex, "AutonomousAgent", _FakeAgent)
+    monkeypatch.setattr(srv, "BENCH", tmp_path)  # don't touch the committed artifact
     out = srv._pentest({"scope": "http://127.0.0.1:8888/login", "goal": "ch14_unauthenticated"})
     assert out["scope"] == "http://127.0.0.1:8888"
     assert out["warning"]
+
+
+def test_pentest_persists_for_report_and_console(monkeypatch, tmp_path):
+    import json
+
+    import valen.server as srv
+
+    class _FakeAgent:
+        def __init__(self, base_url, **kw):
+            pass
+
+        def solve(self, c):
+            return {"challenge": c["id"], "solved": True, "requests": 1,
+                    "seconds": 0.1, "audit": []}
+
+    import valen.redteam.executor as ex
+    monkeypatch.setattr(ex, "AutonomousAgent", _FakeAgent)
+    monkeypatch.setattr(srv, "BENCH", tmp_path)
+
+    out = srv._pentest({"scope": "http://127.0.0.1:8888",
+                        "goal": "ch14_unauthenticated", "authorize": True})
+    assert out["solved"] == 1
+    saved = json.loads((tmp_path / "autopentest_results.json").read_text())
+    # the shape the report + console read
+    assert saved["solved"] == 1 and saved["n"] == 1
+    assert saved["results"][0]["challenge"] == "ch14_unauthenticated"

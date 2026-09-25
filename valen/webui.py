@@ -184,6 +184,12 @@ __HEAD__
       <span class="pill" id="pt-score"></span>
     </div>
     <div id="pt-results" class="mt-3 space-y-2"></div>
+    <div class="flex items-center gap-2 mt-4 flex-wrap">
+      <div class="kicker">Next step</div>
+      <button class="primary py-2 px-5 rounded-xl font-bold" id="pt-report">Generate report →</button>
+      <a href="/console" target="_blank" class="py-2 px-4 rounded-xl text-[13px]" style="border:1px solid var(--border);color:var(--muted)">Open red-team console</a>
+      <span class="text-[11px]" style="color:var(--muted)">the run is saved to benchmarks/autopentest_results.json and feeds the report + console</span>
+    </div>
   </div>
 </section>
 
@@ -519,14 +525,29 @@ $("#pt-run").onclick=async()=>{
     if(d.warning){$("#pt-error").style.color="var(--geometric)";$("#pt-error").textContent="note: "+d.warning;}
     else{$("#pt-error").style.color="var(--algebraic)";$("#pt-error").textContent="";}
     $("#pt-score").textContent=`${d.solved}/${d.total} solved`;
+    const auditHtml=(r)=>{
+      const audit=r.audit||[]; const ev=r.evidence||"";
+      if(!audit.length && !ev) return "";
+      const rows=audit.map(a=>`<div class="mono text-[10px]" style="color:var(--muted)">${a.op||""} ${a.status!=null?"→ "+a.status:""} ${a.skipped?"(skipped: "+a.skipped+")":""} ${a.snippet?("· "+String(a.snippet).slice(0,90)):""}</div>`).join("");
+      return `<details class="mt-2"><summary class="text-[10px]" style="color:var(--muted);cursor:pointer">audit (${audit.length} ops)${ev?" + evidence":""}</summary>${rows}${ev?`<pre class="mono text-[10px] mt-1" style="white-space:pre-wrap;color:var(--muted)">${String(ev).slice(0,400)}</pre>`:""}</details>`;
+    };
     $("#pt-results").innerHTML=(d.challenges||[]).map(r=>`<div class="card" style="padding:10px;border-left:3px solid ${r.solved?'var(--topological)':'var(--muted)'}">
       <div class="flex items-center gap-2">
         <span class="mono text-[12px]">${r.challenge}</span>
         <span class="pill" style="color:${r.solved?'var(--topological)':'var(--muted)'}">${r.solved?'SOLVED':'not solved'}</span>
         <span class="text-[11px] ml-auto" style="color:var(--muted)">${r.requests} req · ${r.seconds}s</span>
-      </div></div>`).join("");
+      </div>${auditHtml(r)}</div>`).join("");
     $("#pt-status").textContent=`${d.solved}/${d.total}`;
   }catch(e){$("#pt-status").textContent="error";$("#pt-error").textContent=String(e);}
+};
+// after solving: hand off to the Report tab, prefilled with the engagement scope
+$("#pt-report").onclick=async()=>{
+  const scope=$("#pt-scope").value.trim() || "http://127.0.0.1:8888";
+  document.querySelector("nav button[data-tab=report]").click();
+  await new Promise(r=>setTimeout(r,50));
+  if(!$("#rp-scope").value) $("#rp-scope").value=scope;
+  if(!$("#rp-client").value) $("#rp-client").value="crAPI lab";
+  $("#rp-generate").click();
 };
 
 // ---- CVSS calculator ----
