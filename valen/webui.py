@@ -47,6 +47,7 @@ __HEAD__
       <button data-tab="report" class="px-4 py-1.5 rounded-lg text-[13px]">Report</button>
       <button data-tab="cve" class="px-4 py-1.5 rounded-lg text-[13px]">CVE Intel</button>
       <button data-tab="ad" class="px-4 py-1.5 rounded-lg text-[13px]">AD</button>
+      <button data-tab="operations" class="px-4 py-1.5 rounded-lg text-[13px]">Operations</button>
       <button data-tab="history" class="px-4 py-1.5 rounded-lg text-[13px]">History</button>
       <button data-tab="experiments" class="px-4 py-1.5 rounded-lg text-[13px]">Experiments</button>
       <button data-tab="methodology" class="px-4 py-1.5 rounded-lg text-[13px]">Methodology</button>
@@ -342,6 +343,30 @@ __HEAD__
   </div>
 </section>
 
+<!-- ================= OPERATIONS ================= -->
+<section class="tab" id="tab-operations">
+  <div class="panel p-4">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="kicker">Operation board — kill chain</div>
+      <select id="ops-eng" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border ml-auto" style="border-color:var(--border)">
+        <option value="">all engagements</option>
+      </select>
+      <button class="py-2 px-4 rounded-xl text-[13px]" id="ops-refresh" style="border:1px solid var(--border);color:var(--muted)">Refresh</button>
+      <span class="pill" id="ops-total">—</span>
+    </div>
+    <div id="ops-board" class="mt-4 grid md:grid-cols-2 xl:grid-cols-3 gap-3"></div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="flex items-center gap-3 flex-wrap">
+      <div class="kicker">Hybrid agent — proposed actions (human-in-the-loop)</div>
+      <input id="ag-target" placeholder="http://127.0.0.1:8888" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-64 ml-auto" style="border-color:var(--border)"/>
+      <button class="primary py-2 px-4 rounded-xl font-bold" id="ag-propose">Propose</button>
+      <span class="pill" id="ag-status">idle</span>
+    </div>
+    <div id="ag-list" class="mt-3 space-y-2"></div>
+  </div>
+</section>
+
 <!-- ================= HISTORY ================= -->
 <section class="tab" id="tab-history">
   <div class="grid lg:grid-cols-3 gap-5">
@@ -477,6 +502,7 @@ document.querySelectorAll("nav button").forEach(b=>{b.style.cssText=NAVOFF; b.on
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   b.style.cssText=NAVON; b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
   if(b.dataset.tab==="history"){ loadEngagements(); loadHistory(); }
+  else if(b.dataset.tab==="operations"){ populateOpsEngagements(); loadOperations(); loadAgentActions(); }
   else if(b.dataset.tab!=="analyze" && !RESULTS) loadResults();
 };});
 document.querySelector("nav button[data-tab=analyze]").style.cssText=NAVON;
@@ -1153,6 +1179,7 @@ function pushActivity(ev){
     `<span style="color:var(--muted)">${esc(ev.kind||"")}</span> ${esc(ev.summary||"")}`;
   el.insertBefore(line, el.firstChild);
   while(el.childElementCount>100) el.removeChild(el.lastChild);
+  if(document.querySelector("#tab-operations") && document.querySelector("#tab-operations").classList.contains("on")) loadOperations();
 }
 async function loadMe(){
   try{
@@ -1183,6 +1210,7 @@ async function afterLogin(){
   loadMe();
   loadExamples(); loadCves(); loadChallenges(); loadCvssPresets();
   loadEngagements(); loadHistory();
+  populateOpsEngagements(); loadOperations();
   startSSE();
 }
 async function initSession(){
@@ -1201,9 +1229,89 @@ async function initSession(){
 bindLogin();
 initSession();
 
+// ---- Operations board ----
+async function populateOpsEngagements(){
+  try{
+    const list=await (await fetch("/api/engagements")).json();
+    const sel=$("#ops-eng"); if(!sel) return;
+    const cur=sel.value;
+    sel.innerHTML=`<option value="">all engagements</option>`+
+      (list||[]).map(e=>`<option value="${e.id}">#${e.id} ${esc(e.name)}</option>`).join("");
+    sel.value=cur;
+  }catch(e){}
+}
+async function loadOperations(){
+  try{
+    const eid=$("#ops-eng")?$("#ops-eng").value:"";
+    const d=await (await fetch("/api/operations"+(eid?("?engagement_id="+eid):""))).json();
+    if(d.error){ return; }
+    $("#ops-total").textContent=`${d.total_runs||0} runs · ${(d.techniques||[]).length} techniques`;
+    $("#ops-board").innerHTML=(d.phases||[]).length? d.phases.map(p=>`
+      <div class="panel p-3">
+        <div class="flex items-center gap-2"><span class="kicker">${esc(p.tactic)}</span>
+          <span class="pill ml-auto">${esc(p.tactic_id)}</span></div>
+        <div class="mt-2 space-y-1">${p.items.map(i=>`<div class="text-[12px]">
+          <span class="mono" style="color:var(--spectral)">${esc(i.technique)}</span>
+          ${esc(i.name||i.kind)} <span style="color:var(--muted)">· ${esc(i.adapter||i.kind)} · ${esc(i.summary||"")}</span></div>`).join("")}</div>
+      </div>`).join("")
+      : `<div class="text-xs" style="color:var(--muted)">no runs yet for this engagement</div>`;
+  }catch(e){}
+}
+$("#ops-eng").onchange=loadOperations;
+$("#ops-refresh").onclick=()=>{ populateOpsEngagements(); loadOperations(); };
+
+// ---- hybrid agent approvals ----
+function agRow(a){
+  const col = a.tier==="intrusive" ? "var(--algebraic)" : "var(--geometric)";
+  const st = a.status||"pending";
+  return `<div class="card" style="padding:10px;border-left:3px solid ${col}">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span class="mono text-[11px]" style="color:var(--spectral)">${esc(a.technique)}</span>
+      <b class="text-[13px]">${esc(a.title)}</b>
+      <span class="pill">${esc(a.tier)}</span>
+      <span class="text-[11px]" style="color:var(--muted)">${esc(a.phase)} · ${esc(a.tactic_id)}</span>
+      <span class="pill ml-auto">${esc(st)}</span>
+    </div>
+    <div class="text-[11px] mt-1" style="color:var(--muted)">${esc(a.rationale||"")}</div>
+    <div class="mono text-[10px] mt-1" style="color:var(--muted);word-break:break-all">${esc(JSON.stringify(a.command))}</div>
+    ${st==="pending"?`<div class="flex gap-2 mt-2">
+      <button class="py-1 px-3 rounded text-[11px]" style="border:1px solid var(--border);color:var(--topological)" onclick="agDecide('${a.id}',true)">Approve</button>
+      <button class="py-1 px-3 rounded text-[11px]" style="border:1px solid var(--border);color:var(--muted)" onclick="agDecide('${a.id}',false)">Deny</button>
+    </div>`:""}
+  </div>`;
+}
+async function loadAgentActions(){
+  try{
+    const eid=$("#ops-eng")?$("#ops-eng").value:"";
+    const list=await (await fetch("/api/agent/actions"+(eid?("?engagement_id="+eid):""))).json();
+    $("#ag-list").innerHTML=(list&&list.length)? list.map(agRow).join("")
+      : `<div class="text-xs" style="color:var(--muted)">no actions — Propose to plan the next steps</div>`;
+  }catch(e){}
+}
+$("#ag-propose").onclick=async()=>{
+  $("#ag-status").textContent="planning…";
+  const eid=$("#ops-eng")?$("#ops-eng").value:"";
+  const body={target:$("#ag-target").value.trim(), engagement_id: eid? +eid: null,
+    context:{target:$("#ag-target").value.trim(), services:[80,443]}};
+  try{
+    const d=await (await fetch("/api/agent/propose",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
+    if(d.error){ $("#ag-status").textContent="error"; return; }
+    $("#ag-status").textContent=`${(d.proposed||[]).length} proposed`;
+    loadAgentActions();
+  }catch(e){ $("#ag-status").textContent="error"; }
+};
+window.agDecide=async(id,approve)=>{
+  try{
+    const r=await fetch("/api/agent/decide",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({id, approve, authorize:$("#pt-authorize")?$("#pt-authorize").checked:false})});
+    const d=await r.json();
+    $("#ag-status").textContent = d.error ? ("error: "+d.error) : d.status;
+    loadAgentActions();
+  }catch(e){ $("#ag-status").textContent="error"; }
+};
+
 // ---- Active Directory ----
-$("#ad-run").onclick=async()=>{
-  $("#ad-error").textContent="";
+$("#ad-run").onclick=async()=>{  $("#ad-error").textContent="";
   $("#ad-status").textContent="analyzing…";
   let data=null;
   try{ data=JSON.parse($("#ad-json").value || "{}"); }

@@ -79,6 +79,7 @@ class ServerConfig:
     store: Any = None  # valen.store.Store | None
     authz: Any = None  # valen.authz.Authz | None (None => legacy single-token mode)
     events: Any = None  # valen.events.EventBus | None
+    approvals: Any = None  # valen.redteam.agent_web.ApprovalQueue | None
 
 
 _DEFAULT_CFG = ServerConfig()
@@ -674,7 +675,8 @@ class Handler(BaseHTTPRequestHandler):
             return "manage_users"
         if path in ("/api/pentest", "/api/dynamic", "/api/lab/reset",
                     "/api/validate", "/api/recon", "/api/ad",
-                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions"):
+                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
+                    "/api/agent/propose", "/api/agent/decide", "/api/agent/actions"):
             return "execute"
         if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
                                         "/api/engagements"):
@@ -830,6 +832,45 @@ class Handler(BaseHTTPRequestHandler):
         if events is not None:
             events.publish(kind, summary, actor=fields.pop("actor", self._actor()), **fields)
 
+    # -- hybrid agent (human-in-the-loop) ----------------------------------
+    def _agent_propose(self, payload: Dict[str, Any]) -> None:
+        q = self._cfg().approvals
+        if q is None:
+            return self._json({"error": "agent queue disabled"}, 400)
+        ctx = payload.get("context") or {}
+        if payload.get("target") and "target" not in ctx:
+            ctx["target"] = payload["target"]
+        acts = q.propose(ctx, engagement_id=payload.get("engagement_id"))
+        for a in acts:
+            self._publish("agent_propose", f"{a.tier} {a.title}",
+                          engagement_id=a.engagement_id, action=a.id)
+        return self._json({"proposed": [a.to_dict() for a in acts]})
+
+    def _agent_actions(self, query: Dict[str, List[str]]) -> None:
+        q = self._cfg().approvals
+        if q is None:
+            return self._json([])
+        eid = query.get("engagement_id", [None])[0]
+        status = query.get("status", [None])[0]
+        acts = q.list(engagement_id=int(eid) if eid else None, status=status)
+        return self._json([a.to_dict() for a in acts])
+
+    def _agent_decide(self, payload: Dict[str, Any]) -> None:
+        q = self._cfg().approvals
+        if q is None:
+            return self._json({"error": "agent queue disabled"}, 400)
+        approve = bool(payload.get("approve"))
+        act = q.get(payload.get("id", ""))
+        if act is None:
+            return self._json({"error": "unknown action"}, 404)
+        authorize = approve and bool(payload.get("authorize")) and bool(self._cfg().allow_exec)
+        out = q.decide(act.id, approve=approve, authorize=authorize)
+        if "error" in out:
+            return self._json(out, 403 if approve else 400)
+        self._publish("agent_decide", f"{out['status']} {act.title}",
+                      engagement_id=act.engagement_id, action=act.id)
+        return self._json(out)
+
     def do_GET(self) -> None:  # noqa: N802
         # Any unhandled exception in a GET handler would make socketserver close
         # the connection without a response — the browser would then report
@@ -856,6 +897,13 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(getattr(self, "_user_ctx", None) or {"legacy": True})
         if u.path == "/api/events":
             return self._sse()
+        if u.path == "/api/agent/actions":
+            return self._agent_actions(parse_qs(u.query))
+        if u.path == "/api/operations":
+            from .ops import board_from_store
+            q = parse_qs(u.query)
+            eid = q.get("engagement_id", [None])[0]
+            return self._json(board_from_store(self._store(), int(eid) if eid else None))
         if u.path == "/api/users":
             az = self._cfg().authz
             if az is None:
@@ -976,6 +1024,7 @@ class Handler(BaseHTTPRequestHandler):
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
                    "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements", "/api/ad",
                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
+                   "/api/agent/propose", "/api/agent/decide",
                    "/api/login", "/api/logout", "/api/users")
         if u.path not in allowed and not u.path.startswith("/api/users/"):
             return self._json({"error": "not found"}, 404)
@@ -1048,6 +1097,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(out)
             if u.path == "/api/ad":
                 return self._json(_ad_plan(payload))
+            if u.path == "/api/agent/propose":
+                return self._agent_propose(payload)
+            if u.path == "/api/agent/decide":
+                return self._agent_decide(payload)
             if u.path == "/api/payloads":
                 return self._json(_payloads(payload))
             if u.path == "/api/c2/plan":
@@ -1167,6 +1220,9 @@ def main(argv: list[str] | None = None) -> int:
             logger.exception("failed to open the history store; continuing without it")
 
     events = EventBus()
+    from .redteam.agent_web import ApprovalQueue
+
+    approvals = ApprovalQueue()
     authz = None
     if not args.token:  # token mode => no user accounts
         from .authz import Authz, bootstrap_admin
@@ -1187,7 +1243,7 @@ def main(argv: list[str] | None = None) -> int:
 
     cfg = ServerConfig(token=args.token, allow_host=args.allow_host,
                        allow_exec=args.allow_exec, max_body=args.max_body,
-                       store=store, authz=authz, events=events)
+                       store=store, authz=authz, events=events, approvals=approvals)
     serve(args.host, args.port, cfg)
     return 0
 

@@ -65,3 +65,37 @@ def tactic_for_category(category: str) -> Tuple[str, str]:
 
 def tactic_for_relation(relation: str) -> Tuple[str, str]:
     return RELATION_TACTICS.get(relation, ("TA0008", "Lateral Movement"))
+
+
+# ATT&CK technique id -> display name (the subset VALEN emits).
+TECHNIQUE_NAMES: Dict[str, str] = {
+    "T1046": "Network Service Scanning",
+    "T1595.002": "Vulnerability Scanning",
+    "T1592": "Gather Victim Host Information",
+    "T1083": "File and Directory Discovery",
+    "T1059": "Command and Scripting Interpreter",
+    "T1190": "Exploit Public-Facing Application",
+    "T1213": "Data from Information Repositories",
+    "T1069.002": "Domain Groups",
+    "T1098": "Account Manipulation",
+    "T1098.005": "Device Registration",
+    "T1222.001": "Windows File and Directory Permissions Modification",
+    "T1484.001": "Group Policy Modification",
+    "T1003.006": "DCSync",
+    "T1021.001": "Remote Desktop Protocol",
+    "T1021.002": "SMB/Windows Admin Shares",
+    "T1021.006": "Windows Remote Management",
+    "T1134": "Access Token Manipulation",
+    "T1555": "Credentials from Password Stores",
+    "T1558": "Steal or Forge Kerberos Tickets",
+    "T1558.003": "Kerberoasting",
+    "T1558.004": "AS-REP Roasting",
+    "T1552.006": "Group Policy Preferences",
+    "T1482": "Domain Trust Discovery",
+    "T1071": "Application Layer Protocol",
+}
+
+
+def technique_name(technique_id: str) -> str:
+    return TECHNIQUE_NAMES.get(technique_id, technique_id)
+

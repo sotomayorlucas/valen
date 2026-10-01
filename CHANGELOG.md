@@ -14,6 +14,14 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
   into the IR, Z3-confirmed tier-0 attack paths, betweenness pivot ranking,
   Kerberoastable / AS-REP-roastable selection, GPP cpassword decryption, and
   command builders (impacket/kerbrute/hashcat); `POST /api/ad` + an AD panel.
+- **C2 + payloads**: Sliver command builders + `sessions -j` parsing folded into
+  the IR (`valen/redteam/c2/`), msfvenom/handler/HTA payload planner
+  (`valen/redteam/payloads.py`); `POST /api/payloads`, `/api/c2/*`.
+- **Hybrid agent** (`valen/redteam/agent_web.py`): deterministic kill-chain
+  planner + operator approval queue with intrusive gating; `/api/agent/*`.
+- **Operation board** (`valen/ops.py`): per-engagement kill-chain board with
+  ATT&CK techniques (T1xxx), live-refreshed over SSE; `GET /api/operations` and
+  an "Operations" tab (with agent approvals).
 - **Server image**: `Dockerfile.server` (multi-stage Rust core + runtime) and
   `docker-compose.yml`.
 
