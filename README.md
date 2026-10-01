@@ -56,6 +56,54 @@ are the only signal, because there the data is legitimate and taint is blind.
 > cambio en CWE (interpretación) y títulos más concisos.
 > Ver *Structural invariants across domains* en el whitepaper.
 
+## Instalación y arranque rápido / Install & quickstart
+
+Requiere Python ≥ 3.10. El núcleo numérico Rust es **opcional**: sin toolchain
+Rust, la instalación usa un fallback pure-Python equivalente.
+
+```bash
+python -m venv .venv && . .venv/bin/activate
+pip install -e .          # o: pip install valen
+valen --version
+valen config --init       # ~/.config/valen/config.toml (opcional)
+```
+
+**CLI** (SAST + red-team):
+
+```bash
+valen analyze examples/c/command_injection.c          # SAST, 9 lenguajes (auto-detecta)
+valen analyze ejemplos/sqli.py --verify               # + witness formal (Z3)
+valen report --format all                             # HTML · Markdown · JSON · SARIF
+valen cvss "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
+valen pentest --scope http://127.0.0.1:8888 --goal all --authorize
+```
+
+**Servidor local + UI** (un solo operador):
+
+```bash
+valen serve            # http://127.0.0.1:8000  (SPA)  ·  /console (red-team)
+# banderas: --token T · --allow-exec · --allow-host · --data-dir DIR · --port N
+```
+
+**Modelo de confianza** (single-operator, pensado para tu máquina):
+
+- Escucha en `127.0.0.1` y **no ejecuta código** salvo que arranques con `--allow-exec`
+  (habilita `/api/dynamic` y `/api/lab/reset`).
+- `/api/pentest` y `/api/validate` solo aceptan objetivos **loopback**; para
+  autorizar externos usa `--allow-host`.
+- `--token T` (o `VALEN_TOKEN`) exige `Authorization: Bearer T` en `/api/*`.
+- Historial persistente en `~/.local/share/valen/valen.db`; config en
+  `~/.config/valen/config.toml`.
+
+> ⚠️ Herramienta ofensiva: úsala **solo** contra objetivos para los que tengas
+> autorización explícita por escrito.
+
+**English (short):** `pip install -e .` → `valen serve` gives a localhost SPA +
+red-team console; `valen analyze|report|cvss|pentest` cover the CLI. It executes
+nothing unless started with `--allow-exec`, only hits loopback targets unless
+`--allow-host`, and supports bearer-token auth (`--token`). Use it only on
+authorized scope.
+
 ## Idea central / Core idea
 
 Un artefacto (código fuente, binario, API web, agente LLM) se transforma en un

@@ -72,6 +72,7 @@ class ServerConfig:
     allow_host: bool = False
     allow_exec: bool = False
     max_body: int = 5_000_000
+    store: Any = None  # valen.store.Store | None
 
 
 _DEFAULT_CFG = ServerConfig()
@@ -550,6 +551,25 @@ class Handler(BaseHTTPRequestHandler):
     def _cfg(self) -> "ServerConfig":
         return getattr(self.server, "cfg", _DEFAULT_CFG)
 
+    def _store(self):
+        return self._cfg().store
+
+    def _record(self, kind: str, out: Any, payload: Dict[str, Any], summary: str) -> None:
+        st = self._store()
+        if st is None:
+            return
+        try:
+            st.record(
+                kind, out,
+                engagement_id=payload.get("engagement_id"),
+                name=payload.get("path") or payload.get("name") or "<web>",
+                adapter=(out or {}).get("adapter", "") if isinstance(out, dict) else "",
+                path=payload.get("path") or "",
+                summary=summary,
+            )
+        except Exception:  # noqa: BLE001
+            logger.exception("failed to persist %s run", kind)
+
     def _client_loopback(self) -> bool:
         return _is_loopback_host(self.client_address[0])
 
@@ -663,6 +683,41 @@ class Handler(BaseHTTPRequestHandler):
         if u.path == "/api/cves":
             p = BENCH / "cve_pairs.json"
             return self._json(json.loads(p.read_text()) if p.exists() else [])
+        if u.path == "/api/history":
+            st = self._store()
+            if st is None:
+                return self._json({"error": "store disabled (start without --no-store)"}, 403)
+            q = parse_qs(u.query)
+            limit = int(q.get("limit", ["50"])[0] or 50)
+            kind = q.get("kind", [None])[0]
+            return self._json({"engagements": st.list_engagements(),
+                               "runs": st.recent_runs(limit, kind),
+                               "count": st.count()})
+        if u.path == "/api/engagements":
+            st = self._store()
+            if st is None:
+                return self._json({"error": "store disabled"}, 403)
+            return self._json(st.list_engagements())
+        if u.path.startswith("/api/engagements/"):
+            st = self._store()
+            if st is None:
+                return self._json({"error": "store disabled"}, 403)
+            try:
+                eid = int(u.path.rsplit("/", 1)[1])
+            except ValueError:
+                return self._json({"error": "bad engagement id"}, 400)
+            eng = st.get_engagement(eid)
+            return self._json(eng) if eng else self._json({"error": "not found"}, 404)
+        if u.path.startswith("/api/runs/"):
+            st = self._store()
+            if st is None:
+                return self._json({"error": "store disabled"}, 403)
+            try:
+                rid = int(u.path.rsplit("/", 1)[1])
+            except ValueError:
+                return self._json({"error": "bad run id"}, 400)
+            run = st.get_run(rid)
+            return self._json(run) if run else self._json({"error": "not found"}, 404)
         if u.path == "/console":
             return self._send(200, self._page(build_console()), "text/html; charset=utf-8")
         if u.path == "/api/redteam":
@@ -684,7 +739,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
-                   "/api/report", "/api/cvss", "/api/lab/reset")
+                   "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements")
         if u.path not in allowed:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
@@ -711,14 +766,32 @@ class Handler(BaseHTTPRequestHandler):
                     {"error": f"scope {norm!r} is not loopback; start the server "
                               f"with --allow-host to authorize external targets"}, 403)
         try:
+            if u.path == "/api/engagements":
+                st = self._store()
+                if st is None:
+                    return self._json({"error": "store disabled"}, 403)
+                name = (payload.get("name") or "").strip()
+                if not name:
+                    return self._json({"error": "name required"}, 400)
+                return self._json(st.create_engagement(
+                    name, payload.get("client", ""), payload.get("scope", ""),
+                    payload.get("notes", "")))
             if u.path == "/api/compare":
-                return self._json(_compare(payload))
+                out = _compare(payload)
+                self._record("compare", out, payload,
+                             f"resolved={len(out['diff']['resolved'])} "
+                             f"introduced={len(out['diff']['introduced'])}")
+                return self._json(out)
             if u.path == "/api/validate":
                 return self._json(_validate(payload))
             if u.path == "/api/recon":
                 return self._json(_recon(payload))
             if u.path == "/api/pentest":
-                return self._json(_pentest(payload))
+                out = _pentest(payload)
+                if "error" not in out:
+                    self._record("pentest", out, payload,
+                                 f"{out.get('solved', 0)}/{out.get('total', 0)} solved")
+                return self._json(out)
             if u.path == "/api/lab/reset":
                 return self._json(_lab_reset(payload))
             if u.path == "/api/report":
@@ -726,11 +799,36 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/cvss":
                 return self._json(_cvss(payload))
             if u.path == "/api/dynamic":
-                return self._json(_dynamic(payload))
+                out = _dynamic(payload)
+                if "error" not in out:
+                    self._record("dynamic", out, payload,
+                                 f"exit={out.get('exit_code')}")
+                return self._json(out)
             if u.path == "/api/viz":
                 return self._send(200, _viz(payload), "text/html; charset=utf-8")
-            return self._json(_analyze(payload))
+            out = _analyze(payload)
+            self._record("analyze", out, payload, f"{len(out.get('findings', []))} findings")
+            return self._json(out)
         except Exception as exc:
+            return self._json({"error": str(exc)}, 500)
+
+    def do_DELETE(self) -> None:  # noqa: N802
+        try:
+            if not self._guard_api():
+                return
+            u = urlparse(self.path)
+            if u.path.startswith("/api/engagements/"):
+                st = self._store()
+                if st is None:
+                    return self._json({"error": "store disabled"}, 403)
+                try:
+                    eid = int(u.path.rsplit("/", 1)[1])
+                except ValueError:
+                    return self._json({"error": "bad engagement id"}, 400)
+                st.delete_engagement(eid)
+                return self._json({"deleted": eid})
+            return self._json({"error": "not found"}, 404)
+        except Exception as exc:  # noqa: BLE001
             return self._json({"error": str(exc)}, 500)
 
 
@@ -763,25 +861,41 @@ def serve(host: str = "127.0.0.1", port: int = 8000,
 
 
 def main(argv: list[str] | None = None) -> int:
+    from .config import load_config
+
+    scfg = load_config().get("server", {})
     ap = argparse.ArgumentParser(description="VALEN web UI (stdlib server).")
-    ap.add_argument("--host", default="127.0.0.1")
-    ap.add_argument("--port", type=int, default=8000)
-    ap.add_argument("--token", default=os.environ.get("VALEN_TOKEN", ""),
+    ap.add_argument("--host", default=scfg.get("host", "127.0.0.1"))
+    ap.add_argument("--port", type=int, default=int(scfg.get("port", 8000)))
+    ap.add_argument("--token", default=os.environ.get("VALEN_TOKEN", scfg.get("token", "")),
                     help="require this bearer token on /api/* (or env VALEN_TOKEN)")
-    ap.add_argument("--allow-host", action="store_true",
+    ap.add_argument("--allow-host", action="store_true", default=bool(scfg.get("allow_host", False)),
                     help="allow non-loopback pentest/validate targets (SSRF guard off)")
-    ap.add_argument("--allow-exec", action="store_true",
+    ap.add_argument("--allow-exec", action="store_true", default=bool(scfg.get("allow_exec", False)),
                     help="enable /api/dynamic and /api/lab/reset (run code / docker)")
     ap.add_argument("--max-body", type=int, default=5_000_000,
                     help="maximum request body size in bytes")
+    ap.add_argument("--no-store", action="store_true",
+                    help="disable the SQLite engagement/run history store")
+    ap.add_argument("--data-dir", default=os.environ.get("VALEN_DATA_DIR", scfg.get("data_dir", "")),
+                    help="store directory (default ~/.local/share/valen)")
     ap.add_argument("--log-level", default="info",
                     choices=["debug", "info", "warning", "error"])
     args = ap.parse_args(argv)
 
     logging.basicConfig(level=getattr(logging, args.log_level.upper()),
                         format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    store = None
+    if not args.no_store:
+        try:
+            from .store import Store
+
+            store = Store(args.data_dir or None)
+        except Exception:  # noqa: BLE001
+            logger.exception("failed to open the history store; continuing without it")
     cfg = ServerConfig(token=args.token, allow_host=args.allow_host,
-                       allow_exec=args.allow_exec, max_body=args.max_body)
+                       allow_exec=args.allow_exec, max_body=args.max_body,
+                       store=store)
     serve(args.host, args.port, cfg)
     return 0
 

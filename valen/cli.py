@@ -266,6 +266,10 @@ def main(argv: list[str] | None = None) -> int:
         from .server import main as server_main
 
         return server_main(argv[1:])
+    if argv and argv[0] == "config":
+        from .config import main as config_main
+
+        return config_main(argv[1:])
     if argv and argv[0] == "pentest":
         return _pentest_main(argv[1:])
     if argv and argv[0] == "report":

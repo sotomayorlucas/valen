@@ -36,6 +36,7 @@ __HEAD__
       <button data-tab="cvss" class="px-4 py-1.5 rounded-lg text-[13px]">CVSS</button>
       <button data-tab="report" class="px-4 py-1.5 rounded-lg text-[13px]">Report</button>
       <button data-tab="cve" class="px-4 py-1.5 rounded-lg text-[13px]">CVE Intel</button>
+      <button data-tab="history" class="px-4 py-1.5 rounded-lg text-[13px]">History</button>
       <button data-tab="experiments" class="px-4 py-1.5 rounded-lg text-[13px]">Experiments</button>
       <button data-tab="methodology" class="px-4 py-1.5 rounded-lg text-[13px]">Methodology</button>
     </nav>
@@ -60,6 +61,7 @@ __HEAD__
           <option>llm-agent</option><option>iam</option>
         </select>
         <input id="path" placeholder="path (optional)" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1 min-w-[140px]" style="border-color:var(--border)"/>
+        <select id="engagement" title="attach this run to an engagement" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border" style="border-color:var(--border)"></select>
       </div>
       <div class="flex items-center gap-4 flex-wrap mb-3">
         <span class="mode on" id="mode-single">Single</span>
@@ -302,6 +304,36 @@ __HEAD__
   </div>
 </section>
 
+<!-- ================= HISTORY ================= -->
+<section class="tab" id="tab-history">
+  <div class="grid lg:grid-cols-3 gap-5">
+    <div class="panel p-4">
+      <div class="kicker">New engagement</div>
+      <label class="text-xs block mt-3" style="color:var(--muted)">name
+        <input id="eng-name" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs block mt-2" style="color:var(--muted)">client
+        <input id="eng-client" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <label class="text-xs block mt-2" style="color:var(--muted)">scope
+        <input id="eng-scope" placeholder="http://127.0.0.1:8888" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
+      <button class="primary w-full mt-3 py-2 rounded-xl font-bold" id="eng-create">Create</button>
+      <div id="eng-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+    </div>
+    <div class="panel p-4 lg:col-span-2">
+      <div class="kicker">Engagements</div>
+      <div id="eng-list" class="mt-3 space-y-2"></div>
+    </div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="kick"> </div>
+    <div class="flex items-center gap-3">
+      <div class="kicker">Recent runs</div>
+      <span class="pill" id="hist-count"></span>
+      <button class="ml-auto py-1.5 px-4 rounded-lg text-[12px]" id="hist-refresh" style="border:1px solid var(--border);color:var(--muted)">Refresh</button>
+    </div>
+    <div id="hist-runs" class="mt-3"></div>
+  </div>
+</section>
+
 <!-- ================= EXPERIMENTS ================= -->
 <section class="tab" id="tab-experiments">
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3" id="cards"></div>
@@ -370,6 +402,7 @@ if(VALEN_TOKEN){
   };
 }
 const $=s=>document.querySelector(s), NS="http://www.w3.org/2000/svg";
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let RESULTS=null;
 
 // connectivity guard: surface a clear message instead of a cryptic
@@ -392,7 +425,8 @@ document.querySelectorAll("nav button").forEach(b=>{b.style.cssText=NAVOFF; b.on
   document.querySelectorAll("nav button").forEach(x=>x.style.cssText=NAVOFF);
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   b.style.cssText=NAVON; b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
-  if(b.dataset.tab!=="analyze" && !RESULTS) loadResults();
+  if(b.dataset.tab==="history"){ loadEngagements(); loadHistory(); }
+  else if(b.dataset.tab!=="analyze" && !RESULTS) loadResults();
 };});
 document.querySelector("nav button[data-tab=analyze]").style.cssText=NAVON;
 
@@ -450,7 +484,8 @@ function makeDrop(el){
 // analyze
 $("#run").onclick=async()=>{
   $("#status").textContent="analyzing…";
-  const common={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,verify:$("#verify").checked,agent:$("#agent").checked};
+  const common={path:$("#path").value||"<web>",adapter:$("#adapter").value||null,verify:$("#verify").checked,agent:$("#agent").checked,
+    engagement_id: ($("#engagement")&&$("#engagement").value)? +$("#engagement").value : null};
   try{
     if(MODE==="compare"){
       const body={...common,vulnerable:$("#code-vuln").value,patched:$("#code-patched").value};
@@ -533,7 +568,8 @@ $("#pt-run").onclick=async()=>{
   $("#pt-status").textContent="engaging…";
   const body={scope:$("#pt-scope").value.trim(),goal:$("#pt-goal").value,
     authorize:$("#pt-authorize").checked,profile:$("#pt-profile").value,
-    max_requests:parseInt($("#pt-max").value)||40,reset:$("#pt-reset").checked};
+    max_requests:parseInt($("#pt-max").value)||40,reset:$("#pt-reset").checked,
+    engagement_id: ($("#engagement")&&$("#engagement").value)? +$("#engagement").value : null};
   try{
     const d=await (await fetch("/api/pentest",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})).json();
     if(d.error){$("#pt-status").textContent="error";$("#pt-error").textContent=d.error;return;}
@@ -758,6 +794,59 @@ $("#cve-all").onclick=async()=>{
   $("#cve-list").innerHTML = (list||[]).map(r=>
     `<div class="truncate">${r.cve} · ${(r.product||"").slice(0,18)} · ${(r.cvss_score||0).toFixed(1)}${r.kev?" ·KEV":""}${r.epss?` ·E ${Number(r.epss).toFixed(2)}`:""}</div>`).join("");
 };
+
+// ---- history / engagements ----
+async function loadEngagements(){
+  try{
+    const list = await (await fetch("/api/engagements")).json();
+    const sel=$("#engagement");
+    if(sel){
+      const cur=sel.value;
+      sel.innerHTML=`<option value="">no engagement</option>`+
+        (list||[]).map(e=>`<option value="${e.id}">#${e.id} ${esc(e.name)} (${e.run_count})</option>`).join("");
+      sel.value=cur;
+    }
+    $("#eng-list").innerHTML=(list&&list.length)? list.map(e=>`<div class="card" style="padding:10px">
+      <div class="flex items-center gap-2">
+        <b>#${e.id} ${esc(e.name)}</b>
+        <span class="pill ml-auto">${e.run_count} runs</span>
+        <button class="py-1 px-2 rounded text-[11px]" style="border:1px solid var(--border);color:var(--algebraic)" onclick="delEng(${e.id})">delete</button>
+      </div>
+      <div class="text-[11px] mt-1" style="color:var(--muted)">${esc(e.client||"—")} · ${esc(e.scope||"")}</div></div>`).join("")
+      : `<div class="text-xs" style="color:var(--muted)">no engagements yet</div>`;
+  }catch(e){}
+}
+async function loadHistory(){
+  try{
+    const d = await (await fetch("/api/history?limit=50")).json();
+    if(d.error){ $("#hist-count").textContent="store disabled"; return; }
+    $("#hist-count").textContent=`${d.count.engagements} engagements · ${d.count.runs} runs`;
+    $("#hist-runs").innerHTML=(d.runs||[]).length?
+      `<table><thead><tr><th>when</th><th>kind</th><th>name</th><th>adapter</th><th>summary</th><th>engagement</th></tr></thead><tbody>`+
+      d.runs.map(r=>`<tr><td class="mono text-[11px]">${new Date(r.created_at*1000).toLocaleString()}</td>
+        <td>${esc(r.kind)}</td><td>${esc(r.name)}</td><td>${esc(r.adapter)}</td>
+        <td>${esc(r.summary)}</td><td>${r.engagement_id?("#"+r.engagement_id):"—"}</td></tr>`).join("")+`</tbody></table>`
+      : `<div class="text-xs" style="color:var(--muted)">no runs yet — analyze or pentest and they appear here</div>`;
+  }catch(e){}
+}
+$("#eng-create").onclick=async()=>{
+  $("#eng-error").textContent="";
+  const name=$("#eng-name").value.trim();
+  if(!name){ $("#eng-error").textContent="name required"; return; }
+  try{
+    const d=await (await fetch("/api/engagements",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({name,client:$("#eng-client").value,scope:$("#eng-scope").value})})).json();
+    if(d.error){ $("#eng-error").textContent=d.error; return; }
+    $("#eng-name").value=""; $("#eng-client").value=""; $("#eng-scope").value="";
+    loadEngagements(); loadHistory();
+  }catch(e){ $("#eng-error").textContent=String(e); }
+};
+window.delEng=async(id)=>{
+  if(!confirm("Delete engagement #"+id+" and its runs?")) return;
+  try{ await fetch("/api/engagements/"+id,{method:"DELETE"}); loadEngagements(); loadHistory(); }catch(e){}
+};
+$("#hist-refresh").onclick=()=>{ loadEngagements(); loadHistory(); };
+loadEngagements();
 
 const SEV={critical:"var(--algebraic)",high:"var(--geometric)",medium:"var(--spectral)",low:"var(--muted)"};
 function findingsHtml(d){
