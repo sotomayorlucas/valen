@@ -487,6 +487,40 @@ def _ad_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     return plan
 
 
+def _payloads(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build msfvenom commands + a handler + an HTA lure (does not execute)."""
+    from .redteam.payloads import payload_plan
+
+    lhost = payload.get("lhost")
+    lport = payload.get("lport")
+    if not lhost or not lport:
+        return {"error": "lhost and lport required"}
+    return payload_plan(lhost, int(lport), payload.get("output_dir", "payloads"))
+
+
+def _c2_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Plan a Sliver listener + implant (does not execute)."""
+    from .redteam.c2 import c2_plan
+
+    lhost, lport = payload.get("lhost"), payload.get("lport")
+    if not lhost or not lport:
+        return {"error": "lhost and lport required"}
+    return c2_plan(lhost, int(lport), payload.get("name", "sess"))
+
+
+def _c2_sessions(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Parse sliver-client 'sessions -j' output and fold it into the IR."""
+    from .redteam.c2 import parse_sessions, sessions_to_ir
+
+    sessions = parse_sessions(payload.get("output", ""))
+    graph = sessions_to_ir(sessions)
+    return {
+        "sessions": sessions,
+        "nodes": _node_data(graph, None),
+        "edges": _edge_data(graph),
+    }
+
+
 def _lab_reset(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Reset the crAPI lab: docker compose down -v + up -d (authorized only)."""
     from .redteam.auth import normalize_scope
@@ -639,7 +673,8 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/users"):
             return "manage_users"
         if path in ("/api/pentest", "/api/dynamic", "/api/lab/reset",
-                    "/api/validate", "/api/recon", "/api/ad"):
+                    "/api/validate", "/api/recon", "/api/ad",
+                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions"):
             return "execute"
         if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
                                         "/api/engagements"):
@@ -940,6 +975,7 @@ class Handler(BaseHTTPRequestHandler):
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
                    "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements", "/api/ad",
+                   "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
                    "/api/login", "/api/logout", "/api/users")
         if u.path not in allowed and not u.path.startswith("/api/users/"):
             return self._json({"error": "not found"}, 404)
@@ -1012,6 +1048,12 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(out)
             if u.path == "/api/ad":
                 return self._json(_ad_plan(payload))
+            if u.path == "/api/payloads":
+                return self._json(_payloads(payload))
+            if u.path == "/api/c2/plan":
+                return self._json(_c2_plan(payload))
+            if u.path == "/api/c2/sessions":
+                return self._json(_c2_sessions(payload))
             if u.path == "/api/lab/reset":
                 return self._json(_lab_reset(payload))
             if u.path == "/api/report":
