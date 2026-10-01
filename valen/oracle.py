@@ -15,7 +15,7 @@ from __future__ import annotations
 import math as _math
 import random
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Sequence, Tuple
 
 from .analysis.field import signal_fields, vulnerability_field
 from .analysis.math_core import run_core
@@ -240,8 +240,8 @@ def global_metrics(
 
 def _auc(points: Sequence[Tuple[float, int]]) -> float:
     """Rank-based AUC (Mann-Whitney) for (score, label) points."""
-    pos = [s for s, l in points if l == 1]
-    neg = [s for s, l in points if l == 0]
+    pos = [s for s, lbl in points if lbl == 1]
+    neg = [s for s, lbl in points if lbl == 0]
     if not pos or not neg:
         return 0.5
     ranked = sorted(points, key=lambda p: p[0])

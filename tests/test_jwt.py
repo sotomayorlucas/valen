@@ -1,9 +1,7 @@
 """Tests for the stdlib JWT forge."""
 
-import base64
 import hashlib
 import hmac
-import json
 
 from valen.redteam.jwt import (
     b64url_decode,

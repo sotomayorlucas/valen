@@ -271,7 +271,7 @@ def _validate(payload: Dict[str, Any]) -> Dict[str, Any]:
 
 def _recon(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Build stealth tool commands (does NOT execute; the operator runs them)."""
-    from .redteam.stealth import PRESETS, StealthProfile, build_masscan_args, build_nmap_args
+    from .redteam.stealth import PRESETS, build_masscan_args, build_nmap_args
 
     targets = payload.get("targets") or ["<scope>"]
     ports = payload.get("ports") or "1-1000"
@@ -366,9 +366,6 @@ def _report(payload: Dict[str, Any]) -> Dict[str, Any]:
         _BUILDERS,
         Engagement,
         build_html,
-        build_json,
-        build_markdown,
-        build_sarif,
         collect_report_data,
         to_pdf,
     )

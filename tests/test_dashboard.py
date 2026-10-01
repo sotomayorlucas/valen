@@ -1,6 +1,6 @@
 """Tests for the dashboard generator."""
 
-from valen.dashboard import build_html, load_data, write_dashboard
+from valen.dashboard import load_data, write_dashboard
 
 
 def test_dashboard_embeds_experiments_and_methodology(tmp_path):

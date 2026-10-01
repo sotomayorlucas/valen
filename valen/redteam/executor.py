@@ -10,8 +10,7 @@ with the HTTP/formal validators as the arbiter.
 from __future__ import annotations
 
 import time
-import uuid
-from typing import Callable, Dict, List, Optional
+from typing import Dict, List
 
 from .auth import CrApiClient
 from .operators import run_operator
@@ -67,7 +66,6 @@ class AutonomousAgent:
     def _llm_fallback(self, challenge: Dict, obs: Dict) -> Dict:
         """Ask the LLM to propose the next action when the recipe fell short."""
         try:
-            from agent.llm import LLMClient
             from agent.prompts import SYSTEM
             text = self.llm.complete([
                 {"role": "system", "content": SYSTEM},

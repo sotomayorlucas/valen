@@ -1,6 +1,5 @@
 """Tests for the IAM / cloud-trust adapter and privilege-bridge analysis."""
 
-import json
 from pathlib import Path
 
 import pytest

@@ -3,7 +3,7 @@
 import pytest
 
 from valen.analysis.math_core import core_binary, topology
-from valen.analysis.reentrancy import analyze, reentrancy_cycle_graph, reentrancy_findings
+from valen.analysis.reentrancy import analyze, reentrancy_cycle_graph
 from valen.ingest.solidity import SolidityIngest
 
 VULNERABLE = '''pragma solidity ^0.4.19;

@@ -97,6 +97,15 @@ lab-chatbot:       # recrear crapi-chatbot con el override LiteLLM
 test:              # suite completa
     {{PY}} -m pytest -q
 
+lint:              # ruff (correctness) sobre el repo
+    {{PY}} -m ruff check .
+
+cov:               # tests con cobertura
+    {{PY}} -m pytest --cov=valen --cov=agent --cov-report=term-missing
+
+config:            # crea/muestra ~/.config/valen/config.toml
+    {{PY}} -m valen.cli config
+
 test-agent:        # solo el harness de pentest
     {{PY}} -m pytest tests/test_autopentest.py -q
 

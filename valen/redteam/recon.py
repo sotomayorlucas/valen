@@ -12,7 +12,6 @@ For authorized engagements only; run with an explicit scope and a StealthProfile
 from __future__ import annotations
 
 import json
-import re
 import xml.etree.ElementTree as ET
 from typing import Dict, List, Optional
 

@@ -18,13 +18,12 @@ framework-mediated real CVEs.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Set, Tuple
 
 from ..analysis import AnalysisResult, Finding
 from ..ir import EdgeKind, Graph, NodeKind
 from .driver import parser_for
 from .java import (
-    _MUTATORS,
     _PATHTRAVER_TYPES,
     _SANITIZERS,
     _SINKS,
@@ -226,7 +225,8 @@ class JavaInterproceduralIngest:
         snap = {k: set(v) for k, v in env.items()}
         self._walk(cons, env, facts, by_name, return_tainted, findings, path)
         then = {k: set(v) for k, v in env.items()}
-        env.clear(); env.update(snap)
+        env.clear()
+        env.update(snap)
         self._walk(alt, env, facts, by_name, return_tainted, findings, path)
         els = {k: set(v) for k, v in env.items()}
         merged = {}
@@ -234,7 +234,8 @@ class JavaInterproceduralIngest:
             t = then.get(k, set()) | els.get(k, set())
             if t:
                 merged[k] = t
-        env.clear(); env.update(merged)
+        env.clear()
+        env.update(merged)
 
     def _expr(self, node, env, facts, by_name, return_tainted, findings, path):
         if node is None:
@@ -310,7 +311,6 @@ class JavaInterproceduralIngest:
         return mi in return_tainted
 
     def _emit(self, node, name, category, findings, path):
-        key = (category, name, node.start_point[0])
         for f in findings:
             if (f.category, f.sink_name, f.line) == (category, name, node.start_point[0] + 1):
                 return
@@ -323,7 +323,8 @@ class JavaInterproceduralIngest:
 
     def _attach_sinks(self, graph, findings, path):
         for i, f in enumerate(findings, 1):
-            src = f"src_{i}"; snk = f"sink_{i}"
+            src = f"src_{i}"
+            snk = f"sink_{i}"
             graph.add_node(src, NodeKind.SOURCE, "input", file=path, line=f.line)
             graph.add_node(snk, NodeKind.SINK, f.sink_name, file=path, line=f.line, attrs={"category": f.category})
             graph.add_edge(src, snk, EdgeKind.TAINT)

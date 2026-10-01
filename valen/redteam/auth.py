@@ -8,7 +8,7 @@ For authorized engagements only (point at the local lab, not arbitrary hosts).
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 from urllib.parse import urlsplit, urlunsplit
 
 import requests

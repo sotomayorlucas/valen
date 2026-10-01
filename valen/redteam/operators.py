@@ -16,7 +16,7 @@ For authorized engagements only.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List
+from typing import Dict
 
 from .auth import CrApiClient
 from .jwt import forge_kid_path_traversal, forge_invalid_signature, forge_alg_confusion

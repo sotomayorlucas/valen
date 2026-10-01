@@ -6,7 +6,7 @@ from valen.analysis.calibration import (
     logistic_regression,
     sigmoid,
 )
-from valen.benchmark import Case, Metrics, evaluate, taint_detector, verified_detector
+from valen.benchmark import Case, evaluate, taint_detector, verified_detector
 
 
 def test_metrics_counts():

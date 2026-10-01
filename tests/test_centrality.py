@@ -10,7 +10,7 @@ from valen.analysis.math_core import (
     core_binary,
     pagerank_ranking,
 )
-from valen.analysis.trust import bridge_nodes, trust_analysis
+from valen.analysis.trust import trust_analysis
 from valen.ingest.iam import IAMIgest
 
 EX = Path(__file__).resolve().parent.parent / "examples" / "iam"

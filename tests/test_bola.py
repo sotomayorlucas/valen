@@ -59,7 +59,7 @@ def test_bola_corpus_precision_recall():
     import subprocess
     import sys
     root = BOLA.parent.parent.parent
-    proc = subprocess.run(
+    subprocess.run(
         [sys.executable, str(root / "benchmarks" / "run_bola.py"), "--corpus", "small"],
         capture_output=True, text=True, check=True,
     )

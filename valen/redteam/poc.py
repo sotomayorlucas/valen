@@ -43,14 +43,10 @@ def render_poc(
     object id --- and the script issues the request and asserts impact.
     """
     placeholder = "{" + victim_var + "}"
-    path_with = path
-    for name in re.findall(r"\{([^}]+)\}", path):
-        path_with = path_with.replace("{" + name + "}", placeholder)
-    qparts = [f"{p}={placeholder}" for p in id_params]
-    suffix = ("?" + "&".join(qparts)) if qparts else ""
+    path_with = build_url(path, id_params, placeholder)
     req = method.lower()
 
-    asserts = f'assert r.status_code == 200, "endpoint did not return the resource (status={{}})".format(r.status_code)\n'
+    asserts = 'assert r.status_code == 200, "endpoint did not return the resource (status={})".format(r.status_code)\n'
     if leak_hint:
         asserts += (
             f'assert {leak_hint!r} in r.text, "expected leaked data {leak_hint!r} '
@@ -65,7 +61,7 @@ def render_poc(
         f'{token_var} = "<attacker bearer token>"\n'
         f'{victim_var} = "<victim object id>"\n\n'
         f'url = BASE + {path_with!r}.format({victim_var}={victim_var})\n'
-        f'r = requests.{req}(url, headers={{"Authorization": "Bearer " + TOKEN}})\n'
+        f'r = requests.{req}(url, headers={{"Authorization": "Bearer " + {token_var}}})\n'
         'print("status:", r.status_code)\n'
         "print(r.text[:500])\n"
         + asserts

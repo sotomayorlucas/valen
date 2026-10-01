@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from ..ir import EdgeKind, Graph, NodeKind
 
@@ -40,7 +40,6 @@ def parse_ffuf_json(text: str) -> List[Dict]:
             d = json.loads(line)
         except json.JSONDecodeError:
             continue
-        inp = d.get("input", {})
         url = d.get("url", "")
         out.append({
             "path": url.split("//", 1)[-1] if "//" in url else url,

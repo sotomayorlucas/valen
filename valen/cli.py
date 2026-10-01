@@ -52,7 +52,8 @@ def _pentest_main(argv: list[str]) -> int:
     ids = [args.goal] if args.goal != "all" else list(CHALLENGES)
     results = []
     for cid in ids:
-        c = dict(CHALLENGES[cid]); c["id"] = cid
+        c = dict(CHALLENGES[cid])
+        c["id"] = cid
         agent = AutonomousAgent(scope, authorize=args.authorize,
                                 max_steps=args.max_requests)
         r = agent.solve(c)

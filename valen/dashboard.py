@@ -23,7 +23,7 @@ from typing import Any, Dict, List
 from .analysis.math_core import run_core
 from .ingest import analyze, infer_adapter
 from .theme import head
-from .viz import _edge_data, _findings_data, _node_data
+from .viz import _edge_data, _node_data
 
 ROOT = Path(__file__).resolve().parent.parent
 BENCH = ROOT / "benchmarks"

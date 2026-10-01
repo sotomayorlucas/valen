@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-from valen.analysis.verifier import SymbolicVerifier, verify
+from valen.analysis.verifier import verify
 from valen.ingest.python import PythonIngest
 
 EXAMPLES = Path(__file__).resolve().parent.parent / "examples" / "python"

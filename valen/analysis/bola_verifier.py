@@ -24,7 +24,6 @@ The model is deliberately minimal and its claims are scoped: the witness shows
 
 from __future__ import annotations
 
-import re
 from typing import Dict, Optional, Tuple
 
 import z3

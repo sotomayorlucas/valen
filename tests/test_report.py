@@ -2,7 +2,6 @@
 
 from pathlib import Path
 
-import pytest
 
 from valen.redteam.report import build_report, cvss_base, cvss_for, severity_name
 

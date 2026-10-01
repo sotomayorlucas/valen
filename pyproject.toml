@@ -57,3 +57,26 @@ include = ["valen*", "agent*"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
+# Experiment scripts (benchmarks), generated docs and vendored dirs are not linted.
+exclude = ["benchmarks", "core", "docs", "scripts", "formal", "viz", "examples", ".venv"]
+
+[tool.ruff.lint]
+# Correctness-focused: pyflakes + pycodestyle errors. Import sorting is opt-in
+# (`ruff check --select I --fix`) to avoid a repo-wide reorder in this pass.
+select = ["E4", "E7", "E9", "F"]
+ignore = ["E402"]  # module-level imports after sys.path tweaks (benchmarks)
+
+[tool.coverage.run]
+branch = true
+source = ["valen", "agent"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = ["pragma: no cover", "if __name__ == .__main__.:"]
+
