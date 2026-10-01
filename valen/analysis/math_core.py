@@ -33,19 +33,37 @@ def core_binary() -> Path:
     )
 
 
+def _use_python_fallback() -> bool:
+    return os.environ.get("VALEN_NO_CORE", "").lower() in ("1", "true", "yes")
+
+
 def run_core(graph: Graph) -> Dict[str, Any]:
-    """Compute spectral + geometric signals over the graph via the Rust core."""
-    payload = json.dumps(graph.to_dict())
-    proc = subprocess.run(
-        [str(core_binary())],
-        input=payload,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    if proc.returncode != 0:
-        raise RuntimeError(f"valen-core failed: {proc.stderr}")
-    return json.loads(proc.stdout)
+    """Compute spectral + geometric signals over the graph.
+
+    Prefers the compiled Rust core; falls back to the pure-Python implementation
+    (``math_core_py``) when the binary is absent or ``VALEN_NO_CORE=1``. Both
+    emit the same JSON schema, so callers are engine-agnostic.
+    """
+    payload = graph.to_dict()
+    if not _use_python_fallback():
+        try:
+            binary = core_binary()
+        except FileNotFoundError:
+            binary = None
+        if binary is not None:
+            proc = subprocess.run(
+                [str(binary)],
+                input=json.dumps(payload),
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            if proc.returncode != 0:
+                raise RuntimeError(f"valen-core failed: {proc.stderr}")
+            return json.loads(proc.stdout)
+    from .math_core_py import run_core_python
+
+    return run_core_python(payload)
 
 
 def fiedler_ranking(graph: Graph, kind: str = "call") -> List[Tuple[str, str, float]]:

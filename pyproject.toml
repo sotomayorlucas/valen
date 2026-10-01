@@ -5,29 +5,55 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "valen"
 version = "0.1.0"
-description = "A mathematical engine for mapping vulnerabilities (spectral + topological + algebraic + formal)."
+description = "Neuro-symbolic structural-invariant verifier: multi-language SAST + autonomous red-team agent."
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "VALEN contributors" }]
+keywords = ["security", "sast", "taint-analysis", "red-team", "cvss", "sarif"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Security",
+]
 dependencies = [
     "tree-sitter>=0.22",
     "tree-sitter-python",
     "tree-sitter-javascript",
     "tree-sitter-java",
+    "tree-sitter-c>=0.23",
+    "tree-sitter-cpp>=0.23",
+    "tree-sitter-rust>=0.23",
+    "tree-sitter-c-sharp>=0.23",
+    "tree-sitter-go>=0.23",
+    "tree-sitter-php>=0.23",
+    "tree-sitter-ruby>=0.23",
     "tree-sitter-solidity",
     "z3-solver",
+    "requests",
 ]
 
 [project.optional-dependencies]
+# LLM-assisted specification mining (optional).
+llm = ["litellm"]
+# Binary analysis adapter (optional, heavy).
+angr = ["angr"]
 dev = [
     "pytest",
+    "pytest-cov",
+    "ruff",
     "litellm",
 ]
-angr = [
-    "angr",
-]
+
+[project.scripts]
+valen = "valen.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/anomalyco/valen"
 
 [tool.setuptools.packages.find]
-include = ["valen*"]
+include = ["valen*", "agent*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+addopts = "-q"

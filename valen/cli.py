@@ -245,9 +245,23 @@ def _cvss_main(argv: list[str]) -> int:
     return 0
 
 
+def _version() -> str:
+    try:
+        from importlib.metadata import version as _v
+
+        return _v("valen")
+    except Exception:
+        return "0.1.0"
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
+    if argv and argv[0] in ("--version", "-V", "version"):
+        print(f"valen {_version()}")
+        return 0
+    if argv and argv[0] == "analyze":
+        return _analyze_main(argv[1:])
     if argv and argv[0] == "pentest":
         return _pentest_main(argv[1:])
     if argv and argv[0] == "report":

@@ -1,12 +1,25 @@
 # Pinned core dependencies (reproducible artifact).
+# pyproject.toml is the source of truth for the installable package; this file
+# pins exact versions for the reproducible Docker build.
 tree-sitter==0.26.0
 tree-sitter-python==0.25.0
 tree-sitter-javascript==0.25.0
 tree-sitter-java==0.23.5
+tree-sitter-c==0.24.2
+tree-sitter-cpp==0.23.4
+tree-sitter-rust==0.24.2
+tree-sitter-c-sharp==0.23.5
+tree-sitter-go==0.25.0
+tree-sitter-php==0.24.1
+tree-sitter-ruby==0.23.1
+tree-sitter-solidity==1.2.13
 z3-solver==5.1.0.0
+requests==2.34.2
 # Optional
 litellm
 angr==10.0.0
 # Dev
 pytest==9.1.1
+pytest-cov
+ruff
 pypdf==6.19.0
