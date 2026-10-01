@@ -20,6 +20,16 @@ __HEAD__
 <div id="conn-banner" class="scan" style="display:none;background:#3a1016;color:#ff8c8c;padding:8px 16px;text-align:center;font-size:13px;border-bottom:1px solid #5c1f1f">
   Cannot reach the VALEN server (API fetch failed). Start it with <span class="mono">just serve</span> and open <span class="mono">http://127.0.0.1:8000</span> — do not open the HTML file directly.
 </div>
+<div id="login-overlay" style="display:none;position:fixed;inset:0;z-index:60;background:rgba(6,9,14,.92);backdrop-filter:blur(3px);place-items:center">
+  <div class="panel p-6" style="width:340px">
+    <div class="kicker">VALEN team server</div>
+    <div class="text-lg font-bold mt-1">Sign in</div>
+    <input id="login-user" placeholder="username" autocomplete="username" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-3" style="border-color:var(--border)"/>
+    <input id="login-pass" type="password" placeholder="password" autocomplete="current-password" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-2" style="border-color:var(--border)"/>
+    <button class="primary w-full mt-3 py-2 rounded-xl font-bold" id="login-go">Sign in</button>
+    <div id="login-err" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+  </div>
+</div>
 <header class="sticky top-0 z-40 backdrop-blur border-b" style="border-color:var(--border);background:rgba(10,14,20,.85)">
   <div class="max-w-[1400px] mx-auto px-6 py-3 flex items-center gap-5 flex-wrap">
     <div class="flex items-center gap-3">
@@ -308,7 +318,8 @@ __HEAD__
 <section class="tab" id="tab-history">
   <div class="grid lg:grid-cols-3 gap-5">
     <div class="panel p-4">
-      <div class="kicker">New engagement</div>
+      <div class="flex items-center gap-2"><div class="kicker">Session</div><span id="session-info" class="ml-auto"></span></div>
+      <div class="kicker mt-4">New engagement</div>
       <label class="text-xs block mt-3" style="color:var(--muted)">name
         <input id="eng-name" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-full mt-1" style="border-color:var(--border)"/></label>
       <label class="text-xs block mt-2" style="color:var(--muted)">client
@@ -318,19 +329,28 @@ __HEAD__
       <button class="primary w-full mt-3 py-2 rounded-xl font-bold" id="eng-create">Create</button>
       <div id="eng-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
     </div>
-    <div class="panel p-4 lg:col-span-2">
+    <div class="panel p-4">
       <div class="kicker">Engagements</div>
       <div id="eng-list" class="mt-3 space-y-2"></div>
     </div>
-  </div>
-  <div class="panel p-4 mt-5">
-    <div class="kick"> </div>
-    <div class="flex items-center gap-3">
-      <div class="kicker">Recent runs</div>
-      <span class="pill" id="hist-count"></span>
-      <button class="ml-auto py-1.5 px-4 rounded-lg text-[12px]" id="hist-refresh" style="border:1px solid var(--border);color:var(--muted)">Refresh</button>
+    <div class="panel p-4" id="team-panel">
+      <div class="kicker">Team</div>
+      <div id="user-list" class="mt-3 space-y-2"></div>
     </div>
-    <div id="hist-runs" class="mt-3"></div>
+  </div>
+  <div class="grid lg:grid-cols-2 gap-5 mt-5">
+    <div class="panel p-4">
+      <div class="flex items-center gap-3">
+        <div class="kicker">Recent runs</div>
+        <span class="pill" id="hist-count"></span>
+        <button class="ml-auto py-1.5 px-4 rounded-lg text-[12px]" id="hist-refresh" style="border:1px solid var(--border);color:var(--muted)">Refresh</button>
+      </div>
+      <div id="hist-runs" class="mt-3"></div>
+    </div>
+    <div class="panel p-4">
+      <div class="kicker">Live activity (team)</div>
+      <div id="act-list" class="mt-3 space-y-1" style="max-height:340px;overflow:auto"></div>
+    </div>
   </div>
 </section>
 
@@ -390,17 +410,20 @@ __SHELL__
 
 # -- the page JS (tailwind classes on nav/mode are applied via inline style) --
 SHELL_JS = r"""
-// Optional bearer token injected by the server for loopback clients (--token).
-const VALEN_TOKEN = "__VALEN_TOKEN__";
-if(VALEN_TOKEN){
-  const _f=window.fetch.bind(window);
-  window.fetch=(u,o={})=>{
-    if(typeof u==="string" && u.startsWith("/api/")){
-      o={...o, headers:{...(o.headers||{}), "Authorization":"Bearer "+VALEN_TOKEN}};
-    }
-    return _f(u,o);
-  };
-}
+// Auth: loopback gets an injected token; team-server mode uses a login token
+// kept in localStorage. All /api/* calls carry the bearer token.
+const INJECTED_TOKEN = "__VALEN_TOKEN__";
+let TOKEN = localStorage.getItem("valen_token") || INJECTED_TOKEN || "";
+function setToken(t){ TOKEN = t || ""; if(t) localStorage.setItem("valen_token", t); else localStorage.removeItem("valen_token"); }
+function showLogin(on){ const o=document.getElementById("login-overlay"); if(o) o.style.display = on ? "grid" : "none"; }
+window.__valen_logout = ()=>{ setToken(""); if(SSE){SSE.close();SSE=null;} showLogin(true); };
+const _fetch = window.fetch.bind(window);
+window.fetch=(u,o={})=>{
+  if(typeof u==="string" && u.startsWith("/api/") && TOKEN){
+    o={...o, headers:{...(o.headers||{}), "Authorization":"Bearer "+TOKEN}};
+  }
+  return _fetch(u,o).then(r=>{ if(r.status===401) showLogin(true); return r; });
+};
 const $=s=>document.querySelector(s), NS="http://www.w3.org/2000/svg";
 const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let RESULTS=null;
@@ -438,7 +461,6 @@ async function loadExamples(){
   sel.onchange=async()=>{ if(!sel.value)return; const d=await (await fetch("/api/example?name="+encodeURIComponent(sel.value))).json();
     $("#code").value=d.code; $("#adapter").value=d.adapter; $("#path").value=d.name; };
 }
-loadExamples();
 
 // CVE pairs
 async function loadCves(){
@@ -450,7 +472,6 @@ async function loadCves(){
     $("#adapter").value=p.adapter; $("#path").value=p.file;
     $("#cve-meta").textContent=`${p.cve} · ${p.resolved?"resolved":"—"}`; };
 }
-loadCves();
 
 // mode + drag & drop
 let MODE="single";
@@ -562,7 +583,6 @@ async function loadChallenges(){
     (list||[]).forEach(c=>{const o=document.createElement("option");o.value=c.id;o.textContent=c.id;sel.appendChild(o);});
   }catch(e){}
 }
-loadChallenges();
 $("#pt-run").onclick=async()=>{
   $("#pt-error").textContent="";
   $("#pt-status").textContent="engaging…";
@@ -701,7 +721,6 @@ async function loadCvssPresets(){
       `<div class="mono truncate">${c.name} · ${c.severity} · ${(c.cwe||[]).join(", ")}</div>`).join("");
   }catch(e){}
 }
-loadCvssPresets();
 $("#cvss-preset").onchange=async()=>{
   const name = $("#cvss-preset").value;
   if(!name) return;
@@ -846,7 +865,6 @@ window.delEng=async(id)=>{
   try{ await fetch("/api/engagements/"+id,{method:"DELETE"}); loadEngagements(); loadHistory(); }catch(e){}
 };
 $("#hist-refresh").onclick=()=>{ loadEngagements(); loadHistory(); };
-loadEngagements();
 
 const SEV={critical:"var(--algebraic)",high:"var(--geometric)",medium:"var(--spectral)",low:"var(--muted)"};
 function findingsHtml(d){
@@ -1076,6 +1094,84 @@ function mkProto(id, steps){
     if(i<steps.length-1) s+=`<line x1="${W/2}" y1="${yy+bh}" x2="${W/2}" y2="${yy+bh+gap-3}" stroke="#8b949e" stroke-width="2" marker-end="url(#p2)"/>`;});
   svg.innerHTML=s;
 }
+
+// ---- session / login / live activity ----
+async function doLogin(){
+  const u=$("#login-user").value, p=$("#login-pass").value;
+  $("#login-err").textContent="";
+  try{
+    const r=await _fetch("/api/login",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username:u,password:p})});
+    if(!r.ok){ const d=await r.json().catch(()=>({})); $("#login-err").textContent=d.error||("login failed "+r.status); return; }
+    const d=await r.json(); setToken(d.token); $("#login-pass").value=""; showLogin(false); afterLogin();
+  }catch(e){ $("#login-err").textContent=String(e); }
+}
+function bindLogin(){
+  const g=$("#login-go"); if(g) g.onclick=doLogin;
+  const p=$("#login-pass"); if(p) p.onkeydown=(e)=>{ if(e.key==="Enter") doLogin(); };
+}
+let SSE=null;
+function startSSE(){
+  if(SSE || !window.EventSource) return;
+  try{ SSE=new EventSource("/api/events"); }catch(e){ return; }
+  SSE.onmessage=(m)=>{ try{ pushActivity(JSON.parse(m.data)); }catch(e){} };
+}
+function pushActivity(ev){
+  const el=$("#act-list"); if(!el) return;
+  const line=document.createElement("div");
+  line.className="mono text-[11px]";
+  line.innerHTML=`<span style="color:var(--muted)">${new Date(ev.ts*1000).toLocaleTimeString()}</span> `+
+    `<b style="color:var(--spectral)">${esc(ev.actor||"—")}</b> `+
+    `<span style="color:var(--muted)">${esc(ev.kind||"")}</span> ${esc(ev.summary||"")}`;
+  el.insertBefore(line, el.firstChild);
+  while(el.childElementCount>100) el.removeChild(el.lastChild);
+}
+async function loadMe(){
+  try{
+    const r=await _fetch("/api/me"); if(r.status===401){ showLogin(true); return false; }
+    const me=await r.json();
+    const info=$("#session-info");
+    if(me && me.username){
+      if(info) info.innerHTML=`<span class="pill">${esc(me.username)} · ${esc(me.role)}</span> `+
+        `<button class="py-1 px-2 rounded text-[11px]" style="border:1px solid var(--border);color:var(--muted)" onclick="__valen_logout()">logout</button>`;
+      if(me.role==="admin") loadUsers(); else { const t=$("#team-panel"); if(t) t.style.display="none"; }
+    } else if(info){ info.innerHTML=`<span class="pill">token mode</span>`; }
+    return true;
+  }catch(e){ showLogin(true); return false; }
+}
+async function loadUsers(){
+  try{
+    const r=await _fetch("/api/users"); if(!r.ok) return;
+    const users=await r.json();
+    const el=$("#user-list"); if(!el) return;
+    el.innerHTML=(users||[]).map(u=>`<div class="flex items-center gap-2 text-[12px]">
+      <span class="mono">${esc(u.username)}</span>
+      <span class="pill ml-auto">${esc(u.role)}</span>
+      ${u.disabled?`<span class="pill" style="color:var(--algebraic)">disabled</span>`:""}
+    </div>`).join("") || `<div class="text-xs" style="color:var(--muted)">no users</div>`;
+  }catch(e){}
+}
+async function afterLogin(){
+  loadMe();
+  loadExamples(); loadCves(); loadChallenges(); loadCvssPresets();
+  loadEngagements(); loadHistory();
+  startSSE();
+}
+async function initSession(){
+  showLogin(false);
+  let me=null;
+  try{ me = await (await _fetch("/api/me")).json(); }catch(e){}
+  if(me && (me.username || me.legacy || me.legacy===true)){
+    afterLogin();
+  } else if(me && me.error){
+    showLogin(true);
+  } else {
+    // server in team mode and we have a token? verify; else ask
+    if(TOKEN){ afterLogin(); } else { showLogin(true); }
+  }
+}
+bindLogin();
+initSession();
 """
 
 

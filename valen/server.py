@@ -37,8 +37,10 @@ import csv
 import json
 import logging
 import os
+import queue
 import sys
 from dataclasses import dataclass
+from http.cookies import SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List
@@ -46,7 +48,9 @@ from urllib.parse import parse_qs, urlsplit, urlparse
 
 from .analysis.field import vulnerability_field
 from .analysis.math_core import run_core
+from .authz import role_can
 from .console import build_console
+from .events import EventBus
 from .ingest import analyze, infer_adapter
 from .viz import _edge_data, _node_data
 from .webui import PAGE
@@ -73,6 +77,8 @@ class ServerConfig:
     allow_exec: bool = False
     max_body: int = 5_000_000
     store: Any = None  # valen.store.Store | None
+    authz: Any = None  # valen.authz.Authz | None (None => legacy single-token mode)
+    events: Any = None  # valen.events.EventBus | None
 
 
 _DEFAULT_CFG = ServerConfig()
@@ -566,11 +572,14 @@ class Handler(BaseHTTPRequestHandler):
             )
         except Exception:  # noqa: BLE001
             logger.exception("failed to persist %s run", kind)
+        self._publish(kind, summary,
+                      engagement_id=payload.get("engagement_id"),
+                      name=payload.get("path") or payload.get("name") or "")
 
     def _client_loopback(self) -> bool:
         return _is_loopback_host(self.client_address[0])
 
-    def _token_ok(self) -> bool:
+    def _legacy_token_ok(self) -> bool:
         cfg = self._cfg()
         if not cfg.token:
             return True
@@ -579,12 +588,67 @@ class Handler(BaseHTTPRequestHandler):
         q = parse_qs(urlparse(self.path).query).get("token", [""])
         return bool(q) and q[0] == cfg.token
 
-    def _guard_api(self) -> bool:
-        """Return True if the request may proceed; else answer 401 and return False."""
-        if self._token_ok():
+    def _bearer(self) -> str:
+        h = self.headers.get("Authorization", "")
+        if h.startswith("Bearer "):
+            return h[7:].strip()
+        q = parse_qs(urlparse(self.path).query).get("token", [""])
+        if q and q[0]:
+            return q[0]
+        cookie = SimpleCookie(self.headers.get("Cookie", ""))
+        morsel = cookie.get("valen_session")
+        return morsel.value if morsel else ""
+
+    def _user(self):
+        az = self._cfg().authz
+        return az.resolve(self._bearer()) if az is not None else None
+
+    @staticmethod
+    def _public_path(path: str) -> bool:
+        return path in ("/", "/index.html", "/console", "/api/login",
+                        "/api/health", "/favicon.ico")
+
+    @staticmethod
+    def _capability(path: str, method: str) -> str:
+        if path.startswith("/api/users"):
+            return "manage_users"
+        if path in ("/api/pentest", "/api/dynamic", "/api/lab/reset",
+                    "/api/validate", "/api/recon"):
+            return "execute"
+        if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
+                                        "/api/engagements"):
+            return "write"
+        if method == "DELETE" and path.startswith("/api/engagements/"):
+            return "write"
+        return "read"
+
+    def _gate(self, method: str) -> bool:
+        """Authorize the request; sets ``self._user_ctx`` and returns True, or
+        answers 401/403 and returns False. Legacy single-token mode when authz is
+        not configured."""
+        cfg = self._cfg()
+        u = urlparse(self.path)
+        if cfg.authz is None:
+            if u.path.startswith("/api/") and not self._legacy_token_ok():
+                self._json({"error": "unauthorized (set VALEN_TOKEN / --token)"}, 401)
+                return False
             return True
-        self._json({"error": "unauthorized (set VALEN_TOKEN / --token)"}, 401)
-        return False
+        if self._public_path(u.path):
+            return True
+        user = self._user()
+        if user is None:
+            self._json({"error": "unauthorized"}, 401)
+            return False
+        cap = self._capability(u.path, method)
+        if not role_can(user["role"], cap):
+            self._json({"error": f"forbidden: role {user['role']!r} lacks {cap!r}"}, 403)
+            return False
+        self._user_ctx = user
+        return True
+
+    def _actor(self) -> str:
+        u = getattr(self, "_user_ctx", None)
+        return u["username"] if u else "anonymous"
 
     def _scope_allowed(self, scope: str) -> bool:
         host = (urlsplit(scope).hostname or "")
@@ -611,16 +675,112 @@ class Handler(BaseHTTPRequestHandler):
     def _json(self, obj: Any, code: int = 200) -> None:
         self._send(code, json.dumps(obj))
 
+    # -- auth / users ------------------------------------------------------
+    def _login(self, payload: Dict[str, Any]) -> None:
+        az = self._cfg().authz
+        if az is None:
+            return self._json({"error": "server is in token mode (no user accounts)"}, 400)
+        user = az.authenticate(payload.get("username", ""), payload.get("password", ""))
+        if user is None:
+            return self._json({"error": "invalid credentials"}, 401)
+        token = az.create_session(user["id"])
+        self._publish("login", f"{user['username']} logged in",
+                      actor=user["username"], user=user["username"])
+        # also set a cookie so the browser can use the SSE stream (EventSource
+        # cannot send Authorization headers)
+        self.send_response(200)
+        body = json.dumps({"token": token, "user": user}).encode()
+        self._last_status = 200
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.send_header("Set-Cookie",
+                         f"valen_session={token}; Path=/; HttpOnly; SameSite=Strict")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _logout(self) -> None:
+        az = self._cfg().authz
+        if az is not None:
+            az.revoke(self._bearer())
+
+    def _create_user(self, payload: Dict[str, Any]) -> None:
+        az = self._cfg().authz
+        if az is None:
+            return self._json({"error": "user management requires authz mode"}, 400)
+        try:
+            user = az.create_user(payload.get("username", ""), payload.get("password", ""),
+                                  payload.get("role", "operator"))
+        except ValueError as exc:
+            return self._json({"error": str(exc)}, 400)
+        self._publish("user_create", f"user {user['username']} ({user['role']}) created")
+        return self._json(user)
+
+    def _update_user(self, uid: int, payload: Dict[str, Any]) -> None:
+        az = self._cfg().authz
+        if az is None:
+            return self._json({"error": "user management requires authz mode"}, 400)
+        try:
+            if "role" in payload:
+                az.set_role(uid, payload["role"])
+            if "password" in payload:
+                az.set_password(uid, payload["password"])
+            if "disabled" in payload:
+                az.set_disabled(uid, bool(payload["disabled"]))
+        except ValueError as exc:
+            return self._json({"error": str(exc)}, 400)
+        self._publish("user_update", f"user #{uid} updated")
+        return self._json(az.get_user(uid) or {"error": "not found"})
+
+    def _sse(self) -> None:
+        events = self._cfg().events
+        self.send_response(200)
+        self._last_status = 200
+        self.send_header("Content-Type", "text/event-stream")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "close")
+        self.end_headers()
+        if events is None:
+            try:
+                self.wfile.write(b": no event bus\n\n")
+                self.wfile.flush()
+            except OSError:
+                pass
+            return
+        q = events.subscribe()
+        try:
+            self.wfile.write(b"retry: 3000\n\n")
+            for ev in events.recent(20):
+                self.wfile.write(EventBus.sse_format(ev).encode())
+            self.wfile.flush()
+            while True:
+                try:
+                    ev = q.get(timeout=15)
+                    self.wfile.write(EventBus.sse_format(ev).encode())
+                except queue.Empty:
+                    self.wfile.write(b": keep-alive\n\n")
+                self.wfile.flush()
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            pass
+        finally:
+            events.unsubscribe(q)
+
+    def _publish(self, kind: str, summary: str, **fields: Any) -> None:
+        events = self._cfg().events
+        if events is not None:
+            events.publish(kind, summary, actor=fields.pop("actor", self._actor()), **fields)
+
     def do_GET(self) -> None:  # noqa: N802
         # Any unhandled exception in a GET handler would make socketserver close
         # the connection without a response — the browser would then report
         # "TypeError: Failed to fetch". Always answer with JSON instead.
         try:
-            u = urlparse(self.path)
-            if u.path.startswith("/api/") and not self._guard_api():
+            if not self._gate("GET"):
                 return
+            u = urlparse(self.path)
             self._dispatch_get()
             logger.info("GET %s -> %s", u.path, getattr(self, "_last_status", 200))
+        except (BrokenPipeError, ConnectionResetError):
+            pass
         except Exception as exc:  # noqa: BLE001
             logger.exception("GET %s failed", self.path)
             return self._json({"error": str(exc)}, 500)
@@ -629,6 +789,17 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if u.path in ("/", "/index.html"):
             return self._send(200, self._page(PAGE), "text/html; charset=utf-8")
+        if u.path == "/api/health":
+            return self._json({"ok": True, "auth": self._cfg().authz is not None})
+        if u.path == "/api/me":
+            return self._json(getattr(self, "_user_ctx", None) or {"legacy": True})
+        if u.path == "/api/events":
+            return self._sse()
+        if u.path == "/api/users":
+            az = self._cfg().authz
+            if az is None:
+                return self._json({"error": "user management requires authz mode"}, 400)
+            return self._json(az.list_users())
         if u.path == "/api/examples":
             return self._json(_example_index())
         if u.path == "/api/adapters":
@@ -694,7 +865,8 @@ class Handler(BaseHTTPRequestHandler):
             st = self._store()
             if st is None:
                 return self._json({"error": "store disabled"}, 403)
-            return self._json(st.list_engagements())
+            user = getattr(self, "_user_ctx", None)
+            return self._json(st.list_engagements(user_id=user["id"] if user else None))
         if u.path.startswith("/api/engagements/"):
             st = self._store()
             if st is None:
@@ -703,6 +875,9 @@ class Handler(BaseHTTPRequestHandler):
                 eid = int(u.path.rsplit("/", 1)[1])
             except ValueError:
                 return self._json({"error": "bad engagement id"}, 400)
+            user = getattr(self, "_user_ctx", None)
+            if user is not None and not st.can_access(eid, user):
+                return self._json({"error": "forbidden"}, 403)
             eng = st.get_engagement(eid)
             return self._json(eng) if eng else self._json({"error": "not found"}, 404)
         if u.path.startswith("/api/runs/"):
@@ -723,11 +898,13 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         try:
-            if not self._guard_api():
+            if not self._gate("POST"):
                 return
             self._dispatch_post()
             logger.info("POST %s -> %s", urlparse(self.path).path,
                         getattr(self, "_last_status", 200))
+        except (BrokenPipeError, ConnectionResetError):
+            pass
         except Exception as exc:  # noqa: BLE001
             logger.exception("POST %s failed", self.path)
             return self._json({"error": str(exc)}, 500)
@@ -736,8 +913,9 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
-                   "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements")
-        if u.path not in allowed:
+                   "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements",
+                   "/api/login", "/api/logout", "/api/users")
+        if u.path not in allowed and not u.path.startswith("/api/users/"):
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
         if length > self._cfg().max_body:
@@ -746,6 +924,20 @@ class Handler(BaseHTTPRequestHandler):
             payload = json.loads(self.rfile.read(length) or b"{}")
         except Exception:
             return self._json({"error": "invalid JSON body"}, 400)
+        # auth endpoints
+        if u.path == "/api/login":
+            return self._login(payload)
+        if u.path == "/api/logout":
+            self._logout()
+            return self._json({"ok": True})
+        if u.path == "/api/users":
+            return self._create_user(payload)
+        if u.path.startswith("/api/users/"):
+            try:
+                uid = int(u.path.rsplit("/", 1)[1])
+            except ValueError:
+                return self._json({"error": "bad user id"}, 400)
+            return self._update_user(uid, payload)
         # dangerous operations (code execution / container runtime) gate
         if u.path in ("/api/dynamic", "/api/lab/reset") and not self._cfg().allow_exec:
             return self._json({"error": f"{u.path} disabled; start the server with --allow-exec"}, 403)
@@ -770,9 +962,12 @@ class Handler(BaseHTTPRequestHandler):
                 name = (payload.get("name") or "").strip()
                 if not name:
                     return self._json({"error": "name required"}, 400)
-                return self._json(st.create_engagement(
+                user = getattr(self, "_user_ctx", None)
+                eng = st.create_engagement(
                     name, payload.get("client", ""), payload.get("scope", ""),
-                    payload.get("notes", "")))
+                    payload.get("notes", ""), owner_id=user["id"] if user else None)
+                self._publish("engagement_create", f"engagement #{eng['id']} {name}")
+                return self._json(eng)
             if u.path == "/api/compare":
                 out = _compare(payload)
                 self._record("compare", out, payload,
@@ -811,7 +1006,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_DELETE(self) -> None:  # noqa: N802
         try:
-            if not self._guard_api():
+            if not self._gate("DELETE"):
                 return
             u = urlparse(self.path)
             if u.path.startswith("/api/engagements/"):
@@ -822,6 +1017,9 @@ class Handler(BaseHTTPRequestHandler):
                     eid = int(u.path.rsplit("/", 1)[1])
                 except ValueError:
                     return self._json({"error": "bad engagement id"}, 400)
+                user = getattr(self, "_user_ctx", None)
+                if user is not None and not st.can_access(eid, user):
+                    return self._json({"error": "forbidden"}, 403)
                 st.delete_engagement(eid)
                 return self._json({"deleted": eid})
             return self._json({"error": "not found"}, 404)
@@ -841,7 +1039,9 @@ def serve(host: str = "127.0.0.1", port: int = 8000,
         raise SystemExit(1)
     httpd.cfg = cfg
     flags = []
-    if cfg.token:
+    if cfg.authz is not None:
+        flags.append(f"team server ({cfg.authz.count()} users)")
+    elif cfg.token:
         flags.append("token auth")
     if cfg.allow_host:
         flags.append("allow-host")
@@ -861,11 +1061,16 @@ def main(argv: list[str] | None = None) -> int:
     from .config import load_config
 
     scfg = load_config().get("server", {})
-    ap = argparse.ArgumentParser(description="VALEN web UI (stdlib server).")
+    ap = argparse.ArgumentParser(description="VALEN team server + web UI (stdlib).")
     ap.add_argument("--host", default=scfg.get("host", "127.0.0.1"))
     ap.add_argument("--port", type=int, default=int(scfg.get("port", 8000)))
     ap.add_argument("--token", default=os.environ.get("VALEN_TOKEN", scfg.get("token", "")),
-                    help="require this bearer token on /api/* (or env VALEN_TOKEN)")
+                    help="shared-secret mode: require this bearer token on /api/* "
+                         "(disables user accounts)")
+    ap.add_argument("--create-admin", nargs="?", const="admin", default=None,
+                    metavar="USER",
+                    help="create the initial admin account (prints a generated "
+                         "password if none is given) and continue serving")
     ap.add_argument("--allow-host", action="store_true", default=bool(scfg.get("allow_host", False)),
                     help="allow non-loopback pentest/validate targets (SSRF guard off)")
     ap.add_argument("--allow-exec", action="store_true", default=bool(scfg.get("allow_exec", False)),
@@ -890,9 +1095,29 @@ def main(argv: list[str] | None = None) -> int:
             store = Store(args.data_dir or None)
         except Exception:  # noqa: BLE001
             logger.exception("failed to open the history store; continuing without it")
+
+    events = EventBus()
+    authz = None
+    if not args.token:  # token mode => no user accounts
+        from .authz import Authz, bootstrap_admin
+
+        authz = Authz(args.data_dir or None)
+        if args.create_admin:
+            if authz.has_users():
+                print("note: users already exist; --create-admin ignored", file=sys.stderr)
+            else:
+                user = bootstrap_admin(authz, args.create_admin)
+                if user.get("generated_password"):
+                    print(f"created admin {user['username']!r}  "
+                          f"password: {user['generated_password']}")
+        elif not authz.has_users():
+            print("warning: no user accounts yet — run the first start with "
+                  "`--create-admin [user]` to create the admin, or use --token "
+                  "for shared-secret mode.", file=sys.stderr)
+
     cfg = ServerConfig(token=args.token, allow_host=args.allow_host,
                        allow_exec=args.allow_exec, max_body=args.max_body,
-                       store=store)
+                       store=store, authz=authz, events=events)
     serve(args.host, args.port, cfg)
     return 0
 

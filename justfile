@@ -26,8 +26,11 @@ agent file:        # agente autónomo sobre un archivo python
 
 # --- web UI / console ------------------------------------------------------
 
-serve port="8000": # servidor web (UI + /console + /api/redteam)
+serve port="8000": # servidor web (team server + UI + /console + API)
     {{PY}} -m valen.server --port {{port}}
+
+serve-admin port="8000" user="admin": # arranca el team server creando el admin inicial
+    {{PY}} -m valen.server --port {{port}} --create-admin {{user}}
 
 dashboard:         # dashboard estático + abrir en el browser
     {{PY}} -m valen.dashboard --out dashboard.html
@@ -105,6 +108,17 @@ cov:               # tests con cobertura
 
 config:            # crea/muestra ~/.config/valen/config.toml
     {{PY}} -m valen.cli config
+
+# --- docker ----------------------------------------------------------------
+
+docker-build:      # construye la imagen del servidor (Rust core + runtime)
+    docker build -f Dockerfile.server -t valen .
+
+docker-up:         # levanta el servidor en http://127.0.0.1:8000
+    docker compose up -d --build
+
+docker-down:       # detiene y borra el contenedor
+    docker compose down
 
 test-agent:        # solo el harness de pentest
     {{PY}} -m pytest tests/test_autopentest.py -q

@@ -35,7 +35,16 @@ CREATE TABLE IF NOT EXISTS engagements (
     client TEXT DEFAULT '',
     scope TEXT DEFAULT '',
     notes TEXT DEFAULT '',
+    owner_id INTEGER,
     created_at REAL NOT NULL
+);
+CREATE TABLE IF NOT EXISTS engagement_members (
+    engagement_id INTEGER NOT NULL,
+    user_id INTEGER NOT NULL,
+    role TEXT NOT NULL DEFAULT 'operator',   -- operator | viewer
+    created_at REAL NOT NULL,
+    PRIMARY KEY (engagement_id, user_id),
+    FOREIGN KEY (engagement_id) REFERENCES engagements(id) ON DELETE CASCADE
 );
 CREATE TABLE IF NOT EXISTS runs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,6 +60,7 @@ CREATE TABLE IF NOT EXISTS runs (
 );
 CREATE INDEX IF NOT EXISTS idx_runs_engagement ON runs(engagement_id);
 CREATE INDEX IF NOT EXISTS idx_runs_created ON runs(created_at);
+CREATE INDEX IF NOT EXISTS idx_members_user ON engagement_members(user_id);
 """
 
 
@@ -75,15 +85,19 @@ class Store:
     def _init(self) -> None:
         with self._conn() as c:
             c.executescript(_SCHEMA)
+            # migrate pre-multi-user databases (engagements.owner_id added in 0.2)
+            cols = {r["name"] for r in c.execute("PRAGMA table_info(engagements)")}
+            if "owner_id" not in cols:
+                c.execute("ALTER TABLE engagements ADD COLUMN owner_id INTEGER")
 
     # -- engagements -------------------------------------------------------
     def create_engagement(self, name: str, client: str = "", scope: str = "",
-                          notes: str = "") -> Dict[str, Any]:
+                          notes: str = "", owner_id: Optional[int] = None) -> Dict[str, Any]:
         with self._conn() as c:
             cur = c.execute(
-                "INSERT INTO engagements(name, client, scope, notes, created_at)"
-                " VALUES(?,?,?,?,?)",
-                (name, client, scope, notes, time.time()),
+                "INSERT INTO engagements(name, client, scope, notes, owner_id, created_at)"
+                " VALUES(?,?,?,?,?,?)",
+                (name, client, scope, notes, owner_id, time.time()),
             )
             row = c.execute("SELECT * FROM engagements WHERE id=?",
                             (cur.lastrowid,)).fetchone()
@@ -91,12 +105,21 @@ class Store:
         eng["runs"] = []
         return eng
 
-    def list_engagements(self) -> List[Dict[str, Any]]:
+    def list_engagements(self, user_id: Optional[int] = None) -> List[Dict[str, Any]]:
         with self._conn() as c:
-            rows = c.execute(
+            base = (
                 "SELECT e.*, (SELECT COUNT(*) FROM runs r WHERE r.engagement_id=e.id)"
-                " AS run_count FROM engagements e ORDER BY e.created_at DESC"
-            ).fetchall()
+                " AS run_count FROM engagements e"
+            )
+            if user_id is None:
+                rows = c.execute(base + " ORDER BY e.created_at DESC").fetchall()
+            else:
+                rows = c.execute(
+                    base + " WHERE e.owner_id=? OR e.id IN"
+                    " (SELECT engagement_id FROM engagement_members WHERE user_id=?)"
+                    " ORDER BY e.created_at DESC",
+                    (user_id, user_id),
+                ).fetchall()
         return [dict(r) for r in rows]
 
     def get_engagement(self, eid: int) -> Optional[Dict[str, Any]]:
@@ -113,7 +136,50 @@ class Store:
     def delete_engagement(self, eid: int) -> None:
         with self._conn() as c:
             c.execute("DELETE FROM runs WHERE engagement_id=?", (eid,))
+            c.execute("DELETE FROM engagement_members WHERE engagement_id=?", (eid,))
             c.execute("DELETE FROM engagements WHERE id=?", (eid,))
+
+    # -- membership / access ----------------------------------------------
+    def add_member(self, eid: int, user_id: int, role: str = "operator") -> None:
+        with self._conn() as c:
+            c.execute(
+                "INSERT OR REPLACE INTO engagement_members"
+                "(engagement_id, user_id, role, created_at) VALUES(?,?,?,?)",
+                (eid, user_id, role, time.time()),
+            )
+
+    def remove_member(self, eid: int, user_id: int) -> None:
+        with self._conn() as c:
+            c.execute("DELETE FROM engagement_members WHERE engagement_id=? AND user_id=?",
+                      (eid, user_id))
+
+    def list_members(self, eid: int) -> List[Dict[str, Any]]:
+        with self._conn() as c:
+            return [dict(r) for r in c.execute(
+                "SELECT * FROM engagement_members WHERE engagement_id=?", (eid,)
+            ).fetchall()]
+
+    def member_role(self, eid: int, user_id: int) -> Optional[str]:
+        with self._conn() as c:
+            row = c.execute(
+                "SELECT role FROM engagement_members WHERE engagement_id=? AND user_id=?",
+                (eid, user_id),
+            ).fetchone()
+        return row["role"] if row else None
+
+    def can_access(self, eid: int, user: Dict[str, Any]) -> bool:
+        """Admins see everything; others need to own or be a member."""
+        if not user:
+            return False
+        if user.get("role") == "admin":
+            return True
+        with self._conn() as c:
+            row = c.execute("SELECT owner_id FROM engagements WHERE id=?", (eid,)).fetchone()
+            if row is None:
+                return False
+            if row["owner_id"] == user.get("id"):
+                return True
+            return self.member_role(eid, user.get("id")) is not None
 
     # -- runs --------------------------------------------------------------
     @staticmethod

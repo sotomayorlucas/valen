@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -255,6 +256,58 @@ def _version() -> str:
         return "0.1.0"
 
 
+def _client_main(argv: list[str]) -> int:
+    """Minimal client for a remote VALEN team server."""
+    import urllib.error
+    import urllib.request
+
+    parser = argparse.ArgumentParser(prog="valen client", description="VALEN team-server client.")
+    parser.add_argument("--server", default=os.environ.get("VALEN_SERVER", "http://127.0.0.1:8000"))
+    parser.add_argument("--token", default=os.environ.get("VALEN_TOKEN", ""))
+    parser.add_argument("action", choices=["ping", "login", "get", "post"],
+                        help="ping | login USER PASS | get PATH | post PATH [JSON]")
+    parser.add_argument("args", nargs="*")
+    args = parser.parse_args(argv)
+    base = args.server.rstrip("/")
+
+    def call(method: str, path: str, body=None, token: str = "") -> int:
+        data = body.encode() if isinstance(body, str) else (json.dumps(body).encode() if body is not None else None)
+        headers = {"Content-Type": "application/json"}
+        tok = token or args.token
+        if tok:
+            headers["Authorization"] = f"Bearer {tok}"
+        req = urllib.request.Request(base + path, data=data, headers=headers, method=method)
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                print(r.read().decode())
+                return 0
+        except urllib.error.HTTPError as e:
+            print(e.read().decode(), file=sys.stderr)
+            return 1
+        except Exception as exc:  # noqa: BLE001
+            print(f"error: {exc}", file=sys.stderr)
+            return 1
+
+    if args.action == "ping":
+        return call("GET", "/api/health")
+    if args.action == "login":
+        if len(args.args) < 2:
+            print("usage: valen client login USER PASSWORD", file=sys.stderr)
+            return 2
+        return call("POST", "/api/login", {"username": args.args[0], "password": args.args[1]})
+    if args.action == "get":
+        if not args.args:
+            print("usage: valen client get PATH", file=sys.stderr)
+            return 2
+        return call("GET", args.args[0])
+    # post
+    if not args.args:
+        print("usage: valen client post PATH [JSON]", file=sys.stderr)
+        return 2
+    payload = args.args[1] if len(args.args) > 1 else "{}"
+    return call("POST", args.args[0], payload)
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
@@ -267,6 +320,8 @@ def main(argv: list[str] | None = None) -> int:
         from .server import main as server_main
 
         return server_main(argv[1:])
+    if argv and argv[0] == "client":
+        return _client_main(argv[1:])
     if argv and argv[0] == "config":
         from .config import main as config_main
 
