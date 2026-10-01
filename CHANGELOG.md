@@ -5,6 +5,18 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added — Red-team platform track
+- **Team server** (multi-user): users + roles (viewer/operator/admin) + sessions
+  (`valen/authz.py`), scoped engagements with membership (`store.py`), live
+  activity over SSE (`valen/events.py`, `GET /api/events`), per-route RBAC,
+  `--create-admin` bootstrap, a login UI and a `valen client` remote CLI.
+- **Active Directory** (`valen/redteam/ad/`): ingest BloodHound/SharpHound JSON
+  into the IR, Z3-confirmed tier-0 attack paths, betweenness pivot ranking,
+  Kerberoastable / AS-REP-roastable selection, GPP cpassword decryption, and
+  command builders (impacket/kerbrute/hashcat); `POST /api/ad` + an AD panel.
+- **Server image**: `Dockerfile.server` (multi-stage Rust core + runtime) and
+  `docker-compose.yml`.
+
 ### Added — MVP track (packaging · hardening · product · quality)
 - **Packaging**: installable `valen` package — all 9 tree-sitter grammars declared,
   the `agent` package included, `valen` console entry point, `LICENSE` (MIT),

@@ -461,6 +461,32 @@ def _cvss(payload: Dict[str, Any]) -> Dict[str, Any]:
     return {"error": "provide 'vector', 'category' or 'metrics'"}
 
 
+def _ad_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze BloodHound/SharpHound JSON: tier-0 paths, roasts, GPP."""
+    from .redteam.ad import attack_plan, gpp_from_xml, parse_sharphound
+
+    data = payload.get("data")
+    if not data:
+        return {"error": "provide 'data' (SharpHound JSON object or string)"}
+    if isinstance(data, str):
+        try:
+            data = json.loads(data)
+        except Exception as exc:  # noqa: BLE001
+            return {"error": f"invalid JSON: {exc}"}
+    ad = parse_sharphound(data)
+    plan = attack_plan(ad, entries=payload.get("entries"))
+    if payload.get("gpp_xml"):
+        plan["gpp_passwords"] = gpp_from_xml(payload["gpp_xml"])
+    plan["stats"] = {
+        "nodes": ad.graph.node_count,
+        "edges": ad.graph.edge_count,
+        "users": len(ad.records["users"]),
+        "groups": len(ad.records["groups"]),
+        "computers": len(ad.records["computers"]),
+    }
+    return plan
+
+
 def _lab_reset(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Reset the crAPI lab: docker compose down -v + up -d (authorized only)."""
     from .redteam.auth import normalize_scope
@@ -613,7 +639,7 @@ class Handler(BaseHTTPRequestHandler):
         if path.startswith("/api/users"):
             return "manage_users"
         if path in ("/api/pentest", "/api/dynamic", "/api/lab/reset",
-                    "/api/validate", "/api/recon"):
+                    "/api/validate", "/api/recon", "/api/ad"):
             return "execute"
         if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
                                         "/api/engagements"):
@@ -913,7 +939,7 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         allowed = ("/api/analyze", "/api/compare", "/api/validate",
                    "/api/recon", "/api/viz", "/api/dynamic", "/api/pentest",
-                   "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements",
+                   "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements", "/api/ad",
                    "/api/login", "/api/logout", "/api/users")
         if u.path not in allowed and not u.path.startswith("/api/users/"):
             return self._json({"error": "not found"}, 404)
@@ -984,6 +1010,8 @@ class Handler(BaseHTTPRequestHandler):
                     self._record("pentest", out, payload,
                                  f"{out.get('solved', 0)}/{out.get('total', 0)} solved")
                 return self._json(out)
+            if u.path == "/api/ad":
+                return self._json(_ad_plan(payload))
             if u.path == "/api/lab/reset":
                 return self._json(_lab_reset(payload))
             if u.path == "/api/report":

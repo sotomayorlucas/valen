@@ -1,0 +1,30 @@
+{
+  "users": [
+    {"ObjectIdentifier": "S-1-5-21-1-1001", "Properties": {"name": "ALICE@CORP.LOCAL", "domain": "CORP.LOCAL", "enabled": true, "hasspn": true}},
+    {"ObjectIdentifier": "S-1-5-21-1-1002", "Properties": {"name": "BOB@CORP.LOCAL", "domain": "CORP.LOCAL", "enabled": true, "dontreqpreauth": true}},
+    {"ObjectIdentifier": "S-1-5-21-1-1003", "Properties": {"name": "SVC_SQL@CORP.LOCAL", "domain": "CORP.LOCAL", "enabled": true, "hasspn": true}},
+    {"ObjectIdentifier": "S-1-5-21-1-1004", "Properties": {"name": "ADMIN@CORP.LOCAL", "domain": "CORP.LOCAL", "enabled": true, "admincount": true}}
+  ],
+  "groups": [
+    {"ObjectIdentifier": "S-1-5-21-1-512",
+     "Properties": {"name": "DOMAIN ADMINS@CORP.LOCAL", "domain": "CORP.LOCAL", "admincount": true},
+     "Members": [{"ObjectIdentifier": "S-1-5-21-1-1004", "ObjectType": "User"}],
+     "Aces": [{"PrincipalSID": "S-1-5-21-1-1001", "PrincipalType": "User", "RightName": "GenericAll", "IsInherited": false}]},
+    {"ObjectIdentifier": "S-1-5-21-1-2000",
+     "Properties": {"name": "IT@CORP.LOCAL", "domain": "CORP.LOCAL"},
+     "Members": [{"ObjectIdentifier": "S-1-5-21-1-1001", "ObjectType": "User"}],
+     "Aces": [{"PrincipalSID": "S-1-5-21-1-1002", "PrincipalType": "Group", "RightName": "GenericAll", "IsInherited": false}]}
+  ],
+  "computers": [
+    {"ObjectIdentifier": "S-1-5-21-1-5001",
+     "Properties": {"name": "SRV01.CORP.LOCAL", "domain": "CORP.LOCAL", "enabled": true},
+     "LocalAdmins": [{"ObjectIdentifier": "S-1-5-21-1-1002", "ObjectType": "User"}],
+     "Sessions": [{"UserSID": "S-1-5-21-1-1002", "ComputerSID": "S-1-5-21-1-5001"}]}
+  ],
+  "domains": [
+    {"ObjectIdentifier": "S-1-5-21-1-1000",
+     "Properties": {"name": "CORP.LOCAL"},
+     "Trusts": [{"TargetDomainName": "CHILD.CORP.LOCAL"}],
+     "Aces": [{"PrincipalSID": "S-1-5-21-1-2000", "PrincipalType": "Group", "RightName": "DCSync", "IsInherited": false}]}
+  ]
+}

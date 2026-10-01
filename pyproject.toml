@@ -38,6 +38,8 @@ dependencies = [
 llm = ["litellm"]
 # Binary analysis adapter (optional, heavy).
 angr = ["angr"]
+# Active Directory analysis (GPP decryption, collectors).
+ad = ["pycryptodome", "impacket", "ldap3"]
 dev = [
     "pytest",
     "pytest-cov",

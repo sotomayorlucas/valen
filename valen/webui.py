@@ -46,6 +46,7 @@ __HEAD__
       <button data-tab="cvss" class="px-4 py-1.5 rounded-lg text-[13px]">CVSS</button>
       <button data-tab="report" class="px-4 py-1.5 rounded-lg text-[13px]">Report</button>
       <button data-tab="cve" class="px-4 py-1.5 rounded-lg text-[13px]">CVE Intel</button>
+      <button data-tab="ad" class="px-4 py-1.5 rounded-lg text-[13px]">AD</button>
       <button data-tab="history" class="px-4 py-1.5 rounded-lg text-[13px]">History</button>
       <button data-tab="experiments" class="px-4 py-1.5 rounded-lg text-[13px]">Experiments</button>
       <button data-tab="methodology" class="px-4 py-1.5 rounded-lg text-[13px]">Methodology</button>
@@ -311,6 +312,33 @@ __HEAD__
       <div class="text-[11px] mt-1" style="color:var(--muted)">Refresh with <span class="mono">just cve-sync</span> (requires network). Works offline otherwise.</div>
       <div id="cve-list" class="mt-3 space-y-1 text-[12px] mono" style="color:var(--muted)"></div>
     </div>
+  </div>
+</section>
+
+<!-- ================= ACTIVE DIRECTORY ================= -->
+<section class="tab" id="tab-ad">
+  <div class="grid lg:grid-cols-2 gap-5">
+    <div class="panel p-4">
+      <div class="kicker">BloodHound / SharpHound JSON</div>
+      <div class="text-[11px] mt-1" style="color:var(--muted)">Paste a SharpHound collection (<span class="mono">users/groups/computers/domains</span>). Authorized engagements only.</div>
+      <textarea id="ad-json" spellcheck="false" placeholder='{"users":[{"Properties":{"name":"ALICE@CORP.LOCAL","enabled":true,"hasspn":true}}],"groups":[...]}' class="mono w-full h-56 bg-[#0b0f14] border rounded-xl p-3 text-[11.5px] mt-3" style="border-color:var(--border)"></textarea>
+      <div class="flex items-center gap-2 mt-3 flex-wrap">
+        <input id="ad-entries" placeholder="owned users (comma-sep, optional)" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border flex-1 min-w-[180px]" style="border-color:var(--border)"/>
+        <button class="primary py-2 px-5 rounded-xl font-bold" id="ad-run">Analyze</button>
+        <span class="pill" id="ad-status">idle</span>
+      </div>
+      <div id="ad-error" class="text-xs mt-2" style="color:var(--algebraic)"></div>
+    </div>
+    <div class="panel p-4 space-y-3">
+      <div id="ad-stats" class="text-xs mono" style="color:var(--muted)"></div>
+      <div><div class="kicker">Kerberoastable</div><div id="ad-spn" class="mt-1 text-[12px] mono"></div></div>
+      <div><div class="kicker">AS-REP roastable</div><div id="ad-asrep" class="mt-1 text-[12px] mono"></div></div>
+      <div><div class="kicker">Pivot bridges (betweenness)</div><div id="ad-bridges" class="mt-1 text-[12px] mono"></div></div>
+    </div>
+  </div>
+  <div class="panel p-4 mt-5">
+    <div class="kicker">Tier-0 attack paths (Z3-confirmed)</div>
+    <div id="ad-paths" class="mt-3 space-y-2"></div>
   </div>
 </section>
 
@@ -1172,6 +1200,30 @@ async function initSession(){
 }
 bindLogin();
 initSession();
+
+// ---- Active Directory ----
+$("#ad-run").onclick=async()=>{
+  $("#ad-error").textContent="";
+  $("#ad-status").textContent="analyzing…";
+  let data=null;
+  try{ data=JSON.parse($("#ad-json").value || "{}"); }
+  catch(e){ $("#ad-error").textContent="invalid JSON: "+e.message; $("#ad-status").textContent="error"; return; }
+  const entries=($("#ad-entries").value||"").split(",").map(s=>s.trim()).filter(Boolean);
+  try{
+    const d=await (await fetch("/api/ad",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({data, entries: entries.length?entries:null})})).json();
+    if(d.error){ $("#ad-error").textContent=d.error; $("#ad-status").textContent="error"; return; }
+    $("#ad-status").textContent=`${d.stats?d.stats.nodes:0} nodes`;
+    $("#ad-stats").textContent=d.stats?`nodes ${d.stats.nodes} · edges ${d.stats.edges} · users ${d.stats.users} · groups ${d.stats.groups} · computers ${d.stats.computers}`:"";
+    $("#ad-spn").innerHTML=(d.kerberoastable||[]).map(u=>esc(u.name)).join("<br>") || "—";
+    $("#ad-asrep").innerHTML=(d.asrep_roastable||[]).map(u=>esc(u.name)).join("<br>") || "—";
+    $("#ad-bridges").innerHTML=(d.pivot_bridges||[]).map(b=>`${esc(b.label)} · ${b.betweenness}`).join("<br>") || "—";
+    $("#ad-paths").innerHTML=(d.paths||[]).length? d.paths.map(p=>`<div class="card" style="padding:10px;border-left:3px solid ${p.z3&&p.z3.reachable?'var(--algebraic)':'var(--muted)'}">
+      <div class="mono text-[11px]">${p.steps.map(s=>`${esc(s.from)} <span style="color:var(--muted)">-[${esc(s.relation)}/${esc(s.technique)}]-></span>`).join(" ")} ${esc(p.target)}</div>
+      <div class="text-[10px] mt-1" style="color:var(--muted)">len ${p.length} · Z3 ${p.z3&&p.z3.reachable?'reachable':'not forced'}</div></div>`).join("")
+      : `<div class="text-xs" style="color:var(--muted)">no paths to tier-0 (add entry users or ACLs)</div>`;
+  }catch(e){ $("#ad-status").textContent="error"; $("#ad-error").textContent=String(e); }
+};
 """
 
 
