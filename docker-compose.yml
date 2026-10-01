@@ -1,0 +1,21 @@
+# VALEN single-operator server.
+#   docker compose up -d   ->  http://127.0.0.1:8000
+services:
+  valen:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: valen:latest
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - valen-data:/data
+    environment:
+      VALEN_DATA_DIR: /data
+      # VALEN_TOKEN: change-me        # enable bearer auth on /api/*
+    # Uncomment for the full toolkit (runs code / docker): 
+    # command: ["serve", "--host", "0.0.0.0", "--port", "8000", "--allow-exec"]
+    restart: unless-stopped
+
+volumes:
+  valen-data:

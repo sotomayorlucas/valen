@@ -85,6 +85,23 @@ valen serve            # http://127.0.0.1:8000  (SPA)  ·  /console (red-team)
 # banderas: --token T · --allow-exec · --allow-host · --data-dir DIR · --port N
 ```
 
+**Team server multiusuario** (colaboración, roles, historial compartido):
+
+```bash
+valen serve --create-admin admin      # crea el admin (imprime la contraseña) y arranca
+# luego cada operador entra en http://localhost:8000 con su usuario (roles: admin/operator/viewer)
+valen client --server http://host:8000 login admin <pw>     # cliente CLI remoto
+```
+
+**Docker** (self-hosted, un comando):
+
+```bash
+docker build -f Dockerfile.server -t valen .
+docker run --rm -p 127.0.0.1:8000:8000 -v valen-data:/data valen
+# o: docker compose up -d   (monta el volumen de historial en /data)
+# toolkit completo: -e VALEN_TOKEN=... -p ... --allow-exec
+```
+
 **Modelo de confianza** (single-operator, pensado para tu máquina):
 
 - Escucha en `127.0.0.1` y **no ejecuta código** salvo que arranques con `--allow-exec`
