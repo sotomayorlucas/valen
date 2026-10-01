@@ -262,6 +262,10 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if argv and argv[0] == "analyze":
         return _analyze_main(argv[1:])
+    if argv and argv[0] == "serve":
+        from .server import main as server_main
+
+        return server_main(argv[1:])
     if argv and argv[0] == "pentest":
         return _pentest_main(argv[1:])
     if argv and argv[0] == "report":

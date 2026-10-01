@@ -107,8 +107,18 @@ details{margin:6px 0} summary{cursor:pointer;color:var(--accent);font-size:13px}
 <div class="wrap" id="app"></div>
 <script type="application/json" id="data">__DATA__</script>
 <script>
-const DATA = JSON.parse(document.getElementById('data').textContent);
-const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// Optional bearer token injected by the server for loopback clients (--token).
+const VALEN_TOKEN = "__VALEN_TOKEN__";
+if(VALEN_TOKEN){
+  const _f=window.fetch.bind(window);
+  window.fetch=(u,o={})=>{
+    if(typeof u==="string" && u.startsWith("/api/")){
+      o={...o, headers:{...(o.headers||{}), "Authorization":"Bearer "+VALEN_TOKEN}};
+    }
+    return _f(u,o);
+  };
+}
+const DATA = JSON.parse(document.getElementById('data').textContent);const esc = s => String(s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 
 function toolsCard(){
   const rows = Object.entries(DATA.tools).map(([n,t]) =>

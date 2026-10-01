@@ -6,7 +6,7 @@ import urllib.request
 from http.server import ThreadingHTTPServer
 
 from valen.redteam.lab import reset_lab
-from valen.server import Handler, _lab_reset
+from valen.server import Handler, ServerConfig, _lab_reset
 
 
 def test_reset_requires_authorize():
@@ -28,6 +28,7 @@ def test_reset_missing_compose_dir():
 
 def test_lab_reset_route_gate_ephemeral_port():
     httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    httpd.cfg = ServerConfig(allow_exec=True)  # pass the exec gate to reach the authorize check
     port = httpd.server_address[1]
     t = threading.Thread(target=httpd.serve_forever, daemon=True)
     t.start()

@@ -35,11 +35,14 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import logging
+import os
 import sys
+from dataclasses import dataclass
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any, Dict, List
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, urlsplit, urlparse
 
 from .analysis.field import vulnerability_field
 from .analysis.math_core import run_core
@@ -51,6 +54,36 @@ from .webui import PAGE
 ROOT = Path(__file__).resolve().parent.parent
 BENCH = ROOT / "benchmarks"
 EXAMPLES = ROOT / "examples"
+
+logger = logging.getLogger("valen.server")
+
+
+@dataclass
+class ServerConfig:
+    """Trust boundary for the local server.
+
+    ``token`` gates ``/api/*``; ``allow_host`` permits non-loopback pentest/validate
+    targets (SSRF guard); ``allow_exec`` permits operations that run code or the
+    container runtime (``/api/dynamic``, ``/api/lab/reset``); ``max_body`` caps
+    request bodies.
+    """
+
+    token: str = ""
+    allow_host: bool = False
+    allow_exec: bool = False
+    max_body: int = 5_000_000
+
+
+_DEFAULT_CFG = ServerConfig()
+
+_LOOPBACK = {"127.0.0.1", "::1", "localhost"}
+
+
+def _is_loopback_host(host: str) -> bool:
+    if not host:
+        return False
+    host = host.lower()
+    return host in _LOOPBACK or host.startswith("127.")
 
 _SOURCE_EXTS = (
     ".py", ".json", ".asm", ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp", ".hh", ".hxx",
@@ -513,7 +546,44 @@ class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):  # quieter
         pass
 
+    # -- config / auth / guards -------------------------------------------
+    def _cfg(self) -> "ServerConfig":
+        return getattr(self.server, "cfg", _DEFAULT_CFG)
+
+    def _client_loopback(self) -> bool:
+        return _is_loopback_host(self.client_address[0])
+
+    def _token_ok(self) -> bool:
+        cfg = self._cfg()
+        if not cfg.token:
+            return True
+        if self.headers.get("Authorization", "") == f"Bearer {cfg.token}":
+            return True
+        q = parse_qs(urlparse(self.path).query).get("token", [""])
+        return bool(q) and q[0] == cfg.token
+
+    def _guard_api(self) -> bool:
+        """Return True if the request may proceed; else answer 401 and return False."""
+        if self._token_ok():
+            return True
+        self._json({"error": "unauthorized (set VALEN_TOKEN / --token)"}, 401)
+        return False
+
+    def _scope_allowed(self, scope: str) -> bool:
+        host = (urlsplit(scope).hostname or "")
+        if _is_loopback_host(host):
+            return True
+        return self._cfg().allow_host
+
+    def _page(self, html: str) -> str:
+        # Inject the token into the page only for loopback clients (Jupyter-style);
+        # remote clients must pass ?token= on every request.
+        if self._cfg().token and self._client_loopback():
+            return html.replace("__VALEN_TOKEN__", self._cfg().token)
+        return html.replace("__VALEN_TOKEN__", "")
+
     def _send(self, code: int, body: str, ctype: str = "application/json; charset=utf-8") -> None:
+        self._last_status = code
         data = body.encode("utf-8")
         self.send_response(code)
         self.send_header("Content-Type", ctype)
@@ -529,14 +599,19 @@ class Handler(BaseHTTPRequestHandler):
         # the connection without a response — the browser would then report
         # "TypeError: Failed to fetch". Always answer with JSON instead.
         try:
-            return self._dispatch_get()
+            u = urlparse(self.path)
+            if u.path.startswith("/api/") and not self._guard_api():
+                return
+            self._dispatch_get()
+            logger.info("GET %s -> %s", u.path, getattr(self, "_last_status", 200))
         except Exception as exc:  # noqa: BLE001
+            logger.exception("GET %s failed", self.path)
             return self._json({"error": str(exc)}, 500)
 
     def _dispatch_get(self) -> None:
         u = urlparse(self.path)
         if u.path in ("/", "/index.html"):
-            return self._send(200, PAGE, "text/html; charset=utf-8")
+            return self._send(200, self._page(PAGE), "text/html; charset=utf-8")
         if u.path == "/api/examples":
             return self._json(_example_index())
         if u.path == "/api/adapters":
@@ -589,15 +664,20 @@ class Handler(BaseHTTPRequestHandler):
             p = BENCH / "cve_pairs.json"
             return self._json(json.loads(p.read_text()) if p.exists() else [])
         if u.path == "/console":
-            return self._send(200, build_console(), "text/html; charset=utf-8")
+            return self._send(200, self._page(build_console()), "text/html; charset=utf-8")
         if u.path == "/api/redteam":
             return self._json(_redteam())
         return self._json({"error": "not found"}, 404)
 
     def do_POST(self) -> None:  # noqa: N802
         try:
-            return self._dispatch_post()
+            if not self._guard_api():
+                return
+            self._dispatch_post()
+            logger.info("POST %s -> %s", urlparse(self.path).path,
+                        getattr(self, "_last_status", 200))
         except Exception as exc:  # noqa: BLE001
+            logger.exception("POST %s failed", self.path)
             return self._json({"error": str(exc)}, 500)
 
     def _dispatch_post(self) -> None:
@@ -608,10 +688,28 @@ class Handler(BaseHTTPRequestHandler):
         if u.path not in allowed:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
+        if length > self._cfg().max_body:
+            return self._json({"error": f"request body too large (>{self._cfg().max_body} bytes)"}, 413)
         try:
             payload = json.loads(self.rfile.read(length) or b"{}")
         except Exception:
             return self._json({"error": "invalid JSON body"}, 400)
+        # dangerous operations (code execution / container runtime) gate
+        if u.path in ("/api/dynamic", "/api/lab/reset") and not self._cfg().allow_exec:
+            return self._json({"error": f"{u.path} disabled; start the server with --allow-exec"}, 403)
+        # SSRF guard: non-loopback targets require --allow-host
+        scope = payload.get("scope") or payload.get("base_url")
+        if scope and u.path in ("/api/pentest", "/api/validate", "/api/lab/reset"):
+            from .redteam.auth import normalize_scope
+
+            try:
+                norm = normalize_scope(scope)
+            except ValueError as exc:
+                return self._json({"error": str(exc)}, 400)
+            if not self._scope_allowed(norm):
+                return self._json(
+                    {"error": f"scope {norm!r} is not loopback; start the server "
+                              f"with --allow-host to authorize external targets"}, 403)
         try:
             if u.path == "/api/compare":
                 return self._json(_compare(payload))
@@ -636,7 +734,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json({"error": str(exc)}, 500)
 
 
-def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
+def serve(host: str = "127.0.0.1", port: int = 8000,
+          config: "ServerConfig | None" = None) -> None:
+    cfg = config or _DEFAULT_CFG
     try:
         httpd = ThreadingHTTPServer((host, port), Handler)
     except OSError as exc:
@@ -644,7 +744,16 @@ def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
               f"Is another `valen.server` already running? Try --port 8001.",
               file=sys.stderr)
         raise SystemExit(1)
-    print(f"VALEN web UI  ->  http://{host}:{port}  (Ctrl+C to stop)")
+    httpd.cfg = cfg
+    flags = []
+    if cfg.token:
+        flags.append("token auth")
+    if cfg.allow_host:
+        flags.append("allow-host")
+    if cfg.allow_exec:
+        flags.append("allow-exec")
+    suffix = f"  [{', '.join(flags)}]" if flags else ""
+    print(f"VALEN web UI  ->  http://{host}:{port}  (Ctrl+C to stop){suffix}")
     try:
         httpd.serve_forever()
     except KeyboardInterrupt:
@@ -653,12 +762,27 @@ def serve(host: str = "127.0.0.1", port: int = 8000) -> None:
         httpd.server_close()
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="VALEN web UI (stdlib server).")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8000)
-    args = ap.parse_args()
-    serve(args.host, args.port)
+    ap.add_argument("--token", default=os.environ.get("VALEN_TOKEN", ""),
+                    help="require this bearer token on /api/* (or env VALEN_TOKEN)")
+    ap.add_argument("--allow-host", action="store_true",
+                    help="allow non-loopback pentest/validate targets (SSRF guard off)")
+    ap.add_argument("--allow-exec", action="store_true",
+                    help="enable /api/dynamic and /api/lab/reset (run code / docker)")
+    ap.add_argument("--max-body", type=int, default=5_000_000,
+                    help="maximum request body size in bytes")
+    ap.add_argument("--log-level", default="info",
+                    choices=["debug", "info", "warning", "error"])
+    args = ap.parse_args(argv)
+
+    logging.basicConfig(level=getattr(logging, args.log_level.upper()),
+                        format="%(asctime)s %(levelname)s %(name)s: %(message)s")
+    cfg = ServerConfig(token=args.token, allow_host=args.allow_host,
+                       allow_exec=args.allow_exec, max_body=args.max_body)
+    serve(args.host, args.port, cfg)
     return 0
 
 

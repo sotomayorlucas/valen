@@ -358,6 +358,17 @@ __SHELL__
 
 # -- the page JS (tailwind classes on nav/mode are applied via inline style) --
 SHELL_JS = r"""
+// Optional bearer token injected by the server for loopback clients (--token).
+const VALEN_TOKEN = "__VALEN_TOKEN__";
+if(VALEN_TOKEN){
+  const _f=window.fetch.bind(window);
+  window.fetch=(u,o={})=>{
+    if(typeof u==="string" && u.startsWith("/api/")){
+      o={...o, headers:{...(o.headers||{}), "Authorization":"Bearer "+VALEN_TOKEN}};
+    }
+    return _f(u,o);
+  };
+}
 const $=s=>document.querySelector(s), NS="http://www.w3.org/2000/svg";
 let RESULTS=null;
 
