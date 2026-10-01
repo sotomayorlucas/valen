@@ -106,3 +106,44 @@ def c2_plan(lhost: str, lport: int, name: str = "sess") -> Dict[str, Any]:
         "implant": generate_implant_command(name, f"{lhost}:{lport}"),
         "note": "run these with sliver-client; VALEN consumes 'sessions -j' output",
     }
+
+
+class SliverRunner:
+    """Optional live driver over ``sliver-client`` (behind --allow-exec)."""
+
+    def __init__(self, timeout: int = 180) -> None:
+        self.timeout = timeout
+
+    def available(self) -> bool:
+        from ..exec import available
+
+        return available(CLIENT)
+
+    def sessions(self, execute: bool = False) -> Dict[str, Any]:
+        cmd = [CLIENT, "sessions", "-j"]
+        if not execute:
+            return {"command": cmd, "note": "dry-run"}
+        from ..exec import run
+
+        res = run(cmd, timeout=self.timeout)
+        if "error" in res:
+            return res
+        return {"sessions": parse_sessions(res.get("stdout", "")),
+                "raw": res.get("stdout", "")[:_MAX_RAW]}
+
+    def generate(self, name: str, mtls: str, execute: bool = False,
+                 **kw: Any) -> Dict[str, Any]:
+        cmd = generate_implant_command(name, mtls, **kw)
+        if not execute:
+            return {"command": cmd, "note": "dry-run"}
+        from ..exec import run
+
+        return run(cmd, timeout=self.timeout)
+
+    def listener(self, host: str, port: int) -> Dict[str, Any]:
+        # sliver-client mtls is interactive; return the command for the operator.
+        return {"command": start_listener_command(host, port),
+                "note": "run interactively to start the listener"}
+
+
+_MAX_RAW = 2000

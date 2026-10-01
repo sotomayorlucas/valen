@@ -867,6 +867,20 @@ class Handler(BaseHTTPRequestHandler):
         out = q.decide(act.id, approve=approve, authorize=authorize)
         if "error" in out:
             return self._json(out, 403 if approve else 400)
+        if approve and payload.get("execute"):
+            if not self._cfg().allow_exec:
+                return self._json({"error": "execution requires --allow-exec"}, 403)
+            if isinstance(act.command, list):
+                from .redteam.exec import run as _exec_run
+
+                out["execution"] = _exec_run(act.command, timeout=int(payload.get("timeout", 120)))
+                self._record("exec",
+                             {"action": act.id, "title": act.title,
+                              "execution": out["execution"]},
+                             {"name": act.title, "engagement_id": act.engagement_id},
+                             f"exec {act.command[0]} rc={out['execution'].get('code')}")
+            else:
+                out["execution"] = {"note": "action is a generator/plan; use a manager endpoint"}
         self._publish("agent_decide", f"{out['status']} {act.title}",
                       engagement_id=act.engagement_id, action=act.id)
         return self._json(out)
@@ -904,6 +918,10 @@ class Handler(BaseHTTPRequestHandler):
             q = parse_qs(u.query)
             eid = q.get("engagement_id", [None])[0]
             return self._json(board_from_store(self._store(), int(eid) if eid else None))
+        if u.path == "/api/exec/tools":
+            from .redteam.exec import installed
+            return self._json({"allow_exec": bool(self._cfg().allow_exec),
+                              "tools": installed()})
         if u.path == "/api/users":
             az = self._cfg().authz
             if az is None:

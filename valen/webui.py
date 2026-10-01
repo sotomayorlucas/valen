@@ -360,6 +360,7 @@ __HEAD__
     <div class="flex items-center gap-3 flex-wrap">
       <div class="kicker">Hybrid agent — proposed actions (human-in-the-loop)</div>
       <input id="ag-target" placeholder="http://127.0.0.1:8888" class="bg-[#161d27] text-sm rounded-lg px-3 py-2 border w-64 ml-auto" style="border-color:var(--border)"/>
+      <label class="flex items-center gap-2 text-xs" style="color:var(--muted)"><input type="checkbox" id="ag-exec" class="accent-blue-500"/> execute (needs --allow-exec)</label>
       <button class="primary py-2 px-4 rounded-xl font-bold" id="ag-propose">Propose</button>
       <span class="pill" id="ag-status">idle</span>
     </div>
@@ -502,7 +503,7 @@ document.querySelectorAll("nav button").forEach(b=>{b.style.cssText=NAVOFF; b.on
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   b.style.cssText=NAVON; b.classList.add("on"); $("#tab-"+b.dataset.tab).classList.add("on");
   if(b.dataset.tab==="history"){ loadEngagements(); loadHistory(); }
-  else if(b.dataset.tab==="operations"){ populateOpsEngagements(); loadOperations(); loadAgentActions(); }
+  else if(b.dataset.tab==="operations"){ populateOpsEngagements(); loadOperations(); loadAgentActions(); loadExecTools(); }
   else if(b.dataset.tab!=="analyze" && !RESULTS) loadResults();
 };});
 document.querySelector("nav button[data-tab=analyze]").style.cssText=NAVON;
@@ -1303,12 +1304,20 @@ $("#ag-propose").onclick=async()=>{
 window.agDecide=async(id,approve)=>{
   try{
     const r=await fetch("/api/agent/decide",{method:"POST",headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({id, approve, authorize:$("#pt-authorize")?$("#pt-authorize").checked:false})});
+      body:JSON.stringify({id, approve, authorize:$("#pt-authorize")?$("#pt-authorize").checked:false,
+        execute:$("#ag-exec")?$("#ag-exec").checked:false})});
     const d=await r.json();
-    $("#ag-status").textContent = d.error ? ("error: "+d.error) : d.status;
+    $("#ag-status").textContent = d.error ? ("error: "+d.error) : (d.status + (d.execution&&d.execution.code!=null?(" rc="+d.execution.code):""));
     loadAgentActions();
   }catch(e){ $("#ag-status").textContent="error"; }
 };
+async function loadExecTools(){
+  try{
+    const d=await (await fetch("/api/exec/tools")).json();
+    const on=Object.entries(d.tools||{}).filter(([,v])=>v).map(([k])=>k);
+    $("#ag-target").title = "allow-exec: "+(d.allow_exec?"on":"off")+" · installed: "+on.join(", ");
+  }catch(e){}
+}
 
 // ---- Active Directory ----
 $("#ad-run").onclick=async()=>{  $("#ad-error").textContent="";

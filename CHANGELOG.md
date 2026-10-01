@@ -22,6 +22,11 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
 - **Operation board** (`valen/ops.py`): per-engagement kill-chain board with
   ATT&CK techniques (T1xxx), live-refreshed over SSE; `GET /api/operations` and
   an "Operations" tab (with agent approvals).
+- **Live execution** (`valen/redteam/exec.py` + C2/AD runners): an allowlisted,
+  shell-free, timeout-bounded tool runner; `SliverRunner` and `ADRunner` drive
+  `sliver-client`/`impacket`/`kerbrute`/`hashcat` when installed; the agent
+  approval path can run an approved action (`execute:true` + `--allow-exec`),
+  accounting it as an `exec` run. `GET /api/exec/tools`.
 - **Server image**: `Dockerfile.server` (multi-stage Rust core + runtime) and
   `docker-compose.yml`.
 
