@@ -27,6 +27,10 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
   `sliver-client`/`impacket`/`kerbrute`/`hashcat` when installed; the agent
   approval path can run an approved action (`execute:true` + `--allow-exec`),
   accounting it as an `exec` run. `GET /api/exec/tools`.
+- **Phishing / exfiltration** (`valen/redteam/phishing.py`, `exfil.py`): GoPhish
+  campaign planning (groups/templates/pages/campaign payloads + curl calls +
+  funnel metrics parser) and a staging/encrypt/upload exfil planner;
+  `POST /api/phishing/plan`, `POST /api/exfil/plan`.
 - **Server image**: `Dockerfile.server` (multi-stage Rust core + runtime) and
   `docker-compose.yml`.
 

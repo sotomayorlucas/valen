@@ -488,6 +488,36 @@ def _ad_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     return plan
 
 
+def _phishing_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a GoPhish campaign plan (payloads + curl calls; does not send)."""
+    from .redteam.phishing import campaign_plan
+
+    if not payload.get("base_url"):
+        return {"error": "base_url (GoPhish URL) required"}
+    return campaign_plan(
+        payload["base_url"], payload.get("api_key", ""),
+        name=payload.get("name", "campaign"),
+        senders=payload.get("senders", []),
+        subject=payload.get("subject", ""),
+        body_html=payload.get("body_html", ""),
+        landing_html=payload.get("landing_html", ""),
+        landing_url=payload.get("landing_url", "http://127.0.0.1"),
+        smtp_name=payload.get("smtp_name", "Local SMTP"),
+    )
+
+
+def _exfil_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build a staging/encryption/upload plan (does not execute)."""
+    from .redteam.exfil import exfil_plan
+
+    if not payload.get("dest"):
+        return {"error": "dest (collector URL) required"}
+    return exfil_plan(payload.get("paths", []), payload["dest"],
+                      method=payload.get("method", "https"),
+                      passphrase=payload.get("passphrase"),
+                      chunk=bool(payload.get("chunk")))
+
+
 def _payloads(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Build msfvenom commands + a handler + an HTA lure (does not execute)."""
     from .redteam.payloads import payload_plan
@@ -676,7 +706,8 @@ class Handler(BaseHTTPRequestHandler):
         if path in ("/api/pentest", "/api/dynamic", "/api/lab/reset",
                     "/api/validate", "/api/recon", "/api/ad",
                     "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
-                    "/api/agent/propose", "/api/agent/decide", "/api/agent/actions"):
+                    "/api/agent/propose", "/api/agent/decide", "/api/agent/actions",
+                    "/api/phishing/plan", "/api/exfil/plan"):
             return "execute"
         if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
                                         "/api/engagements"):
@@ -1043,6 +1074,7 @@ class Handler(BaseHTTPRequestHandler):
                    "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements", "/api/ad",
                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
                    "/api/agent/propose", "/api/agent/decide",
+                   "/api/phishing/plan", "/api/exfil/plan",
                    "/api/login", "/api/logout", "/api/users")
         if u.path not in allowed and not u.path.startswith("/api/users/"):
             return self._json({"error": "not found"}, 404)
@@ -1119,6 +1151,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._agent_propose(payload)
             if u.path == "/api/agent/decide":
                 return self._agent_decide(payload)
+            if u.path == "/api/phishing/plan":
+                return self._json(_phishing_plan(payload))
+            if u.path == "/api/exfil/plan":
+                return self._json(_exfil_plan(payload))
             if u.path == "/api/payloads":
                 return self._json(_payloads(payload))
             if u.path == "/api/c2/plan":
