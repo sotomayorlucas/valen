@@ -175,9 +175,9 @@ the transient subspace. \qedhere
 
 \subsection{The boundary on geometric priors}
 \label{sec:boundary}
-On OWASP Benchmark~1.2 ($2740$ cases with known ground truth) a prioritization
-oracle ranks all sink candidates and measures MRR, R@1, NDCG@$k$, plus a paired
-permutation test and bootstrap confidence intervals.
+On OWASP Benchmark~1.2 \cite{owasp2015} ($2740$ cases with known ground truth) a
+prioritization oracle ranks all sink candidates and measures MRR, R@1, NDCG@$k$,
+plus a paired permutation test and bootstrap confidence intervals.
 
 \begin{theorem}[Boundary, empirical]
 \label{thm:boundary}
@@ -235,7 +235,8 @@ filled triangle becomes a false cycle.
 
 \begin{proposition}[Directed vs.\ symmetrized homology]
 \label{prop:glmy}
-GLMY directed path homology $H_1$ is a strict superset of symmetrized homology for
+GLMY directed path homology $H_1$ \cite{glmy2012} is a strict superset of
+symmetrized homology for
 detecting destructive cycles: measured recall $1.0$ / precision $0.75$ on a
 12-graph state-machine corpus (vs.\ $0.5$/$0.5$ symmetrized) and $0.968$ vs.\
 $0.065$ on SmartBugs-curated smart contracts.
@@ -297,7 +298,7 @@ server and gated by an authorization-first model.}
 \begin{theorem}[Menger, vertex form]
 \label{thm:menger}
 The maximum number of internally vertex-disjoint paths from $S$ to $T$ equals the
-minimum number of vertices whose removal separates $S$ from $T$.
+minimum number of vertices whose removal separates $S$ from $T$ \cite{menger1927}.
 \end{theorem}
 \begin{proof}[Construction]
 Split each $v$ into $v_{\mathrm{in}}\to v_{\mathrm{out}}$ of capacity $1$
@@ -305,7 +306,7 @@ Split each $v$ into $v_{\mathrm{in}}\to v_{\mathrm{out}}$ of capacity $1$
 $u_{\mathrm{out}}\to v_{\mathrm{in}}$ of capacity $\infty$, and add a super-source
 to $S$ and $T$ to a super-sink. A max flow saturates the unit split edges of a
 minimum vertex cut; the saturated edges on the source side of the residual graph
-are exactly the chokepoints. \qedhere
+are exactly the chokepoints (Ford--Fulkerson \cite{ford1956}). \qedhere
 \end{proof}
 
 \subsection{Min-cost flow}
@@ -327,7 +328,7 @@ Let the transition system be
 \vee \bigvee_{e:\,m\to n}\bigl(\mathrm{taken}_e\wedge\mathrm{has}(s,m)\bigr),
 \]
 with entries at step $0$. A satisfying assignment of
-\texttt{z3.Optimize} minimizing $\sum_e \mathrm{taken}_e\,c(e)$ under
+\texttt{z3.Optimize} \cite{z3} minimizing $\sum_e \mathrm{taken}_e\,c(e)$ under
 $\bigvee_{s\le k}\mathrm{has}(s,t)$ is (i) a feasible plan and (ii) minimal-cost
 among plans of length $\le k$.
 \end{theorem}
@@ -373,7 +374,8 @@ Tokenize a password into runs of letters $L$, digits $D$, symbols $S$. A
 \emph{base structure} is the sequence of $(class,length)$ pairs (e.g.\
 $L_6D_4S_1$); terminals are keyed by $(class,length)$. The probability of a guess
 $\sigma$ is
-$P(\sigma)=P(\mathrm{structure})\cdot\prod_{t\in\sigma}P(t)$.
+$P(\sigma)=P(\mathrm{structure})\cdot\prod_{t\in\sigma}P(t)$
+\cite{weir2009}.
 \end{definition}
 \begin{proposition}[Monotone enumeration]
 \label{prop:pcfg}
@@ -432,5 +434,37 @@ invariant, the correct cycle signal, a measured neuro-symbolic arbitration
 boundary, a multi-language front-end, an autonomous red-team platform, and a
 proved attack-graph mathematics. One typed IR joins the defensive and offensive
 sides, and every result carries a machine-checkable witness.
+
+\begin{thebibliography}{99}
+\bibitem{weir2009} M.~Weir, S.~Aggarwal, B.~de~Medeiros, and B.~Glodek,
+``Password cracking using probabilistic context-free grammars,''
+\emph{Proc. IEEE Symposium on Security and Privacy (S\&P)}, 2009.
+\bibitem{ma2014} J.~Ma, W.~Yang, M.~Luo, and N.~Li,
+``A study of probabilistic password models,''
+\emph{Proc. IEEE S\&P}, 2014.
+\bibitem{glmy2012} A.~Grigor'yan, Y.~Lin, Y.~Muranov, and S.-T.~Yau,
+``Homologies of path complexes and digraphs,''
+arXiv:1207.2834, 2012.
+\bibitem{menger1927} K.~Menger,
+``Zur allgemeinen Kurventheorie,''
+\emph{Fundamenta Mathematicae}, vol.~10, pp.~96--115, 1927.
+\bibitem{ford1956} L.~R.~Ford and D.~R.~Fulkerson,
+``Maximal flow through a network,''
+\emph{Canadian Journal of Mathematics}, vol.~8, pp.~399--404, 1956.
+\bibitem{z3} L.~de~Moura and N.~Bj{\o}rner,
+``Z3: An efficient SMT solver,''
+\emph{Proc. TACAS}, 2008.
+\bibitem{owasp2015} OWASP, ``OWASP Benchmark Project,''
+\url{https://owasp.org/www-project-benchmark/}, 2015.
+\bibitem{attck} MITRE, ``ATT\&CK for Enterprise,''
+\url{https://attack.mitre.org/}, 2023.
+\bibitem{cvss} FIRST, ``CVSS v3.1 Specification Document,''
+\url{https://www.first.org/cvss/v3.1/specification-document}, 2019.
+\bibitem{crapi} OWASP, ``crAPI --- Completely Ridiculous API,''
+\url{https://owasp.org/www-project-crapi/}.
+\bibitem{lean} L.~de~Moura and S.~Ullrich,
+``The Lean 4 theorem prover and programming language,''
+\emph{Proc. CADE}, 2021.
+\end{thebibliography}
 
 \end{document}
