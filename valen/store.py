@@ -61,6 +61,16 @@ CREATE TABLE IF NOT EXISTS runs (
 CREATE INDEX IF NOT EXISTS idx_runs_engagement ON runs(engagement_id);
 CREATE INDEX IF NOT EXISTS idx_runs_created ON runs(created_at);
 CREATE INDEX IF NOT EXISTS idx_members_user ON engagement_members(user_id);
+CREATE TABLE IF NOT EXISTS artifacts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    engagement_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    kind TEXT DEFAULT '',
+    data TEXT NOT NULL,
+    created_at REAL NOT NULL,
+    FOREIGN KEY (engagement_id) REFERENCES engagements(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_artifacts_engagement ON artifacts(engagement_id);
 """
 
 
@@ -226,3 +236,36 @@ class Store:
             eng = c.execute("SELECT COUNT(*) FROM engagements").fetchone()[0]
             runs = c.execute("SELECT COUNT(*) FROM runs").fetchone()[0]
         return {"engagements": eng, "runs": runs}
+
+    # -- artifacts (evidence) ---------------------------------------------
+    def record_artifact(self, engagement_id: int, name: str, kind: str = "",
+                        data: Any = None) -> Dict[str, Any]:
+        import json
+
+        with self._conn() as c:
+            cur = c.execute(
+                "INSERT INTO artifacts(engagement_id, name, kind, data, created_at)"
+                " VALUES(?,?,?,?,?)",
+                (engagement_id, name, kind,
+                 data if isinstance(data, str) else json.dumps(data), time.time()),
+            )
+            row = c.execute("SELECT * FROM artifacts WHERE id=?", (cur.lastrowid,)).fetchone()
+        return dict(row) if row else {}
+
+    def list_artifacts(self, engagement_id: int) -> List[Dict[str, Any]]:
+        import json
+
+        with self._conn() as c:
+            rows = c.execute(
+                "SELECT * FROM artifacts WHERE engagement_id=? ORDER BY created_at DESC",
+                (engagement_id,),
+            ).fetchall()
+        out = []
+        for r in rows:
+            d = dict(r)
+            try:
+                d["data"] = json.loads(d["data"])
+            except Exception:
+                pass
+            out.append(d)
+        return out

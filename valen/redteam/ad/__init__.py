@@ -27,6 +27,7 @@ from .collect import (
     privileged_users,
 )
 from .graph import ADGraph, RELATION_META, node_id
+from .live import bloodhound_command, collect, parse_collection_dir
 from .paths import attack_paths, betweenness_ranking, high_value_targets
 
 __all__ = [
@@ -49,4 +50,7 @@ __all__ = [
     "crack_command",
     "decrypt_cpassword",
     "gpp_from_xml",
+    "bloodhound_command",
+    "collect",
+    "parse_collection_dir",
 ]

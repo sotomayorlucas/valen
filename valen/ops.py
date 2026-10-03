@@ -19,6 +19,7 @@ RUN_PHASE = {
     "pentest": ("TA0009", "T1213", "Collection"),
     "ad": ("TA0006", "T1558", "Credential Access"),
     "c2": ("TA0011", "T1071", "Command and Control"),
+    "creds": ("TA0006", "T1555", "Credential Access"),
 }
 
 _TACTIC_NAMES = {

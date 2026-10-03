@@ -131,3 +131,27 @@ def test_ad_command_builders():
     assert spray_command("C", "d", "users.txt", "Passw0rd!")[0] == "kerbrute"
     assert crack_command("h.txt")[0] == "hashcat"
 
+
+def test_bloodhound_command_builder_and_parse_dir(tmp_path):
+    from valen.redteam.ad import bloodhound_command, kerberoastable, parse_collection_dir
+
+    cmd = bloodhound_command("CORP.LOCAL", "10.0.0.1", "u", "p")
+    assert cmd[0] == "bloodhound-python" and "-c" in cmd
+
+    # split the fixture into per-key files (bloodhound-python output layout)
+    data = json.loads(FIXTURE.read_text())
+    for key, items in data.items():
+        (tmp_path / f"20240901_{key}.json").write_text(json.dumps({key: items}))
+
+    ad = parse_collection_dir(str(tmp_path))
+    assert ad.graph.node_count >= 8
+    assert {u["name"] for u in kerberoastable(ad)} == {"ALICE@CORP.LOCAL", "SVC_SQL@CORP.LOCAL"}
+
+
+def test_ad_collect_endpoint_dry_run():
+    from valen.server import _ad_collect
+
+    out = _ad_collect({"domain": "CORP.LOCAL", "dc": "10.0.0.1", "user": "u", "password": "p"})
+    assert out.get("command") and out.get("note") == "dry-run (pass execute=true and --allow-exec)"
+    assert "error" in _ad_collect({})
+

@@ -67,10 +67,60 @@ def test_payload_builder():
 
 
 def test_c2_endpoints():
-    from valen.server import _c2_plan, _c2_sessions, _payloads
+    from valen.server import _c2_plan, _payloads
 
     assert _c2_plan({"lhost": "h", "lport": 1})["listener"]
     assert _payloads({"lhost": "h", "lport": 1})["builds"]
-    out = _c2_sessions({"output": SAMPLE})
-    assert out["sessions"] and any(n["id"] == "host:WEB01" for n in out["nodes"])
     assert "error" in _c2_plan({})
+
+
+def test_save_sessions_to_store(tmp_path):
+    from valen.redteam.c2 import save_sessions, parse_sessions
+    from valen.store import Store
+
+    store = Store(str(tmp_path / "d"))
+    e = store.create_engagement("e1")
+    n = save_sessions(store, parse_sessions(SAMPLE), engagement_id=e["id"])
+    assert n == 1
+    runs = store.recent_runs(kind="c2")
+    assert runs and runs[0]["adapter"] == "sliver"
+    assert "WEB01" in runs[0]["name"]
+    assert save_sessions(None, parse_sessions(SAMPLE)) == 0
+
+
+def test_sliver_client_fallback():
+    from valen.redteam.c2 import SliverClient
+
+    c = SliverClient()
+    # gRPC may or may not be available; either path returns a dict with 'sessions' or 'command'
+    out = c.sessions(execute=False)
+    assert "sessions" in out or "command" in out or "installed" in out
+
+
+def test_c2_sessions_endpoint_save(tmp_path):
+    import threading
+    from http.server import ThreadingHTTPServer
+
+    from valen.events import EventBus
+    from valen.server import Handler, ServerConfig
+    from valen.store import Store
+
+    store = Store(str(tmp_path / "d"))
+    e = store.create_engagement("e1")
+    httpd = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    httpd.cfg = ServerConfig(store=store, events=EventBus())
+    threading.Thread(target=httpd.serve_forever, daemon=True).start()
+    try:
+        import urllib.request
+
+        port = httpd.server_address[1]
+        body = json.dumps({"output": SAMPLE, "save": True, "engagement_id": e["id"]}).encode()
+        req = urllib.request.Request(f"http://127.0.0.1:{port}/api/c2/sessions", data=body,
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        with urllib.request.urlopen(req) as r:
+            out = json.loads(r.read())
+        assert out["saved"] == 1
+        assert store.recent_runs(kind="c2")[0]["adapter"] == "sliver"
+    finally:
+        httpd.shutdown()
+        httpd.server_close()

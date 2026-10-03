@@ -86,3 +86,24 @@ def test_store_disabled_returns_403():
     finally:
         httpd.shutdown()
         httpd.server_close()
+
+
+def test_artifacts_store_and_endpoint(tmp_path):
+    s = Store(str(tmp_path / "d"))
+    e = s.create_engagement("e1", owner_id=1)
+    s.record_artifact(e["id"], "screenshot.png", kind="image", data={"note": "admin panel"})
+    s.record_artifact(e["id"], "creds.txt", kind="text", data="user:pass")
+    arts = s.list_artifacts(e["id"])
+    assert len(arts) == 2
+    assert arts[0]["kind"] == "text"  # newest first
+    assert arts[1]["data"] == {"note": "admin panel"}  # JSON round-trips
+
+    httpd, port = _server(Store(str(tmp_path / "d")))
+    try:
+        _req(port, f"/api/engagements/{e['id']}/artifacts", "POST",
+             {"name": "loot", "kind": "note", "data": "x"})
+        arts = _req(port, f"/api/engagements/{e['id']}/artifacts")
+        assert len(arts) == 3
+    finally:
+        httpd.shutdown()
+        httpd.server_close()

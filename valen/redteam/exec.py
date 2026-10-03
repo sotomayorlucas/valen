@@ -15,7 +15,7 @@ from typing import Dict, List, Optional
 ALLOWED = frozenset({
     "nmap", "masscan", "gobuster", "ffuf", "nuclei", "sqlmap", "nikto",
     "sliver-client", "impacket-GetUserSPNs", "impacket-GetNPUsers",
-    "kerbrute", "hashcat", "john", "msfvenom",
+    "kerbrute", "hashcat", "john", "msfvenom", "bloodhound-python", "ldapsearch",
 })
 
 _MAX_STDOUT = 20000

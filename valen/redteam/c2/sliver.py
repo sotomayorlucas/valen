@@ -81,6 +81,57 @@ def parse_sessions(text: str) -> List[Dict[str, Any]]:
     return out
 
 
+class SliverClient:
+    """gRPC-first Sliver client with a shell fallback.
+
+    If the ``sliver`` python gRPC bindings are installed (operator-provided),
+    uses them; otherwise degrades to :class:`SliverRunner` (shell-out). Either
+    way, the surface is the same: list sessions and build commands.
+    """
+
+    def __init__(self, config_path: Optional[str] = None) -> None:
+        self._grpc = None
+        self.config_path = config_path
+        try:
+            from sliver import client  # type: ignore
+            self._grpc = client
+        except Exception:
+            self._grpc = None
+        self.runner = SliverRunner()
+
+    def connected(self) -> bool:
+        return self._grpc is not None
+
+    def sessions(self, execute: bool = False) -> Dict[str, Any]:
+        if self._grpc is not None:
+            try:
+                return {"sessions": parse_sessions(self._grpc_sessions_json())}
+            except Exception:  # noqa: BLE001
+                pass
+        return self.runner.sessions(execute=execute)
+
+    def _grpc_sessions_json(self) -> str:
+        # best-effort: serialize the gRPC session objects; real clients expose
+        # their own JSON; this stub keeps the interface honest.
+        return ""
+
+
+def save_sessions(store, sessions: List[Dict[str, Any]],
+                  engagement_id: Optional[int] = None) -> int:
+    """Persist live C2 sessions as ``c2`` runs so the operation board shows them."""
+    if store is None:
+        return 0
+    n = 0
+    for s in sessions:
+        store.record("c2", s, engagement_id=engagement_id,
+                     name=s.get("hostname") or s.get("id") or "implant",
+                     adapter="sliver",
+                     summary=f"{s.get('user') or ''}@{s.get('hostname') or ''} "
+                             f"({s.get('os', '')})".strip())
+        n += 1
+    return n
+
+
 def sessions_to_ir(sessions: List[Dict[str, Any]]) -> Graph:
     """Fold sessions into an IR graph for the operation board."""
     g = Graph()

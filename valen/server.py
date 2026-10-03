@@ -488,6 +488,25 @@ def _ad_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     return plan
 
 
+def _ad_collect(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Plan or run a bloodhound-python collection, then parse the output."""
+    from .redteam.ad.live import collect
+
+    if not payload.get("domain") or not payload.get("dc"):
+        return {"error": "domain and dc required"}
+    out = collect(
+        payload["domain"], payload["dc"],
+        payload.get("user", ""), payload.get("password", ""),
+        execute=bool(payload.get("execute")), collection=payload.get("collection", "All"),
+        out_dir=payload.get("out_dir", "ad-data"), timeout=int(payload.get("timeout", 1800)),
+    )
+    if "graph" in out:
+        g = out.pop("graph")
+        out["nodes"] = g.node_count
+        out["edges"] = g.edge_count
+    return out
+
+
 def _phishing_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Build a GoPhish campaign plan (payloads + curl calls; does not send)."""
     from .redteam.phishing import campaign_plan
@@ -504,6 +523,19 @@ def _phishing_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
         landing_url=payload.get("landing_url", "http://127.0.0.1"),
         smtp_name=payload.get("smtp_name", "Local SMTP"),
     )
+
+
+def _creds_potfile(payload: Dict[str, Any], store=None) -> Dict[str, Any]:
+    """Parse a hashcat/john potfile and optionally record recovered creds."""
+    from .redteam.creds import parse_potfile, record_creds
+
+    if not payload.get("path"):
+        return {"error": "path (potfile) required"}
+    creds = parse_potfile(payload["path"], payload.get("tool", "hashcat"))
+    saved = 0
+    if payload.get("save") and payload.get("engagement_id") is not None:
+        saved = record_creds(store, creds, engagement_id=int(payload["engagement_id"]))
+    return {"credentials": creds, "saved": saved}
 
 
 def _exfil_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
@@ -539,16 +571,24 @@ def _c2_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     return c2_plan(lhost, int(lport), payload.get("name", "sess"))
 
 
-def _c2_sessions(payload: Dict[str, Any]) -> Dict[str, Any]:
+def _c2_sessions(payload: Dict[str, Any], store=None, publish=None) -> Dict[str, Any]:
     """Parse sliver-client 'sessions -j' output and fold it into the IR."""
-    from .redteam.c2 import parse_sessions, sessions_to_ir
+    from .redteam.c2 import parse_sessions, save_sessions, sessions_to_ir
 
     sessions = parse_sessions(payload.get("output", ""))
     graph = sessions_to_ir(sessions)
+    saved = 0
+    if payload.get("save") and payload.get("engagement_id") is not None:
+        saved = save_sessions(store, sessions,
+                              engagement_id=int(payload["engagement_id"]))
+        if publish:
+            publish("c2_sessions", f"{saved} C2 session(s) recorded",
+                    engagement_id=int(payload["engagement_id"]))
     return {
         "sessions": sessions,
         "nodes": _node_data(graph, None),
         "edges": _edge_data(graph),
+        "saved": saved,
     }
 
 
@@ -707,7 +747,7 @@ class Handler(BaseHTTPRequestHandler):
                     "/api/validate", "/api/recon", "/api/ad",
                     "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
                     "/api/agent/propose", "/api/agent/decide", "/api/agent/actions",
-                    "/api/phishing/plan", "/api/exfil/plan"):
+                    "/api/phishing/plan", "/api/exfil/plan", "/api/ad/collect", "/api/creds/potfile"):
             return "execute"
         if method != "GET" and path in ("/api/analyze", "/api/compare", "/api/report",
                                         "/api/engagements"):
@@ -1029,11 +1069,21 @@ class Handler(BaseHTTPRequestHandler):
             st = self._store()
             if st is None:
                 return self._json({"error": "store disabled"}, 403)
+            user = getattr(self, "_user_ctx", None)
+            parts = u.path.split("/")
+            # /api/engagements/{id}/artifacts
+            if parts[-1] == "artifacts" and len(parts) >= 5:
+                try:
+                    eid = int(parts[3])
+                except ValueError:
+                    return self._json({"error": "bad engagement id"}, 400)
+                if user is not None and not st.can_access(eid, user):
+                    return self._json({"error": "forbidden"}, 403)
+                return self._json(st.list_artifacts(eid))
             try:
                 eid = int(u.path.rsplit("/", 1)[1])
             except ValueError:
                 return self._json({"error": "bad engagement id"}, 400)
-            user = getattr(self, "_user_ctx", None)
             if user is not None and not st.can_access(eid, user):
                 return self._json({"error": "forbidden"}, 403)
             eng = st.get_engagement(eid)
@@ -1074,9 +1124,10 @@ class Handler(BaseHTTPRequestHandler):
                    "/api/report", "/api/cvss", "/api/lab/reset", "/api/engagements", "/api/ad",
                    "/api/payloads", "/api/c2/plan", "/api/c2/sessions",
                    "/api/agent/propose", "/api/agent/decide",
-                   "/api/phishing/plan", "/api/exfil/plan",
+                   "/api/phishing/plan", "/api/exfil/plan", "/api/ad/collect", "/api/creds/potfile",
                    "/api/login", "/api/logout", "/api/users")
-        if u.path not in allowed and not u.path.startswith("/api/users/"):
+        artifacts = u.path.startswith("/api/engagements/") and u.path.endswith("/artifacts")
+        if u.path not in allowed and not u.path.startswith("/api/users/") and not artifacts:
             return self._json({"error": "not found"}, 404)
         length = int(self.headers.get("Content-Length", "0"))
         if length > self._cfg().max_body:
@@ -1129,6 +1180,21 @@ class Handler(BaseHTTPRequestHandler):
                     payload.get("notes", ""), owner_id=user["id"] if user else None)
                 self._publish("engagement_create", f"engagement #{eng['id']} {name}")
                 return self._json(eng)
+            if u.path.startswith("/api/engagements/") and u.path.endswith("/artifacts"):
+                st = self._store()
+                if st is None:
+                    return self._json({"error": "store disabled"}, 403)
+                try:
+                    eid = int(u.path.split("/")[3])
+                except (ValueError, IndexError):
+                    return self._json({"error": "bad engagement id"}, 400)
+                user = getattr(self, "_user_ctx", None)
+                if user is not None and not st.can_access(eid, user):
+                    return self._json({"error": "forbidden"}, 403)
+                art = st.record_artifact(eid, payload.get("name", "artifact"),
+                                         payload.get("kind", ""), payload.get("data"))
+                self._publish("artifact", f"artifact {art.get('name')} on engagement #{eid}")
+                return self._json(art)
             if u.path == "/api/compare":
                 out = _compare(payload)
                 self._record("compare", out, payload,
@@ -1147,10 +1213,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(out)
             if u.path == "/api/ad":
                 return self._json(_ad_plan(payload))
+            if u.path == "/api/ad/collect":
+                return self._json(_ad_collect(payload))
             if u.path == "/api/agent/propose":
                 return self._agent_propose(payload)
             if u.path == "/api/agent/decide":
                 return self._agent_decide(payload)
+            if u.path == "/api/creds/potfile":
+                return self._json(_creds_potfile(payload, store=self._store()))
             if u.path == "/api/phishing/plan":
                 return self._json(_phishing_plan(payload))
             if u.path == "/api/exfil/plan":
@@ -1160,7 +1230,8 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/c2/plan":
                 return self._json(_c2_plan(payload))
             if u.path == "/api/c2/sessions":
-                return self._json(_c2_sessions(payload))
+                return self._json(_c2_sessions(payload, store=self._store(),
+                                               publish=self._publish))
             if u.path == "/api/lab/reset":
                 return self._json(_lab_reset(payload))
             if u.path == "/api/report":
