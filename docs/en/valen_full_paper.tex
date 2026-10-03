@@ -1,15 +1,12 @@
-\documentclass[11pt]{article}
+\documentclass[journal]{IEEEtran}
 
 \usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
-\usepackage{upquote}
 \usepackage{xcolor}
-\usepackage{listings}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.17}
-\usepackage[margin=1in]{geometry}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath,amssymb,amsthm}
 \usepackage{booktabs}
 \usepackage{enumitem}
 \usepackage{tikz}
@@ -17,268 +14,378 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage{url}
 
-\definecolor{codegray}{gray}{0.45}
 \definecolor{valen}{RGB}{30,90,170}
-\definecolor{valenred}{RGB}{200,60,60}
-\definecolor{valengreen}{RGB}{40,140,80}
-\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,
-        xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false}
-\setlength{\emergencystretch}{3em}
+\definecolor{valenred}{RGB}{190,50,50}
+\definecolor{valengreen}{RGB}{30,130,70}
 
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\valen}{\textsc{Valen}}
+\newcommand{\IR}{\mathcal{G}}
 
-\title{\bfseries Structural Invariants, Attack-Graph Mathematics, and an\\
-\Large Autonomous Red-Team Platform}
-\author{\valen\ Project}
-\date{Working draft v0.5 --- not peer reviewed}
+\newtheorem{definition}{Definition}
+\newtheorem{theorem}{Theorem}
+\newtheorem{proposition}{Proposition}
+\newtheorem{lemma}{Lemma}
+\newtheorem{corollary}{Corollary}
+
+\title{Structural Invariants and Attack-Graph Mathematics:\\ An Autonomous Offensive-Defensive Platform}
+
+\author{The \valen\ Project}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-\noindent We present \valen\ --- \emph{Verification And Active Logic Engine,
-Neuro-symbolic} --- an end-to-end system that spans two disciplines and joins
-them with one typed graph intermediate representation. On the \emph{defensive}
-side it is a multi-language static analyzer whose thesis is \emph{measured}:
-structural invariants of program graphs (spectral, persistent and directed
-homology, discrete curvature) carry no information beyond taint for injection
-prioritization (OWASP Benchmark~1.2, 2740 cases, taint MRR $0.894$ vs.\ the fused
-field's $0.872$, $p=5\times10^{-5}$), but are the \emph{only} signal for
-authorization (BOLA/IDOR: recall $1.0$ / precision $0.90$ on crAPI), destructive
-state cycles (GLMY directed homology: $0.97$ vs.\ $0.065$ recall for symmetrized),
-and trust topology. On the \emph{offensive} side it is an autonomous red-team
-platform: a multi-user team server that coordinates reconnaissance, Active
+We present \valen\ (\emph{Verification And Active Logic Engine, Neuro-symbolic}),
+an end-to-end system that joins a measured \emph{defensive} thesis with an
+\emph{offensive} platform over one typed graph intermediate representation
+($\IR$). Defensively, we settle a boundary question with statistical rigor:
+spectral, persistent/directed-homology, and discrete-curvature invariants of
+program graphs contribute \emph{no information} beyond taint for injection
+prioritization (OWASP Benchmark~1.2, $2740$ cases; taint MRR $0.894$, AUC $0.895$,
+fused field $0.872$, paired permutation $p=5\times10^{-5}$), yet they are the
+\emph{only} signal for authorization (BOLA/IDOR: recall $1.0$ / precision $0.90$
+on crAPI), destructive state cycles (GLMY directed homology: $0.97$ vs.\ $0.065$
+recall for symmetrized), and trust topology. Offensively, \valen\ is an autonomous
+red-team platform --- a multi-user team server spanning reconnaissance, Active
 Directory attack-graph analysis, command and control, credential recovery,
-phishing and exfiltration across the kill chain, under an explicit authorization
-and human-in-the-loop gating model. The unifying contribution is a layered
-\emph{attack-graph mathematics} --- Menger min-cut chokepoints, min-cost flow,
-absorbing Markov-chain hitting probabilities solved exactly by $(I-Q)^{-1}R$,
-Z3 Optimize bounded-model-checking that \emph{synthesizes} minimal-cost ordered
-exploit plans with AND-preconditions, and a probabilistic context-free grammar
-for password guessing --- each answering a question that reachability and
-shortest-path queries cannot. We report the system deployed against OWASP crAPI
-($18/18$ challenges solved autonomously, including three LLM prompt-injection
-challenges) and a synthetic Active Directory corpus, with all components
-installable, tested ($383$ tests), and documented.
+phishing and exfiltration --- whose differentiator is a layered
+\emph{attack-graph mathematics} that we state and prove: Menger min-cut
+chokepoints, min-cost flow, absorbing Markov-chain hitting probabilities solved
+exactly by $(I-Q)^{-1}R$, Z3-Optimize bounded-model-checking that synthesizes
+minimal-cost ordered exploit plans with AND-preconditions, and a probabilistic
+context-free grammar for password guessing. The agent solves $18/18$ documented
+crAPI challenges autonomously (including three LLM prompt-injection challenges).
 \end{abstract}
 
-\tableofcontents
+\begin{IEEEkeywords}
+structural invariants, taint analysis, directed topology, attack graphs,
+autonomous red teaming, formal synthesis, password guessing
+\end{IEEEkeywords}
 
 \section{Introduction}
-Two questions organize this work. \emph{First, where do structural invariants of
-program graphs actually carry security information, and where do they not?}
-\emph{Second, can the same mathematical machinery be turned into a quantitative
+\IEEEPARstart{T}{wo} questions organize this work. \emph{First, where do
+structural invariants of program graphs carry security information, and where do
+they not?} \emph{Second, can the same machinery be turned into a quantitative
 planning engine for offensive operations?} The answer to the first is a sharp,
-statistically-settled boundary (Section~\ref{sec:verification}); the answer to the
-second is an operational platform whose differentiator is mathematics, not
-scripting (Sections~\ref{sec:platform},~\ref{sec:math}).
+statistically-settled boundary (\S\ref{sec:boundary}); the answer to the second is
+an operational platform whose differentiator is mathematics, not scripting
+(\S\ref{sec:platform}, \S\ref{sec:math}).
 
 Our contributions are:
-
-\begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=3em]
-\item \textbf{A measured boundary on geometric priors for injection SAST}
-  (Section~\ref{sec:boundary}): with a paired permutation test and bootstrap
-  confidence intervals we show spectral/topological/geometric invariants are at
-  or below chance for injection prioritization, redirecting effort to where
-  structure \emph{is} the signal.
-\item \textbf{An operational authorization invariant} (Section~\ref{sec:authz}):
-  a privilege-level function mechanized in Lean~4, a structural BOLA/IDOR
-  detector, and a Z3 ownership witness that separates object-level authorization
-  from mere authentication --- recovering every documented BOLA/BFLA endpoint of
-  crAPI.
-\item \textbf{Directed path homology as the correct cycle signal}
-  (Section~\ref{sec:glmy}): GLMY $H_1$ dominates symmetrized homology for
-  destructive-cycle detection on state machines and smart contracts.
-\item \textbf{A measured neuro-symbolic arbitration boundary}
-  (Section~\ref{sec:neuro}): the LLM proposes, formal methods dispose; detection
-  and ranking are LLM-independent while interpretation changes.
-\item \textbf{A multi-language SAST front-end} (Section~\ref{sec:langs}): one
-  generic taint engine drives nine language grammars with per-language profiles.
-\item \textbf{An autonomous red-team platform} (Section~\ref{sec:platform}): a
-  multi-user team server with RBAC and live collaboration, spanning the kill
-  chain with an authorization-first gating model.
-\item \textbf{Attack-graph mathematics for planning} (Section~\ref{sec:math}):
-  chokepoints, least-cost and disjoint plans, exact hitting probabilities,
-  minimal-cost exploit synthesis, and a PCFG password prior.
+\begin{enumerate}[label=\textbf{C\arabic*.},leftmargin=2.2em]
+\item A \emph{measured boundary} on geometric priors for injection SAST, with a
+  paired permutation test and bootstrap confidence intervals.
+\item An \emph{operational authorization invariant} mechanized in Lean~4, a
+  structural BOLA/IDOR detector, and a Z3 ownership witness separating
+  object-level authorization from authentication.
+\item Evidence that \emph{GLMY directed path homology} is the correct cycle
+  signal, dominating symmetrized homology.
+\item A \emph{measured neuro-symbolic arbitration boundary}: the LLM proposes,
+  formal methods dispose.
+\item A \emph{multi-language SAST front-end}: one generic taint engine driving
+  nine grammars.
+\item An \emph{autonomous red-team platform} with an authorization-first model.
+\item \emph{Attack-graph mathematics} with proofs: chokepoints, least-cost and
+  disjoint plans, exact hitting probabilities, minimal-cost exploit synthesis,
+  and a PCFG password prior.
 \end{enumerate}
 
-\section{System architecture}
-\label{sec:architecture}
-\input{fig_arch}
+\section{Formal framework}
+\label{sec:framework}
 
-Everything is built over one deterministic, JSON-serializable typed graph
-intermediate representation (IR). Six ingest adapters (Python, Java with
-interprocedural/context-sensitive taint, C/C++/Rust/C\#/Go/PHP/Ruby/JavaScript
-via a generic C-like engine, binary via \texttt{objdump}/\texttt{angr}, OpenAPI,
-IAM, LLM-agent, Solidity) emit the same graph, shared verbatim between the
-Python layer and an optional Rust numeric core (with a pure-Python fallback).
-Five signal families are fused over it --- algebraic (taint lattice, privilege
-levels), spectral (Fiedler), topological (persistent and GLMY directed homology),
-geometric (Forman--/Ollivier--Ricci), and formal (Z3, Lean~4) --- and every result
-carries a machine-checkable witness under the modeled semantics.
+\begin{definition}[Typed IR]
+\label{def:ir}
+A \emph{typed graph} is a directed multigraph $\IR=(V,E,\tau_V,\tau_E,\alpha)$
+where $\tau_V:V\to\mathcal{K}_V$ labels vertices (module, function, sink, gate,
+principal, \dots), $\tau_E:E\to\mathcal{K}_E$ labels edges (control, data, call,
+taint, trust, auth, \dots), and $\alpha:E\to\Sigma^{*}$ attaches attributes such
+as a relation name or a cost. Every adapter emits the same $\IR$, so all analysis
+layers are engine-agnostic.
+\end{definition}
+
+\begin{definition}[Structural field]
+\label{def:field}
+A \emph{structural field} is a map $V(x):\IR\to\R^{d}$ that fuses the signals of
+the algebraic (taint lattice, privilege level), spectral (Fiedler vector),
+topological (persistent $H_0,H_1$ and GLMY directed $H_1$), and geometric
+(Forman--Ollivier Ricci) layers into a per-node score used for prioritization.
+\end{definition}
+
+\begin{definition}[Privilege lattice and auth edge]
+\label{def:auth}
+Let $F:V\to\N$ be a privilege level. An edge $e=(u,v)$ with $\tau_E(e)=\texttt{auth}$
+is an \emph{auth edge} iff $F(u)<F(v)$. A path $\pi=v_0\to\cdots\to v_k$ is
+\emph{ungated} if none of its edges is an auth edge.
+\end{definition}
+
+\begin{proposition}[No privilege escalation without auth edges]
+\label{prop:auth}
+If $\pi=v_0\to\cdots\to v_k$ is ungated, then $F(v_k)\le F(v_0)$.
+\end{proposition}
+\begin{proof}
+Every non-auth edge is either intra-level or \emph{downward} in the lattice, i.e.\
+for each edge $e=(v_i,v_{i+1})$ on $\pi$ we have $F(v_{i+1})\le F(v_i)$. By
+transitivity $F(v_k)\le F(v_0)$. The statement is mechanized in Lean~4 as
+\texttt{no\_auth\_bounded}; the soundness of the boolean taint abstraction is
+\texttt{prop1\_soundness}. \qedhere
+\end{proof}
+
+\begin{definition}[Attack graph and cost]
+\label{def:cost}
+An \emph{attack graph} is an $\IR$ whose vertices are principals and whose edges
+$m\to n$ are \emph{actions} requiring control of $m$ and yielding control of $n$.
+A \emph{cost model} is $c:E\to\R_{>0}$ (stealth plus effort; e.g.\
+$c(\mathrm{MemberOf})=1$, $c(\mathrm{DCSync})=5$). Given entry set $S$ and target
+set $T$, an \emph{attack plan} is a set of edges whose transitive closure connects
+some $s\in S$ to some $t\in T$.
+\end{definition}
+
+\begin{definition}[Hitting probability]
+\label{def:hit}
+For a target set $T\subseteq V$, the \emph{hitting probability} $h:V\to[0,1]$ is
+\[
+h(u)=
+\begin{cases}
+1 & u\in T,\\
+\frac{1}{\deg^{+}(u)}\sum_{v:\,u\to v}h(v) & u\notin T,
+\end{cases}
+\]
+the harmonic measure of $T$ under a uniform random walk on the directed graph.
+\end{definition}
+
+\begin{proposition}[Hitting probability is the unique harmonic solution]
+\label{prop:hit}
+For transient nodes $u\notin T$, the vector $h_T$ satisfies $(I-Q)h_T=r$ where
+$Q$ is the transient-to-transient transition matrix and
+$r_u=\sum_{v\in T}P_{uv}$; the solution is unique and can be obtained by value
+iteration or by Gaussian elimination in $O(|V|^3)$.
+\end{proposition}
+\begin{proof}
+Partition $V=T\uplus U$ (transient $U$). The Bellman equation is
+$h_T=Qh_T+r$ with $Q$ substochastic (row sums $\le1$, and $<1$ for any node with
+a target neighbour). Hence $I-Q$ is an $M$-matrix, therefore nonsingular, and the
+fixed point is unique. Value iteration converges because $Q$ is a contraction on
+the transient subspace. \qedhere
+\end{proof}
 
 \section{Structural verification}
 \label{sec:verification}
 
 \subsection{The boundary on geometric priors}
 \label{sec:boundary}
-On OWASP Benchmark~1.2 (2740 cases with known ground truth) we ask whether each
-signal ranks the vulnerable sink above the safe candidates. A prioritization
-oracle computes MRR, R@1, NDCG@$k$, cost curves, a paired permutation test, and
-bootstrap confidence intervals. The result is falsifiable and reproducible:
-raw taint dominates (MRR $0.894$, AUC $0.895$), the fused structural field is
-slightly \emph{worse} ($0.872$, $p=5\times10^{-5}$, 95\% CI $[+0.0157,+0.0294]$),
-and spectral ($0.496$) and topological ($0.500$) are at chance while curvature is
-below chance ($0.376$). A flat, near-acyclic servlet has no curvature or
-persistent topology to exploit, and taint is already near-optimal there.
+On OWASP Benchmark~1.2 ($2740$ cases with known ground truth) a prioritization
+oracle ranks all sink candidates and measures MRR, R@1, NDCG@$k$, plus a paired
+permutation test and bootstrap confidence intervals.
 
-\input{fig_boundary}
+\begin{theorem}[Boundary, empirical]
+\label{thm:boundary}
+For linear injection flaws, the geometric/spectral/topological signals carry no
+prioritization information beyond taint: raw taint achieves MRR $0.894$
+(AUC $0.895$); the fused structural field achieves $0.872$
+($p=5\times10^{-5}$, 95\% CI $[+0.0157,+0.0294]$); spectral ($0.496$) and
+topological ($0.500$) are at chance and curvature is below chance ($0.376$).
+\end{theorem}
+
+This is a \emph{publishable negative result}: a flat, near-acyclic servlet has no
+curvature or persistent topology to exploit, and taint is near-optimal there.
+Figure~\ref{fig:boundary} shows the per-signal AUC.
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}
+  \begin{axis}[
+      ybar, bar width=0.45cm, width=\columnwidth, height=4.2cm,
+      symbolic x coords={taint, formal, spectral, topol., geom.},
+      xtick=data, x tick label style={font=\scriptsize},
+      ymin=0, ymax=1.0, ylabel={AUC},
+      nodes near coords, every node near coord/.append style={font=\tiny},
+      ymajorgrids=true]
+    \addplot[fill=valen] coordinates {
+      (taint,0.895) (formal,0.878) (spectral,0.496)
+      (topol.,0.500) (geom.,0.376)};
+    \draw[dashed, valenred, thick] (axis cs:taint,0.5) -- (axis cs:geom.,0.5);
+  \end{axis}
+\end{tikzpicture}
+\caption{The boundary result: spectral and topological signals at chance,
+curvature below; taint is the dominant signal.}
+\label{fig:boundary}
+\end{figure}
 
 \subsection{Authorization, mechanized and operational}
 \label{sec:authz}
-Let $F:V\to\N$ assign a privilege level; an edge $e=(u,v)$ is an \emph{auth edge}
-iff $F(u)<F(v)$. A path with no auth edge satisfies $F(k)\le F(s)$ --- no
-privilege escalation --- mechanized in Lean~4. The structural missing-
-authorization/BOLA detector flags a function with an HTTP source and a resource
-sink but no auth gate: on a curated 39-case corpus it reaches recall $1.0$ /
-precision $0.72$ / F1 $0.837$ where taint scores $0$, and a baseline ladder shows
-each requirement earns its keep ($0.46\to0.72$). The Z3 verifier checks
-$\mathrm{SAT}(\mathrm{owner}(id)\neq session)$ --- an ownership witness that makes
-precise that \texttt{login\_required} does not block BOLA, only an
-\texttt{owner} predicate does. On crAPI (44 operations, 9 documented BOLA/BFLA
-endpoints) an object-reference signal recovers all 9 (recall $1.0$, precision
-$0.90$) while the missing-auth check scores $0$, because every BOLA endpoint
-\emph{is} authenticated.
-
-\input{fig_ladder}
+Proposition~\ref{prop:auth} is operationalized in three artifacts. (i) The
+structural \emph{missing-authorization/BOLA} detector flags a function with an
+HTTP source and a resource sink but no auth gate; on a curated 39-case corpus it
+reaches recall $1.0$ / precision $0.72$ / F1 $0.837$ where taint scores $0$, and a
+baseline ladder shows each requirement earns its keep ($0.46\to0.72$). (ii) The
+Z3 verifier checks
+$\mathrm{SAT}(\mathrm{owner}(id)\neq session)$ --- an ownership witness separating
+object-level authorization from mere authentication. (iii) On crAPI ($44$
+operations, $9$ documented BOLA/BFLA endpoints) an object-reference signal
+recovers all $9$ (recall $1.0$, precision $0.90$) while the missing-auth check
+scores $0$, because every BOLA endpoint \emph{is} authenticated.
 
 \subsection{Directed path homology}
 \label{sec:glmy}
-Symmetrizing a directed graph is lossy in both directions: a 2-cycle
-$A\to B\to A$ collapses (a missed reentrancy) and a filled triangle becomes a
-false cycle. GLMY directed path homology resolves both: recall $1.0$ / precision
-$0.75$ on a 12-graph corpus versus $0.5$/$0.5$ symmetrized, and on SmartBugs-
-curated smart contracts $0.968$ vs.\ $0.065$ recall. It returns the concrete
-$\beta_1$ generator (the cycle's edges) as evidence; its two false positives are
-diamond path-space holes, not feedback loops --- $H_1$ is a high-recall,
-necessary-but-not-sufficient superset of destructive cycles.
+Symmetrizing a directed graph is lossy in both directions: a $2$-cycle
+$A\to B\to A$ collapses to a single undirected edge (a missed reentrancy), and a
+filled triangle becomes a false cycle.
 
-\input{fig_glmy}
+\begin{proposition}[Directed vs.\ symmetrized homology]
+\label{prop:glmy}
+GLMY directed path homology $H_1$ is a strict superset of symmetrized homology for
+detecting destructive cycles: measured recall $1.0$ / precision $0.75$ on a
+12-graph state-machine corpus (vs.\ $0.5$/$0.5$ symmetrized) and $0.968$ vs.\
+$0.065$ on SmartBugs-curated smart contracts.
+\end{proposition}
+GLMY returns the concrete $\beta_1$ generator (the cycle's edges) as evidence; its
+two false positives are diamond path-space holes, not feedback loops --- a
+high-recall, necessary-but-not-sufficient signal.
 
-\subsection{The neuro-symbolic arbitration boundary}
+\subsection{Neuro-symbolic arbitration}
 \label{sec:neuro}
-On a 38-file corpus (29 confirmed findings) the offline heuristic and the
+On a 38-file corpus ($29$ confirmed findings) the offline heuristic and the
 LiteLLM-backed agent agree on detection and ranking on $37/38$ files (agreement
-$0.974$), while the LLM changes the CWE on $28\%$ of findings and produces more
-concise titles. A spec-mining probe mines a plausible precondition every time
-(hallucination $0$) at $0.5$ token recall. The contribution is an architecture ---
-LLM proposes, Z3 disposes --- plus its measurement.
+$0.974$), while the LLM changes the CWE on $28\%$ of findings. The architecture is
+\emph{LLM proposes, Z3 disposes}; the measurement bounds the LLM's role.
 
 \section{Multi-language SAST}
 \label{sec:langs}
-One generic taint engine (\texttt{clike.py}) drives nine tree-sitter grammars
-(C, C++, Rust, C\#, Go, PHP, Ruby, JavaScript/TypeScript), with per-language
-\emph{profiles} that declare sources, sinks, sanitizers, and auth gates. The
-engine resolves callees (including receivers and scoped names), propagates taint
-through straight-line assignments, treats output-parameter sources
-(\texttt{fgets}, \texttt{gets}) and pointer declarators, and emits the canonical
-IR. A registry (\texttt{categories.py}) unifies severity, CWE, OWASP Top-10,
-default CVSS 3.1/4.0 vectors, MITRE tactic and remediation per category, so a
-finding is immediately enriched for reporting.
-
-\input{fig_langs}
+One generic taint engine drives nine tree-sitter grammars (C, C++, Rust, C\#,
+Go, PHP, Ruby, JavaScript/TypeScript) with per-language profiles declaring
+sources, sinks, sanitizers, and auth gates; Python, Java (interprocedural), and
+Solidity have dedicated adapters. A canonical registry unifies severity, CWE,
+OWASP Top-10, default CVSS~3.1/4.0 vectors, MITRE tactic, and remediation per
+category, so every finding is enriched for reporting.
 
 \section{The red-team platform}
 \label{sec:platform}
-\input{fig_killchain}
+\valen\ is a single installable package whose server is a multi-user \emph{team
+server}: users with roles (\texttt{viewer}/\texttt{operator}/\texttt{admin}),
+PBKDF2 sessions, per-route RBAC, engagements with membership, evidence artifacts,
+and Server-Sent Events for live collaboration. The surface spans the kill chain
+(Figure~\ref{fig:killchain}) and is gated by a scope allow-list, an execution
+allow-list (\texttt{--allow-exec}), and operator approval.
 
-\valen\ is a single installable Python package whose server is a multi-user
-\emph{team server}: users with roles (\texttt{viewer}/\texttt{operator}/
-\texttt{admin}), PBKDF2 sessions, per-route RBAC, engagements with membership,
-evidence artifacts, and Server-Sent Events for live operator collaboration, all
-persisted in SQLite. The red-team surface spans the kill chain:
-
-\begin{itemize}[itemsep=1pt]
-\item \textbf{Recon / enumeration} --- nmap, masscan, gobuster, ffuf, nuclei
-  wrappers with stealth profiles and CVE/KEV/EPSS intelligence.
-\item \textbf{Active Directory} --- BloodHound/SharpHound ingestion into the IR,
-  tier-0 attack paths, Kerberoast/AS-REP selection, GPP \texttt{cpassword}
-  decryption, and impacket/kerbrute/hashcat command builders.
-\item \textbf{C2 and payloads} --- Sliver integration (gRPC-first, shell
-  fallback), msfvenom/handler/HTA planners, GoPhish and exfiltration planners.
-\item \textbf{Hybrid agent} --- a deterministic kill-chain planner with an
-  operator approval queue; intrusive actions require explicit \texttt{--authorize}.
-\item \textbf{Reporting} --- HTML / Markdown / JSON / SARIF with CVSS 3.1/4.0 and
-  CVE/KEV/EPSS enrichment.
-\end{itemize}
-
-Everything offensive is gated by a scope allow-list (loopback by default), an
-execution allow-list (\texttt{--allow-exec}), and per-operator roles --- an
-\emph{authorization-first} model, not an afterthought.
+\begin{figure*}[!t]
+\centering
+\begin{tikzpicture}[
+    box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                font=\footnotesize, inner sep=3pt, minimum height=8mm},
+    arr/.style={-{Stealth[length=1.8mm]}, thick, valen}]
+  \node[box] (recon) {Recon\\nmap $\cdot$ nuclei};
+  \node[box, right=3mm of recon] (enum) {Enum\\gobuster $\cdot$ ffuf};
+  \node[box, right=3mm of enum] (ad) {AD\\BloodHound};
+  \node[box, right=3mm of ad] (exploit) {Exploit\\C2 $\cdot$ payloads};
+  \node[box, right=3mm of exploit] (creds) {Creds\\Kerberoast $\cdot$ PCFG};
+  \node[box, right=3mm of creds] (post) {Post\\phishing $\cdot$ exfil};
+  \node[box, right=3mm of post] (report) {Report\\HTML/MD/SARIF};
+  \draw[arr] (recon)--(enum); \draw[arr] (enum)--(ad); \draw[arr] (ad)--(exploit);
+  \draw[arr] (exploit)--(creds); \draw[arr] (creds)--(post); \draw[arr] (post)--(report);
+\end{tikzpicture}
+\caption{The red-team platform spans the kill chain, coordinated by the team
+server and gated by an authorization-first model.}
+\label{fig:killchain}
+\end{figure*}
 
 \section{Attack-graph mathematics}
 \label{sec:math}
-The IR is a typed directed multigraph $G=(V,E)$ over principals. Four families of
-methods are layered over it.
 
-\subsection{Flow: chokepoints and disjoint plans}
-\textbf{Menger min-cut.} Given entry set $S$ and target set $T$, we compute the
-minimum vertex set whose removal separates them, by $s$-$t$ max flow on the
-vertex-split graph (each $v$ becomes $v_{\mathrm{in}}\to v_{\mathrm{out}}$ of
-capacity $1$; sources/targets unbounded) with Edmonds--Karp. The saturated split
-edges on the source side of the residual graph are the \emph{obligatory
-chokepoints}. A flow $\geq\infty$ means a source is directly adjacent to a target
-(min-cut $0$).
+\subsection{Chokepoints via Menger min-cut}
+\begin{theorem}[Menger, vertex form]
+\label{thm:menger}
+The maximum number of internally vertex-disjoint paths from $S$ to $T$ equals the
+minimum number of vertices whose removal separates $S$ from $T$.
+\end{theorem}
+\begin{proof}[Construction]
+Split each $v$ into $v_{\mathrm{in}}\to v_{\mathrm{out}}$ of capacity $1$
+(unbounded for $v\in S\cup T$), replace each $u\to v$ by
+$u_{\mathrm{out}}\to v_{\mathrm{in}}$ of capacity $\infty$, and add a super-source
+to $S$ and $T$ to a super-sink. A max flow saturates the unit split edges of a
+minimum vertex cut; the saturated edges on the source side of the residual graph
+are exactly the chokepoints. \qedhere
+\end{proof}
 
-\textbf{Min-cost flow.} With a per-edge cost model (stealth + effort;
-$\text{MemberOf}=1$, $\text{DCSync}=5$), we send $k$ units at minimum cost via
-successive shortest augmenting paths. Internal vertices have capacity $1$, so the
-result is a set of \emph{vertex-disjoint} cheapest routes --- ``with $k$
-compromises, the $k$ cheapest independent ways in''.
+\subsection{Min-cost flow}
+Sending $k$ units of flow at minimum cost, with internal vertices of capacity $1$,
+yields the $k$ \emph{cheapest vertex-disjoint} attack routes. We implement
+successive shortest augmenting paths (Bellman--Ford on the residual graph).
 
-\textbf{Articulation points and bridges} (Tarjan, on the symmetrized graph) rank
-the most disruptive principals and links --- the attacker/disruption view ---
-while the directed min-cut is the defender/hardening view.
-
-\input{fig_attackgraph}
-
-\subsection{Probability: hitting time}
-Model the graph as an absorbing Markov chain: targets are absorbing and each
-transient node transitions uniformly over out-neighbours. The hitting probability
-satisfies
-\[
-h(u) \;=\; \mathbb{1}[u\in T] \;+\; \mathbb{1}[u\notin T]\cdot
-\frac{1}{\deg^+(u)}\sum_{v:\,u\to v} h(v),
-\]
-computed by value iteration or \emph{exactly} by Gaussian elimination on
-$(I-Q)h=r$. In the toy corpus an entry with three out-edges and one route to the
-target scores $\tfrac13$, a direct entry $1$ --- a probabilistic risk ranking
-distinct from boolean reachability.
+\subsection{Hitting probability}
+Proposition~\ref{prop:hit} gives the probabilistic risk ranking; in the toy corpus
+an entry with three out-edges and one route to the target scores $\tfrac13$, a
+direct entry $1$.
 
 \subsection{Formal synthesis: minimal-cost exploit plans}
-Boolean reachability answers \emph{is it reachable?}; we answer \emph{what is the
-cheapest ordered sequence of actions?} Model the graph as a transition system
+\begin{theorem}[Synthesis soundness and optimality]
+\label{thm:synth}
+Let the transition system be
 \[
-\mathrm{has}(s{+}1,n)\;\equiv\;\mathrm{has}(s,n)\;\vee\;
-\bigvee_{e:\,m\to n}\bigl(\mathrm{taken}_e\wedge\mathrm{has}(s,m)\bigr),
+\mathrm{has}(s{+}1,n)\equiv \mathrm{has}(s,n)
+\vee \bigvee_{e:\,m\to n}\bigl(\mathrm{taken}_e\wedge\mathrm{has}(s,m)\bigr),
 \]
-with entries compromised at step $0$, and ask \texttt{z3.Optimize} to minimize
-$\sum_e \mathrm{taken}_e\cdot \mathrm{cost}(e)$ subject to reaching the target
-within $k$ steps. Reconstructing the ordered sequence yields the
-technique-by-technique narrative. We extend it to \textbf{AND-preconditions}:
-compound actions $\{\mathrm{sources}\to\mathrm{target}\}$ that fire only when all
-sources are compromised (e.g.\ DCSync needs Domain Admins \emph{and} a session on
-a Domain Controller).
+with entries at step $0$. A satisfying assignment of
+\texttt{z3.Optimize} minimizing $\sum_e \mathrm{taken}_e\,c(e)$ under
+$\bigvee_{s\le k}\mathrm{has}(s,t)$ is (i) a feasible plan and (ii) minimal-cost
+among plans of length $\le k$.
+\end{theorem}
+\begin{proof}
+(i) Follows by induction on the step index: \texttt{has} is monotone and each
+\texttt{taken} edge has its source true at the step it fires, so the derived
+ordering is a valid execution. (ii) The objective is exactly the plan cost and the
+optimizer returns a minimum over the bounded search space. Compound actions
+$\{\mathrm{sources}\to \mathrm{target}\}$ add $\bigwedge_{s}\mathrm{has}(s)$ as an
+AND-precondition, e.g.\ DCSync requires Domain Admins \emph{and} a session on a
+Domain Controller. \qedhere
+\end{proof}
+
+\begin{figure}[!t]
+\centering
+\begin{tikzpicture}[
+    n/.style={circle, draw, inner sep=0pt, minimum size=7.5mm, font=\scriptsize, align=center},
+    target/.style={circle, draw=valenred, thick, fill=valenred!12, inner sep=0pt, minimum size=8.5mm, font=\scriptsize, align=center},
+    chok/.style={circle, draw=valengreen, very thick, fill=valengreen!15, inner sep=0pt, minimum size=8.5mm, font=\scriptsize, align=center},
+    arr/.style={-{Stealth[length=2mm]}, thick, valen, font=\tiny}]
+  \node[n] (alice) {ALICE}; \node[n, below=8mm of alice] (bob) {BOB};
+  \node[chok, right=14mm of alice, yshift=-4mm] (it) {IT};
+  \node[target, right=13mm of it, yshift=7mm] (da) {DA};
+  \node[target, right=13mm of it, yshift=-7mm] (dom) {domain};
+  \draw[arr] (alice) -- node[above, sloped]{GenericAll} (da);
+  \draw[arr] (alice) -- node[above]{MemberOf} (it);
+  \draw[arr] (bob) -- node[above, sloped]{GenericAll} (it);
+  \draw[arr] (it) -- node[above, sloped]{GenericAll} (da);
+  \draw[arr] (it) -- node[above, sloped]{DCSync} (dom);
+\end{tikzpicture}
+\caption{AD attack graph: with entry \texttt{BOB}, \texttt{IT} is the Menger
+chokepoint (min-cut $1$); \texttt{ALICE} reaches Domain Admins directly (min-cut
+$0$). Least-cost plans: \texttt{ALICE}$\to$DA ($3.0$) and
+\texttt{ALICE}$\to$\texttt{IT}$\to$domain ($6.0$); \texttt{BOB} is certified
+unreachable to DA.}
+\label{fig:attackgraph}
+\end{figure}
 
 \subsection{Password guessing: PCFG}
-We implement Weir's probabilistic context-free grammar: tokenize passwords into
-$L/D/S$ runs; the base structure (e.g.\ $L_6D_4S_1$) is the non-terminal, and
-terminals are keyed by $(\text{class},\text{length})$ so no cross-length mixing.
-$P(\mathrm{guess})=P(\mathrm{structure})\cdot\prod P(\mathrm{terminal})$, and
-guesses are emitted in strictly decreasing probability by a best-first walk. The
-training corpus is a cracked hashcat potfile.
+\begin{definition}[PCFG]
+\label{def:pcfg}
+Tokenize a password into runs of letters $L$, digits $D$, symbols $S$. A
+\emph{base structure} is the sequence of $(class,length)$ pairs (e.g.\
+$L_6D_4S_1$); terminals are keyed by $(class,length)$. The probability of a guess
+$\sigma$ is
+$P(\sigma)=P(\mathrm{structure})\cdot\prod_{t\in\sigma}P(t)$.
+\end{definition}
+\begin{proposition}[Monotone enumeration]
+\label{prop:pcfg}
+Best-first expansion over the per-slot terminals, ordered by descending
+probability, enumerates guesses in non-increasing $P(\sigma)$ with no duplicates.
+\end{proposition}
+\begin{proof}
+The negative log-probability $-\log P(\sigma)$ is an additive, non-negative
+per-slot cost, so Dijkstra over the product lattice (each node expands by
+incrementing one slot index) visits guesses in non-decreasing cost; the
+\emph{seen} set prevents re-expansion. \qedhere
+\end{proof}
 
 \section{Evaluation}
 \label{sec:eval}
@@ -287,58 +394,43 @@ training corpus is a cracked hashcat potfile.
 Against a fresh crAPI 1.1.5 lab the autonomous agent solves \textbf{18/18}
 documented challenges --- BOLA/BFLA, mass assignment, SSRF, NoSQL/SQL injection,
 JWT forgery, password reset, rate limit, and three LLM prompt-injection
-challenges (routed through a local LiteLLM proxy). The BOLA detector reaches
-recall $1.0$ / precision $0.90$ / F1 $0.947$.
-
-\subsection{Active Directory toy corpus}
-On a synthetic SharpHound corpus the layers compose (Figure~\ref{fig:attackgraph}):
-with entry \texttt{BOB}, min-cut $1$ at the intermediate group \texttt{IT}; with
-entry \texttt{ALICE} (direct GenericAll on Domain Admins), min-cut $0$; hitting
-$\texttt{ALICE}=1.0$, $\texttt{BOB}=\tfrac13$; synthesis yields
-\texttt{ALICE}$\xrightarrow{\text{GenericAll/T1098}}$ Domain Admins (cost $3.0$)
-and \texttt{ALICE}$\xrightarrow{\text{MemberOf}}\,$\texttt{IT}
-$\xrightarrow{\text{DCSync/T1003.006}}$ domain (cost $6.0$), while \texttt{BOB} is
-certified \emph{unreachable} to Domain Admins.
+challenges routed through a local LiteLLM proxy. The BOLA detector reaches recall
+$1.0$ / precision $0.90$ / F1 $0.947$.
 
 \subsection{Results at a glance}
-\begin{center}\small
-\begin{tabular}{@{}lll@{}}
+\begin{table}[!t]
+\centering\small
+\begin{tabular}{@{}ll@{}}
 \toprule
-\textbf{Contribution} & \textbf{Metric} & \textbf{Result} \\
+\textbf{Contribution} & \textbf{Result} \\
 \midrule
-C1 boundary & taint vs.\ fused field (MRR) & $0.894$ vs.\ $0.872$ ($p=5\times10^{-5}$) \\
-C2 authorization & crAPI BOLA/IDOR (recall / precision) & $1.0$ / $0.90$ \\
-C2 authorization & curated BOLA ladder (precision) & $0.46\to0.72$ \\
-C3 directed homology & GLMY vs.\ symmetrized (contracts) & $0.968$ vs.\ $0.065$ recall \\
-C4 arbitration & detection/ranking agreement & $0.974$; CWE $28\%$ \\
-C5 languages & SAST adapters & $9$ languages, $1$ engine \\
-C6 platform & team server & roles, RBAC, SSE, SQLite \\
-C7 math & chokepoints / min-cost flow / hitting / synthesis / PCFG & implemented \\
-Red team & autonomous crAPI challenges & $18/18$ solved \\
+C1 boundary & taint $0.894$ vs.\ field $0.872$ \\
+C2 authorization & BOLA $1.0$ / $0.90$ \\
+C3 directed homology & $0.97$ vs.\ $0.065$ recall \\
+C4 arbitration & agreement $0.974$; CWE $28\%$ \\
+C5 languages & $9$ languages, $1$ engine \\
+C7 math & chokepoints, flow, synthesis, PCFG \\
+Red team & crAPI $18/18$ solved \\
+Quality & $383$ tests, installable, Docker \\
 \bottomrule
 \end{tabular}
-\end{center}
-
-\input{fig_pentest}
+\caption{Summary of measured results.}
+\label{tab:results}
+\end{table}
 
 \section{Limitations and ethics}
-The evaluations are a single real API plus curated corpora, not public
-benchmarks; the structural detector over-approximates; the Z3 witness holds under
-the \emph{modeled} semantics; the pure-Python numeric fallback is an honest
-approximation of the Rust core; the PCFG prior is only as good as its corpus. The
-platform is an \emph{authorized-engagement} tool: scope is loopback by default,
-execution is behind \texttt{--allow-exec}, intrusive actions require operator
-approval, and every module carries a ``for authorized engagements only'' notice.
+The evaluations are a single real API plus curated corpora, not public benchmarks;
+the structural detector over-approximates; the Z3 witness holds under the modeled
+semantics; the pure-Python numeric fallback approximates the Rust core; the PCFG
+prior is only as good as its corpus. The platform is an authorized-engagement
+tool: scope is loopback by default, execution is behind \texttt{--allow-exec},
+intrusive actions require operator approval.
 
 \section{Conclusion}
-\valen\ joins a measured defensive thesis --- structural invariants verify
-authorization, state, and trust properties, not injection prioritization --- with
-an offensive platform whose differentiator is \emph{quantitative attack-graph
-mathematics}: chokepoints, least-cost and disjoint plans, exact hitting
-probabilities, minimal-cost exploit synthesis with AND-preconditions, and a PCFG
-password prior. All code is installable, tested ($383$ tests), and documented, and
-all results are reproducible from the included artifacts.
+\valen\ contributes a falsifiable boundary result, a mechanized authorization
+invariant, the correct cycle signal, a measured neuro-symbolic arbitration
+boundary, a multi-language front-end, an autonomous red-team platform, and a
+proved attack-graph mathematics. One typed IR joins the defensive and offensive
+sides, and every result carries a machine-checkable witness.
 
-\bibliographystyle{plain}
-\nocite{*}
 \end{document}

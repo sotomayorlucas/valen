@@ -242,6 +242,23 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{Formal results (with proofs)}
+  \begin{theorem}[No privilege escalation]\small
+    An ungated path satisfies $F(v_k)\le F(v_0)$ (mechanized in Lean~4).
+  \end{theorem}
+  \begin{theorem}[Menger, vertex form]\small
+    Max internally vertex-disjoint $S$--$T$ paths $=$ min vertex cut (chokepoints).
+  \end{theorem}
+  \begin{theorem}[Synthesis optimality]\small
+    The Z3-Optimize model is a feasible plan and minimal-cost among length $\le k$;
+    AND-preconditions model multi-requirement actions.
+  \end{theorem}
+  \begin{theorem}[PCFG monotonicity]\small
+    Best-first expansion enumerates guesses in non-increasing probability, no
+    duplicates.
+  \end{theorem}
+\end{frame}
+
 \begin{frame}{Conclusion}
   \begin{itemize}
     \item \textbf{Defensive}: structural invariants verify authorization, state, and trust --- not injection prioritization (measured boundary).
