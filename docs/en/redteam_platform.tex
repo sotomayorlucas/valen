@@ -1,0 +1,208 @@
+\documentclass[11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{upquote}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage[hidelinks]{hyperref}
+\usepackage{url}
+
+\definecolor{codegray}{gray}{0.45}
+\lstset{basicstyle=\ttfamily\small,breaklines=true,columns=fullflexible,
+        xleftmargin=4pt,xrightmargin=4pt,showstringspaces=false}
+\setlength{\emergencystretch}{3em}
+
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\valen}{\textsc{Valen}}
+
+\title{\bfseries From Structural Invariants to a Red-Team Platform:\\ \Large
+Attack-Graph Mathematics for Autonomous Offensive Operations}
+\author{\valen\ Project}
+\date{Working draft --- engineering and methods report}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent We describe the extension of \valen\ --- a neuro-symbolic
+structural-invariant verifier --- into a full red-team \emph{platform}: a
+multi-user team server that coordinates autonomous offensive operations across
+the kill chain (reconnaissance, Active Directory attack-graph analysis, command
+\& control, credential recovery, phishing and exfiltration), under an explicit
+authorization and human-in-the-loop gating model. The core contribution is a
+layered attack-graph \emph{mathematics}: structural signals (spectral, persistent
+and directed homology, discrete curvature), \emph{flow} (Menger min-cut
+chokepoints, min-cost flow, articulation points), \emph{probability} (absorbing
+Markov-chain hitting probabilities, solved exactly by $(I-Q)^{-1}R$),
+\emph{formal synthesis} (Z3 Optimize bounded model checking that yields minimal-cost
+ordered exploit plans with AND-preconditions), and a \emph{probabilistic
+context-free grammar} for password guessing. We report the system as deployed
+against OWASP crAPI (18/18 challenges solved autonomously, including three LLM
+prompt-injection challenges) and the Active Directory toy corpus, and we state
+precisely what each mathematical layer answers that a naive shortest-path or
+reachability query cannot.
+\end{abstract}
+
+\section{Introduction}
+Classic semantic analysis answers \emph{is this sink reachable by untrusted
+data?}. Offensive operations ask harder, quantitative questions:
+\begin{itemize}[itemsep=1pt]
+  \item Which principals are \emph{obligatory} on every path to the target (the
+        chokepoints)?
+  \item What is the \emph{cheapest} ordered sequence of actions, given a model of
+        stealth and effort, not just the fewest-hop one?
+  \item What is the \emph{probability} that a given entry point reaches the
+        crown-jewel target, when the attacker moves according to some policy?
+  \item With a \emph{budget} of $k$ compromises, what are the $k$ cheapest
+        independent routes?
+  \item Which passwords should a spray try first, to maximize hits before lockout?
+\end{itemize}
+This paper reports the machinery added to \valen\ to answer these, and the
+platform that operationalizes it.
+
+\section{Platform architecture}
+\valen\ is a single installable Python package (\texttt{pip install valen}) with
+an optional Rust numeric core and a pure-Python fallback. Its server is a
+multi-user \emph{team server} (users with roles \texttt{viewer}/\texttt{operator}/
+\texttt{admin}, PBKDF2 sessions, per-route RBAC, Server-Sent Events for live
+collaboration) that persists engagements, runs, and evidence artifacts in SQLite.
+
+The red-team surface spans the kill chain:
+\begin{itemize}[itemsep=1pt]
+  \item \textbf{Recon / enumeration} --- nmap, masscan, gobuster, ffuf, nuclei
+        wrappers with stealth profiles and CVE/KEV/EPSS intelligence.
+  \item \textbf{Active Directory} --- BloodHound/SharpHound ingestion into a typed
+        IR graph, tier-0 attack paths, Kerberoast/AS-REP selection, GPP
+        \texttt{cpassword} decryption, and command builders.
+  \item \textbf{C2 and payloads} --- Sliver integration (gRPC-first, shell
+        fallback), msfvenom/handler/HTA planners, phishing (GoPhish) and
+        exfiltration planners.
+  \item \textbf{Hybrid agent} --- a deterministic kill-chain planner with an
+        operator approval queue; intrusive actions require explicit
+        \texttt{--authorize}.
+  \item \textbf{Reporting} --- HTML / Markdown / JSON / SARIF with CVSS 3.1/4.0
+        and CVE/KEV/EPSS enrichment.
+\end{itemize}
+Everything offensive is gated by a scope allow-list (loopback by default), an
+execution allow-list (\texttt{--allow-exec}), and per-operator roles.
+
+\section{Attack-graph mathematics}
+The IR is a typed directed multigraph $G=(V,E)$ over principals. We layer four
+families of methods over it.
+
+\subsection{Structural signals}
+The base layer reuses the existing kernels: the combinatorial Laplacian and its
+Fiedler vector/$\lambda_2$, persistent $H_0/H_1$ homology, GLMY directed path
+homology, Forman--Ollivier Ricci curvature, and betweenness/PageRank. To these we
+add spectral centralities --- eigenvector, Katz, and HITS
+(hubs/authorities) --- for targeting and pivot selection.
+
+\subsection{Flow: chokepoints and disjoint plans}
+\textbf{Menger min-cut.} Given entry set $S$ and target set $T$, we compute the
+minimum vertex set whose removal separates them. We reduce to an $s$-$t$ max flow
+on the vertex-split graph (each vertex $v$ becomes $v_{\mathrm{in}}\to
+v_{\mathrm{out}}$ of capacity $1$; sources/targets unbounded) and run
+Edmonds--Karp; the saturated split edges on the source side of the residual graph
+are the \emph{obligatory chokepoints}. A flow of magnitude $\geq \infty$ means a
+source is directly adjacent to a target (min-cut $0$).
+
+\textbf{Min-cost flow.} With a per-edge cost model (stealth + effort; e.g.\
+$\text{MemberOf}=1,\ \text{DCSync}=5$), we send $k$ units of flow at minimum cost
+via successive shortest augmenting paths (Bellman--Ford on the residual graph).
+Because internal vertices have capacity $1$, the result is a set of
+\emph{vertex-disjoint} cheapest attack routes --- ``with $k$ compromises, the $k$
+cheapest independent ways in''.
+
+\textbf{Articulation points and bridges} (Tarjan, on the symmetrized graph) rank
+the most disruptive principals and links: removing them fragments the network.
+The directed min-cut is the \emph{defender/hardening} view; the undirected
+articulation points are the \emph{attacker/disruption} view.
+
+\subsection{Probability: hitting time}
+Model the attack graph as an absorbing Markov chain: targets are absorbing, and
+each transient node transitions uniformly over its out-neighbours. The hitting
+probability $h(u)$ satisfies
+\[
+h(u) \;=\; \mathbb{1}[u \in T] \;+\; \mathbb{1}[u\notin T]\cdot
+   \frac{1}{\deg^+(u)}\sum_{v : u\to v} h(v),
+\]
+computed either by value iteration or \emph{exactly} by Gaussian elimination on
+$(I-Q)h = r$, where $Q$ is the transient-to-transient transition and $r$ the
+one-step mass into targets. This yields a probabilistic risk ranking, distinct
+from boolean reachability: in the toy corpus, an entry with three out-edges and a
+single route to the target scores $\tfrac13$, while a direct entry scores $1$.
+
+\subsection{Formal synthesis: minimal-cost exploit plans}
+Boolean reachability (Z3) answers \emph{is it reachable?}. We upgrade to
+\emph{synthesis}: model the graph as a transition system
+\[
+\mathrm{has}(s{+}1, n) \;\equiv\; \mathrm{has}(s,n)
+   \;\vee\; \bigvee_{e:\, m\to n} \bigl(\mathrm{taken}_e \wedge \mathrm{has}(s,m)\bigr),
+\]
+with entries compromised at step $0$, and ask \texttt{z3.Optimize} to minimize
+$\sum_e \mathrm{taken}_e \cdot \mathrm{cost}(e)$ subject to reaching the target
+within $k$ steps. Reconstructing the ordered action sequence gives the
+technique-by-technique narrative. We extend this to \textbf{AND-preconditions}:
+compound actions $\{\mathrm{sources}\to \mathrm{target}\}$ that fire only when
+\emph{all} sources are compromised (e.g.\ DCSync needs Domain Admins \emph{and} a
+session on a Domain Controller).
+
+\subsection{Password guessing: PCFG}
+We implement Weir's probabilistic context-free grammar: tokenize passwords into
+$L/D/S$ runs; the base structure (e.g.\ $L_6D_4S_1$) is the non-terminal and
+terminals are keyed by $(\text{class},\text{length})$ --- so no cross-length
+mixing ($\texttt{summer}+123$ is rejected when only $L_6D_4$ was seen). The
+probability of a guess is $P(\mathrm{structure})\cdot\prod P(\mathrm{terminal})$,
+and guesses are emitted in strictly decreasing probability by a best-first
+(Dijkstra) walk over the sorted per-slot terminals. Training corpus is a cracked
+hashcat potfile; an empty corpus falls back to a seed list.
+
+\section{Evaluation}
+\subsection{Autonomous pentest against OWASP crAPI}
+Against a fresh OWASP crAPI 1.1.5 lab, the autonomous agent solves \textbf{18/18}
+documented challenges, including BOLA/BFLA, mass assignment, SSRF, NoSQL/SQL
+injection, JWT forgery, and three LLM prompt-injection challenges (routed through
+a local LiteLLM proxy). The BOLA detector reaches recall $1.0$ / precision $0.90$.
+
+\subsection{Active Directory toy corpus}
+On a synthetic SharpHound corpus the layers compose:
+\begin{itemize}[itemsep=1pt]
+  \item \emph{Chokepoints}: with entry \texttt{BOB}, min-cut $1$ at the
+        intermediate group \texttt{IT}; with entry \texttt{ALICE} (directly
+        GenericAll on Domain Admins), min-cut $0$.
+  \item \emph{Hitting}: $\texttt{ALICE}=1.0$, $\texttt{BOB}=\tfrac13$ (three
+        out-edges, one to the target).
+  \item \emph{Synthesis}: \texttt{ALICE} $\xrightarrow{\text{GenericAll/T1098}}$
+        Domain Admins (cost $3.0$), and \texttt{ALICE}
+        $\xrightarrow{\text{MemberOf}}\,$ \texttt{IT}
+        $\xrightarrow{\text{DCSync/T1003.006}}$ domain (cost $6.0$); \texttt{BOB}
+        is certified \emph{unreachable} to Domain Admins.
+\end{itemize}
+
+\section{Limitations and ethics}
+The platform is an \emph{authorized-engagement} tool: scope is loopback by
+default, execution is behind \texttt{--allow-exec}, intrusive actions require
+operator approval, and every module carries a "for authorized engagements only"
+notice. The pure-Python numerical fallback is an honest approximation of the Rust
+core (persistent homology reduced to Betti numbers, GLMY to a cycle-rank
+estimate); set \texttt{VALEN\_CORE\_BIN} to use the compiled core. The PCFG prior
+is only as good as its training corpus; production use should feed it a real
+cracked corpus.
+
+\section{Conclusion}
+We turned a structural-invariant verifier into a red-team platform whose
+differentiator is \emph{quantitative attack-graph mathematics}: chokepoints,
+least-cost and disjoint plans, exact hitting probabilities, formal minimal-cost
+exploit synthesis with AND-preconditions, and a PCFG password prior. Each layer
+answers a question that reachability and shortest paths cannot, and the whole is
+operationalized behind an explicit authorization model. All code is installable,
+tested (383 tests), and documented.
+
+\end{document}
