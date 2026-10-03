@@ -156,3 +156,20 @@ def synthesize_attack(ad: ADGraph, entries: Optional[List[str]] = None,
     sources = owned_principals(ad, entries)
     targets = high_value_targets(ad)
     return synthesize_plan(ad.graph, sources, targets, max_steps=max_steps)
+
+
+def multi_target_plans(ad: ADGraph, entries: Optional[List[str]] = None,
+                       budget: int = 3) -> Dict[str, Any]:
+    """Cheapest ``budget`` vertex-disjoint attack paths (min-cost flow).
+
+    "With k compromises available, these are the k cheapest independent routes to
+    tier-0." Returns ``{cost, flow, paths}`` with principal labels.
+    """
+    from ...analysis.network import min_cost_flow
+
+    sources = owned_principals(ad, entries)
+    targets = high_value_targets(ad)
+    res = min_cost_flow(ad.graph, sources, targets, flow=budget)
+    labels = {n.id: n.label for n in ad.graph.nodes}
+    res["paths"] = [[labels.get(p, p) for p in path] for path in res.get("paths", [])]
+    return res

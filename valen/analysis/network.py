@@ -19,7 +19,7 @@ or any other ``Graph``.
 
 from __future__ import annotations
 
-from typing import Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 from ..ir import EdgeKind, Graph
 
@@ -237,6 +237,186 @@ def vertex_connectivity(graph: Graph, sources: Sequence[str], targets: Sequence[
     """Minimum number of internal vertices separating sources from targets."""
     value, _ = min_vertex_cut(graph, sources, targets, kind)
     return value
+
+
+# ---------------------------------------------------------------------------
+# Min-cost flow (successive shortest augmenting paths) — multi-target plans
+# ---------------------------------------------------------------------------
+def min_cost_flow(
+    graph: Graph,
+    sources: Sequence[str],
+    targets: Sequence[str],
+    flow: int = 1,
+    kind: EdgeKind = EdgeKind.CALL,
+    cost_fn: Optional[Callable[[str, str], float]] = None,
+) -> Dict[str, Any]:
+    """Send ``flow`` units of attack flow at minimum total cost.
+
+    Vertex-split (each principal used once) so the result is a set of
+    *vertex-disjoint* cheapest attack paths — "with a budget of k compromises,
+    these are the cheapest k independent ways to reach the target". Uses
+    successive shortest augmenting paths (Bellman-Ford over the residual graph).
+
+    Returns ``{cost, flow, paths: [[node_ids...], ...]}``.
+    """
+    costs = edge_costs(graph, kind)
+    if cost_fn is None:
+        cost_fn = lambda s, d: costs.get((s, d), 1.0)  # noqa: E731
+
+    nodes = [n.id for n in graph.nodes]
+    idx = {n: i for i, n in enumerate(nodes)}
+    sources = {s for s in sources if s in idx}
+    targets = {t for t in targets if t in idx}
+
+    S, T = "__SRC__", "__SNK__"
+    vin = {n: f"{n}#in" for n in nodes}
+    vout = {n: f"{n}#out" for n in nodes}
+
+    cap: Dict[Tuple[str, str], int] = {}
+    cost_edge: Dict[Tuple[str, str], float] = {}
+    adj: Dict[str, List[str]] = {}
+
+    def add(u: str, v: str, c: int, w: float) -> None:
+        cap[(u, v)] = cap.get((u, v), 0) + c
+        cost_edge[(u, v)] = w
+        adj.setdefault(u, []).append(v)
+        adj.setdefault(v, []).append(u)
+
+    for n in nodes:
+        # internal vertices carry capacity 1 (used once); sources/targets are
+        # shared endpoints, so unbounded.
+        vcap = 1 if (n not in sources and n not in targets) else 10**9
+        add(vin[n], vout[n], vcap, 0.0)
+    for e in graph.edges(kind):
+        if e.src in idx and e.dst in idx:
+            add(vout[e.src], vin[e.dst], 10**9, max(cost_fn(e.src, e.dst), 1e-6))
+    for s in sources:
+        add(S, vin[s], 10**9, 0.0)
+    for t in targets:
+        add(vout[t], T, 10**9, 0.0)
+
+    flow_map: Dict[Tuple[str, str], int] = {}
+    total_cost = 0.0
+    paths: List[List[str]] = []
+    sent = 0
+
+    for _ in range(flow):
+        # Bellman-Ford shortest path by cost in the residual graph
+        dist = {v: float("inf") for v in adj}
+        dist[S] = 0.0
+        parent: Dict[str, Optional[str]] = {S: None}
+        for _ in range(len(nodes) * 2 + 2):
+            changed = False
+            for u in list(adj):
+                for v in adj[u]:
+                    residual = cap.get((u, v), 0) - flow_map.get((u, v), 0)
+                    if residual <= 0:
+                        continue
+                    w = cost_edge.get((u, v), 0.0)
+                    if dist[u] + w < dist[v] - 1e-12:
+                        dist[v] = dist[u] + w
+                        parent[v] = u
+                        changed = True
+            if not changed:
+                break
+        if T not in parent or parent[T] is None and T != S:
+            break
+        # reconstruct node path
+        node_path: List[str] = []
+        v = T
+        while v != S:
+            u = parent[v]
+            flow_map[(u, v)] = flow_map.get((u, v), 0) + 1
+            flow_map[(v, u)] = flow_map.get((v, u), 0) - 1
+            total_cost += cost_edge.get((u, v), 0.0)
+            # record real node (strip #in/#out)
+            if v.endswith("#in"):
+                node_path.append(v[:-3])
+            v = u
+        # node_path is reverse (T -> ... -> S)
+        clean = [n for n in reversed(node_path) if n in idx]
+        # prepend the actual source if not captured (S->vin edge has no cost node)
+        paths.append(clean)
+        sent += 1
+
+    return {"cost": round(total_cost, 3), "flow": sent,
+            "paths": [p for p in paths if p]}
+
+
+# ---------------------------------------------------------------------------
+# Optimal defense disruption (vertex/edge removal to fragment the graph)
+# ---------------------------------------------------------------------------
+def critical_vertices(graph: Graph, kind: EdgeKind = EdgeKind.CALL) -> Dict[str, Any]:
+    """Most disruptive principals: articulation points + their impact.
+
+    Impact of removing a cut vertex is the number of components it separates
+    (its block-tree degree) — an "optimal defense disruption" ranking from the
+    attacker's viewpoint (target these to fragment the network).
+    """
+    adj = _undirected(graph, kind)
+    nodes = list(adj)
+
+    # count connected components
+    def components() -> int:
+        seen = set()
+        c = 0
+        for n in nodes:
+            if n in seen:
+                continue
+            c += 1
+            stack = [n]
+            seen.add(n)
+            while stack:
+                u = stack.pop()
+                for v in adj[u]:
+                    if v not in seen:
+                        seen.add(v)
+                        stack.append(v)
+        return c
+
+    base = components()
+    ap = articulation_points(graph, kind)
+    out = []
+    for n in ap:
+        # remove n and count how many components its neighbours split into
+        rest = components_without(adj, nodes, {n})
+        out.append({"id": n, "impact": rest - base})
+    out.sort(key=lambda x: -x["impact"])
+    return {"articulation_points": ap,
+            "ranked": [{"id": x["id"], "added_components": x["impact"]} for x in out],
+            "base_components": base}
+
+
+def components_without(adj: Dict[str, List[str]], nodes: List[str],
+                       removed: set) -> int:
+    seen = set(removed)
+    c = 0
+    for n in nodes:
+        if n in seen:
+            continue
+        c += 1
+        stack = [n]
+        seen.add(n)
+        while stack:
+            u = stack.pop()
+            for v in adj[u]:
+                if v not in seen:
+                    seen.add(v)
+                    stack.append(v)
+    return c
+
+
+def disruption_plan(graph: Graph, sources: Sequence[str], targets: Sequence[str],
+                    kind: EdgeKind = EdgeKind.CALL) -> Dict[str, Any]:
+    """Minimum vertex cut separating ``sources`` from ``targets`` (defense view).
+
+    From the defender's perspective this is the set to *harden*; from the
+    attacker's it is the set whose removal maximally disconnects the two sides.
+    """
+    value, cut = min_vertex_cut(graph, sources, targets, kind)
+    labels = {n.id: n.label for n in graph.nodes}
+    return {"min_cut": value,
+            "vertices": [{"id": c, "label": labels.get(c, c)} for c in cut]}
 
 
 # ---------------------------------------------------------------------------

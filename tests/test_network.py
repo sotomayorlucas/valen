@@ -6,11 +6,14 @@ from pathlib import Path
 from valen.analysis.network import (
     articulation_points,
     bridges,
+    critical_vertices,
+    disruption_plan,
     eigenvector_centrality,
     hitting_probabilities,
     hitting_probabilities_exact,
     hits,
     katz_centrality,
+    min_cost_flow,
     min_vertex_cut,
     vertex_connectivity,
     weighted_shortest_paths,
@@ -226,3 +229,60 @@ def test_articulation_points_and_bridges():
     assert articulation_points(g) == ["c", "d"]
     assert set(bridges(g)) == {("c", "d"), ("d", "e")}
     assert vertex_connectivity(g, ["c"], ["e"]) == 1
+
+
+def test_min_cost_flow_single_and_multi():
+    g = Graph()
+    for n in ["s", "a", "b", "t"]:
+        g.add_node(n, NodeKind.GATE, n)
+    g.add_edge("s", "a", EdgeKind.CALL, attrs={"cost": 1})
+    g.add_edge("a", "t", EdgeKind.CALL, attrs={"cost": 1})
+    g.add_edge("s", "b", EdgeKind.CALL, attrs={"cost": 10})
+    g.add_edge("b", "t", EdgeKind.CALL, attrs={"cost": 1})
+    one = min_cost_flow(g, ["s"], ["t"], flow=1)
+    assert one["cost"] == 2.0 and one["paths"] == [["s", "a", "t"]]
+    two = min_cost_flow(g, ["s"], ["t"], flow=2)
+    assert two["cost"] == 13.0 and two["flow"] == 2
+    assert ["s", "a", "t"] in two["paths"] and ["s", "b", "t"] in two["paths"]
+
+
+def test_min_cost_flow_is_disjoint_internally():
+    # a shared intermediate vertex (bottleneck) -> only one unit can pass
+    g = Graph()
+    for n in ["s", "x", "t"]:
+        g.add_node(n, NodeKind.GATE, n)
+    g.add_edge("s", "x", EdgeKind.CALL, attrs={"cost": 1})
+    g.add_edge("x", "t", EdgeKind.CALL, attrs={"cost": 1})
+    assert min_cost_flow(g, ["s"], ["t"], flow=2)["flow"] == 1
+
+
+def test_critical_vertices_and_disruption():
+    # undirected dumbbell: two triangles joined by a bridge path c-d-e
+    g = Graph()
+    for n in ["a", "b", "c", "d", "e", "f", "g"]:
+        g.add_node(n, NodeKind.GATE, n)
+    for u, v in [("a", "b"), ("b", "c"), ("c", "a"), ("c", "d"), ("d", "e"),
+                 ("e", "f"), ("f", "g"), ("g", "e")]:
+        g.add_edge(u, v, EdgeKind.CALL)
+    crit = critical_vertices(g)
+    assert set(crit["articulation_points"]) == {"c", "d", "e"}
+    assert crit["base_components"] == 1
+    # directed min cut (attack graph semantics): a -> b -> c -> a cycle means
+    # removing b disconnects a from g (a's only out-edge is b)
+    d = Graph()
+    for n in ["a", "b", "c", "d", "e", "f", "g"]:
+        d.add_node(n, NodeKind.GATE, n)
+    for u, v in [("a", "b"), ("b", "c"), ("c", "a"), ("c", "d"), ("d", "e"),
+                 ("e", "f"), ("f", "g"), ("g", "e")]:
+        d.add_edge(u, v, EdgeKind.CALL)
+    plan = disruption_plan(d, ["a"], ["g"])
+    assert plan["min_cut"] == 1 and plan["vertices"][0]["id"] == "b"
+
+
+def test_ad_multi_target_plans():
+    ad = _ad()
+    from valen.redteam.ad import multi_target_plans
+
+    plans = multi_target_plans(ad, ["ALICE"], budget=2)
+    assert plans["flow"] >= 1
+    assert plans["paths"] and all(isinstance(p, list) for p in plans["paths"])

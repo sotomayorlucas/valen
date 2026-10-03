@@ -94,6 +94,7 @@ def attack_plan(ad, entries: Optional[List[str]] = None) -> Dict[str, Any]:
         cheapest_paths,
         chokepoints,
         hitting_rank,
+        multi_target_plans,
         synthesize_attack,
     )
 
@@ -110,4 +111,5 @@ def attack_plan(ad, entries: Optional[List[str]] = None) -> Dict[str, Any]:
         "hitting": hitting_rank(ad, entries),
         "cheapest_paths": cheapest_paths(ad, entries),
         "synthesized_plans": synthesize_attack(ad, entries),
+        "multi_target_plans": multi_target_plans(ad, entries),
     }
