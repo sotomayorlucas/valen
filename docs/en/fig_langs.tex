@@ -1,0 +1,27 @@
+% Figure: one generic engine, nine grammars
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\small, inner sep=4pt},
+      lang/.style={rectangle, draw=gray, rounded corners, align=center, font=\scriptsize, inner sep=2.5pt},
+      arr/.style={-{Stealth[length=1.6mm]}, gray, thick},
+    ]
+    \node[box] (engine) {generic C-like\\taint engine\\(\texttt{clike.py})};
+    \node[lang, above left=6mm and 2mm of engine] (c) {C};
+    \node[lang, above=6mm of engine] (cpp) {C++};
+    \node[lang, above right=6mm and 2mm of engine] (rust) {Rust};
+    \node[lang, left=8mm of engine] (cs) {C\#};
+    \node[lang, right=8mm of engine] (go) {Go};
+    \node[lang, below left=6mm and 2mm of engine] (php) {PHP};
+    \node[lang, below=6mm of engine] (ruby) {Ruby};
+    \node[lang, below right=6mm and 2mm of engine] (js) {JS/TS};
+    \draw[arr] (engine) -- (c);  \draw[arr] (engine) -- (cpp);
+    \draw[arr] (engine) -- (rust); \draw[arr] (engine) -- (cs);
+    \draw[arr] (engine) -- (go);  \draw[arr] (engine) -- (php);
+    \draw[arr] (engine) -- (ruby); \draw[arr] (engine) -- (js);
+  \end{tikzpicture}
+  \caption{One generic taint engine drives nine tree-sitter grammars via
+  per-language source/sink/sanitizer profiles; Python, Java (interprocedural) and
+  Solidity have dedicated adapters.}
+\end{figure}

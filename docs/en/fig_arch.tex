@@ -1,0 +1,38 @@
+% Figure: system architecture (verifier + platform over one IR)
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\small, inner sep=5pt},
+      soft/.style={rectangle, draw=gray, thick, rounded corners, align=center,
+                   font=\small, inner sep=5pt},
+      arr/.style={-{Stealth[length=2mm]}, thick, valen},
+      ]
+    % left: defensive / verifier
+    \node[soft] (art) {artifact\\code / binary / API / IAM};
+    \node[box, right=6mm of art] (ir) {\textbf{typed graph IR}};
+    \node[box, right=7mm of ir] (layers) {math layers\\spectral $\cdot$ topol. $\cdot$\\geometric $\cdot$ algebraic};
+    \node[box, below=8mm of layers] (field) {structural field $V(x)$};
+    \node[box, below=8mm of field] (verify) {formal\\Z3 $\cdot$ GLMY $\cdot$ Lean 4};
+    \node[box, below=8mm of verify] (wit) {machine-checkable\\witnesses};
+
+    % right: offensive / platform
+    \node[soft, right=14mm of layers, yshift=2mm] (ad) {AD attack graph\\chokepoints $\cdot$ paths};
+    \node[soft, right=14mm of field] (c2) {C2 / payloads\\phishing / exfil};
+    \node[soft, right=14mm of verify] (agent) {hybrid agent\\(human-in-the-loop)};
+    \node[soft, right=14mm of wit] (report) {report\\HTML/MD/JSON/SARIF};
+
+    \draw[arr] (art) -- (ir);
+    \draw[arr] (ir) -- (layers);
+    \draw[arr] (layers) -- (field);
+    \draw[arr] (field) -- (verify);
+    \draw[arr] (verify) -- (wit);
+    \draw[arr] (ir) -- (ad);
+    \draw[arr] (ir) -- (c2);
+    \draw[arr] (ir) -- (agent);
+    \draw[arr] (agent) -- (report);
+    \draw[arr, gray] (wit) -- (report);
+  \end{tikzpicture}
+  \caption{One typed IR feeds both a \emph{verifier} (left) and a \emph{red-team
+  platform} (right). Findings become witnesses, attack plans, and reports.}
+\end{figure}

@@ -1,0 +1,28 @@
+% Figure: Active Directory attack graph with chokepoint and least-cost path
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      n/.style={circle, draw, inner sep=0pt, minimum size=8mm, font=\scriptsize, align=center},
+      target/.style={circle, draw=valenred, thick, fill=valenred!12, inner sep=0pt, minimum size=9mm, font=\scriptsize, align=center},
+      chok/.style={circle, draw=valengreen, very thick, fill=valengreen!15, inner sep=0pt, minimum size=9mm, font=\scriptsize, align=center},
+      arr/.style={-{Stealth[length=2mm]}, thick, valen, font=\tiny},
+    ]
+    \node[n] (alice) {ALICE};
+    \node[n, below=10mm of alice] (bob) {BOB};
+    \node[chok, right=16mm of alice, yshift=-5mm] (it) {IT};
+    \node[target, right=16mm of it, yshift=10mm] (da) {Domain\\Admins};
+    \node[target, right=16mm of it, yshift=-10mm] (dom) {domain};
+
+    \draw[arr] (alice) -- node[above, sloped]{GenericAll $3$} (da);
+    \draw[arr] (alice) -- node[above]{MemberOf $1$} (it);
+    \draw[arr] (bob) -- node[above, sloped]{GenericAll $3$} (it);
+    \draw[arr] (it) -- node[above, sloped]{GenericAll $3$} (da);
+    \draw[arr] (it) -- node[above, sloped]{DCSync $5$} (dom);
+  \end{tikzpicture}
+  \caption{The AD attack graph: with entry \texttt{BOB}, \texttt{IT} is the
+  Menger min-cut chokepoint (min-cut $1$); \texttt{ALICE} reaches Domain Admins
+  directly (min-cut $0$). Least-cost plans: \texttt{ALICE}$\to$Domain Admins
+  ($3.0$) and \texttt{ALICE}$\to$\texttt{IT}$\to$domain ($6.0$); \texttt{BOB} is
+  certified unreachable to Domain Admins.}
+  \label{fig:attackgraph}
+\end{figure}

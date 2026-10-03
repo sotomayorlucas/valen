@@ -1,0 +1,18 @@
+% Figure: BOLA/IDOR detector ablation ladder
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.5cm, width=0.85\linewidth, height=4.4cm,
+        symbolic x coords={all-positive, sink-only, source+sink, detector},
+        xtick=data, x tick label style={rotate=20, anchor=east, font=\scriptsize},
+        ymin=0, ymax=0.85, ylabel={precision (recall $=1.0$)},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+      ]
+      \addplot[fill=valen] coordinates {
+        (all-positive,0.46) (sink-only,0.49) (source+sink,0.56) (detector,0.72)};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Each structural requirement of the BOLA/IDOR detector raises precision
+  at constant recall: the detector reaches $0.72$ where taint scores $0$.}
+\end{figure}

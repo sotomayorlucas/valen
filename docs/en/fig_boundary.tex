@@ -1,0 +1,22 @@
+% Figure: the boundary result (per-signal AUC, chance line)
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.55cm, width=0.95\linewidth, height=4.6cm,
+        symbolic x coords={taint, formal, spectral, topological, geometric},
+        xtick=data, x tick label style={font=\scriptsize},
+        ymin=0, ymax=1.0, ylabel={AUC (prioritization)},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+        ymajorgrids=true,
+      ]
+      \addplot[fill=valen] coordinates {
+        (taint,0.895) (formal,0.878) (spectral,0.496)
+        (topological,0.500) (geometric,0.376)};
+      \draw[dashed, valenred, thick] (axis cs:taint,0.5) -- (axis cs:geometric,0.5);
+      \node[anchor=west, font=\tiny, valenred] at (axis cs:spectral,0.52) {chance};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{The boundary result: spectral and topological signals are at chance,
+  curvature below it; taint is the dominant signal for injection prioritization.}
+\end{figure}

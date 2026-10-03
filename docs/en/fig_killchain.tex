@@ -1,0 +1,27 @@
+% Figure: the red-team kill chain
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      box/.style={rectangle, draw=valen, thick, rounded corners, align=center,
+                  font=\scriptsize, inner sep=3.5pt, minimum height=8mm},
+      arr/.style={-{Stealth[length=1.8mm]}, thick, valen},
+    ]
+    \node[box] (recon) {Recon\\nmap $\cdot$ nuclei};
+    \node[box, right=4mm of recon] (enum) {Enum\\gobuster $\cdot$ ffuf};
+    \node[box, right=4mm of enum] (ad) {AD\\BloodHound $\cdot$ paths};
+    \node[box, right=4mm of ad] (exploit) {Exploit\\C2 $\cdot$ payloads};
+    \node[box, right=4mm of exploit] (creds) {Creds\\Kerberoast $\cdot$ PCFG};
+    \node[box, right=4mm of creds] (post) {Post\\phishing $\cdot$ exfil};
+    \node[box, right=4mm of post] (report) {Report\\HTML/MD/SARIF};
+    \draw[arr] (recon) -- (enum);
+    \draw[arr] (enum) -- (ad);
+    \draw[arr] (ad) -- (exploit);
+    \draw[arr] (exploit) -- (creds);
+    \draw[arr] (creds) -- (post);
+    \draw[arr] (post) -- (report);
+    \node[align=center, font=\scriptsize, below=5mm of ad, gray]
+      {gated by scope allow-list, \texttt{--allow-exec}, RBAC, and operator approval};
+  \end{tikzpicture}
+  \caption{The red-team platform spans the kill chain end-to-end, coordinated by
+  the team server and gated by an authorization-first model.}
+\end{figure}

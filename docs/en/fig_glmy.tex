@@ -1,0 +1,21 @@
+% Figure: directed (GLMY) vs symmetrized homology
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        ybar, bar width=0.30cm, width=0.85\linewidth, height=4.6cm,
+        symbolic x coords={state machines, smart contracts},
+        xtick=data, ymin=0, ymax=1.05, ylabel={recall},
+        legend style={at={(0.5,1.03)}, anchor=south, legend columns=-1, font=\scriptsize},
+        nodes near coords, every node near coord/.append style={font=\tiny},
+        enlarge x limits=0.35,
+      ]
+      \addplot[fill=valen] coordinates {(state machines,1.00) (smart contracts,0.968)};
+      \addplot[fill=gray!60]  coordinates {(state machines,0.50) (smart contracts,0.065)};
+      \legend{GLMY directed, symmetrized}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Directed (GLMY) path homology vs.\ symmetrized homology: symmetrization
+  collapses the directed 2-cycle, dropping recall from $1.0\to0.5$ on state
+  machines and $0.97\to0.065$ on smart contracts.}
+\end{figure}
