@@ -28,7 +28,14 @@ from .collect import (
 )
 from .graph import ADGraph, RELATION_META, node_id
 from .live import bloodhound_command, collect, parse_collection_dir
-from .paths import attack_paths, betweenness_ranking, high_value_targets
+from .paths import (
+    attack_paths,
+    betweenness_ranking,
+    cheapest_paths,
+    chokepoints,
+    high_value_targets,
+    hitting_rank,
+)
 
 __all__ = [
     "ADGraph",
@@ -43,6 +50,9 @@ __all__ = [
     "attack_paths",
     "high_value_targets",
     "betweenness_ranking",
+    "chokepoints",
+    "hitting_rank",
+    "cheapest_paths",
     "attack_plan",
     "kerberoast_command",
     "asrep_command",

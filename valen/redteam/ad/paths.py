@@ -98,3 +98,47 @@ def betweenness_ranking(ad: ADGraph, limit: int = 20) -> List[Dict[str, Any]]:
     ranked = sorted(block, key=lambda kv: -kv[1])[:limit]
     return [{"id": nid, "label": labels.get(nid, nid), "betweenness": round(v, 5)}
             for nid, v in ranked if v > 0]
+
+
+# -- advanced attack-graph analytics (flow / probability / cost) -------------
+def chokepoints(ad: ADGraph, entries: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Menger min-cut: the obligatory principals separating entry from tier-0."""
+    from ...analysis.network import min_vertex_cut
+
+    sources = owned_principals(ad, entries)
+    targets = high_value_targets(ad)
+    value, cut = min_vertex_cut(ad.graph, sources, targets)
+    labels = {n.id: n.label for n in ad.graph.nodes}
+    return {"min_cut": value,
+            "chokepoints": [{"id": c, "label": labels.get(c, c)} for c in cut]}
+
+
+def hitting_rank(ad: ADGraph, entries: Optional[List[str]] = None) -> Dict[str, float]:
+    """Hitting probability to tier-0 (absorbing Markov chain) per principal."""
+    from ...analysis.network import hitting_probabilities
+
+    targets = high_value_targets(ad)
+    prob = hitting_probabilities(ad.graph, targets)
+    sources = set(owned_principals(ad, entries))
+    return {k: v for k, v in sorted(prob.items(), key=lambda kv: -kv[1])
+            if k in sources and v > 0}
+
+
+def cheapest_paths(ad: ADGraph, entries: Optional[List[str]] = None,
+                   max_len: int = 10) -> List[Dict[str, Any]]:
+    """Least-cost (stealth+effort) paths to tier-0 via Dijkstra."""
+    from ...analysis.network import edge_costs, weighted_shortest_paths
+
+    sources = owned_principals(ad, entries)
+    targets = high_value_targets(ad)
+    costs = edge_costs(ad.graph)
+    best = weighted_shortest_paths(ad.graph, sources, targets, cost_fn=lambda s, d: costs.get((s, d), 1.0))
+    labels = {n.id: n.label for n in ad.graph.nodes}
+    out = []
+    for t, (cost, path) in sorted(best.items(), key=lambda kv: kv[1][0]):
+        if len(path) - 1 > max_len:
+            continue
+        out.append({"entry": path[0], "target": t, "cost": round(cost, 3),
+                    "length": len(path) - 1,
+                    "path": [labels.get(p, p) for p in path]})
+    return out

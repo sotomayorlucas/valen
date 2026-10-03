@@ -45,6 +45,35 @@ RELATION_META: Dict[str, Tuple[str, str, str]] = {
     "TrustedBy": ("trust", "T1482", "TA0008"),
 }
 
+# Stealth/effort cost per relation (a default cost model for least-cost planning;
+# lower = easier/quieter). Operators can tune these per engagement.
+RELATION_COST: Dict[str, float] = {
+    "MemberOf": 1.0,                 # you are already a member
+    "HasSession": 2.0,               # reuse an existing session
+    "AdminTo": 2.0,                  # local admin on a box
+    "GenericAll": 3.0,               # full control of an object
+    "GenericWrite": 3.0,
+    "WriteDacl": 3.0,
+    "WriteOwner": 3.0,
+    "Owns": 3.0,
+    "ForceChangePassword": 3.0,
+    "AddKeyCredentialLink": 3.5,
+    "AllExtendedRights": 4.0,
+    "CanRDP": 2.5,
+    "CanPSRemote": 2.5,
+    "ExecuteAsUser": 3.5,
+    "ReadLAPSPassword": 3.0,
+    "ReadGMSAPassword": 3.0,
+    "AllowedToDelegate": 4.0,
+    "GPLink": 4.0,
+    "DCSync": 5.0,                   # highest-impact credential attack
+    "TrustedBy": 5.0,                # cross-domain trust abuse
+}
+
+
+def relation_cost(relation: str) -> float:
+    return RELATION_COST.get(relation, 3.0)
+
 # ACL rights recognised as edges.
 ACL_RIGHTS = {
     "GenericAll", "GenericWrite", "WriteDacl", "WriteOwner", "Owns",
@@ -96,7 +125,8 @@ class ADGraph:
         bucket, technique, tactic = _rel(relation)
         self.graph.add_edge(src, dst, EdgeKind.CALL,
                             attrs={"relation": bucket, "ad_relation": relation,
-                                   "technique": technique, "tactic_id": tactic})
+                                   "technique": technique, "tactic_id": tactic,
+                                   "cost": relation_cost(relation)})
 
     def resolve_sid(self, sid: str) -> Optional[str]:
         return self.sid_to_id.get(sid)
