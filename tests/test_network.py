@@ -24,6 +24,7 @@ from valen.redteam.ad import (
     parse_sharphound,
 )
 from valen.redteam.creds import rank_passwords, spray_batches
+from valen.redteam.pcfg import PCFG, structure_of, tokenize
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "ad_sharphound.json"
 
@@ -128,6 +129,35 @@ def test_password_ranking_and_batches():
     assert all("passpass" not in c["password"] for c in ranked)
     batches = spray_batches("C", "d", "u.txt", candidates=["a", "b", "c"], per_batch=2)
     assert len(batches) == 3 and batches[0]["command"][0] == "kerbrute"
+
+
+def test_pcfg_tokenize_and_structure():
+    assert tokenize("Summer2024!") == [("L", "Summer"), ("D", "2024"), ("S", "!")]
+    assert structure_of(tokenize("Summer2024!")) == "L6D4S1"
+
+
+def test_pcfg_ranks_corpus_and_no_cross_length():
+    corpus = ["password123", "summer2024", "admin123", "password123",
+              "password123", "welcome1"]
+    p = PCFG().train(corpus)
+    gen = [g["password"] for g in p.generate(200)]
+    # exactly the learned combos, most frequent first, no cross-length mixing
+    assert gen == ["password123", "summer2024", "admin123", "welcome1"]
+    assert "summer123" not in gen
+
+
+def test_pcfg_monotonic_and_unique_on_seed():
+    p = PCFG().train([])  # seed corpus
+    g = p.generate(200)
+    probs = [x["prob"] for x in g]
+    assert all(probs[i] >= probs[i + 1] - 1e-9 for i in range(len(probs) - 1))
+    assert len({x["password"] for x in g}) == len(g)
+
+
+def test_pcfg_from_potfile_seeds_when_empty(tmp_path):
+    p = PCFG.from_potfile(str(tmp_path / "nope"))
+    assert p._total > 0  # fell back to the seed corpus
+    assert p.generate(5)
 
 
 def test_synthesize_plan_finds_cheapest():
