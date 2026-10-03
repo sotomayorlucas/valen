@@ -81,6 +81,165 @@ def hitting_probabilities(
 
 
 # ---------------------------------------------------------------------------
+# Exact hitting probability via (I - Q)^{-1} R (Gaussian elimination)
+# ---------------------------------------------------------------------------
+def hitting_probabilities_exact(
+    graph: Graph,
+    targets: Sequence[str],
+    kind: EdgeKind = EdgeKind.CALL,
+) -> Dict[str, float]:
+    """Hitting probability to ``targets`` by solving the absorbing chain exactly.
+
+    For transient nodes, ``h = Q h + r`` where ``Q`` is the transient-to-transient
+    transition and ``r_i`` is the mass to absorbing targets in one step; solve
+    ``(I - Q) h = r`` by Gaussian elimination. O(n^3), exact — for when the value
+    iteration is not enough (large or ill-conditioned graphs).
+    """
+    targets = set(targets)
+    adj = out_neighbors(graph, kind)
+    nodes = list(adj)
+    transient = [n for n in nodes if n not in targets]
+    n = len(transient)
+    if n == 0:
+        return {node: (1.0 if node in targets else 0.0) for node in nodes}
+
+    ti = {node: i for i, node in enumerate(transient)}
+    # build A = I - Q (n x n) and b = r (n x 1)
+    A = [[0.0] * n for _ in range(n)]
+    b = [0.0] * n
+    for i, node in enumerate(transient):
+        A[i][i] = 1.0
+        nbrs = adj[node]
+        if not nbrs:
+            b[i] = 0.0
+            continue
+        p = 1.0 / len(nbrs)
+        for m in nbrs:
+            if m in targets:
+                b[i] += p
+            else:
+                A[i][ti[m]] -= p
+
+    # Gaussian elimination with partial pivoting
+    for col in range(n):
+        pivot = max(range(col, n), key=lambda r: abs(A[r][col]))
+        if abs(A[pivot][col]) < 1e-15:
+            continue
+        A[col], A[pivot] = A[pivot], A[col]
+        b[col], b[pivot] = b[pivot], b[col]
+        for r in range(col + 1, n):
+            f = A[r][col] / A[col][col]
+            for c in range(col, n):
+                A[r][c] -= f * A[col][c]
+            b[r] -= f * b[col]
+    x = [0.0] * n
+    for i in range(n - 1, -1, -1):
+        s = b[i] - sum(A[i][j] * x[j] for j in range(i + 1, n))
+        x[i] = s / A[i][i] if abs(A[i][i]) > 1e-15 else 0.0
+
+    result = {node: 1.0 for node in targets}
+    for i, node in enumerate(transient):
+        result[node] = round(max(0.0, min(1.0, x[i])), 9)
+    for node in nodes:
+        if node not in result:
+            result[node] = 0.0
+    return result
+
+
+# ---------------------------------------------------------------------------
+# Articulation points and bridges (Tarjan) — optimal-defense-disruption
+# ---------------------------------------------------------------------------
+def _undirected(graph: Graph, kind: EdgeKind) -> Dict[str, List[str]]:
+    adj: Dict[str, List[str]] = {n.id: [] for n in graph.nodes}
+    seen = set()
+    for e in graph.edges(kind):
+        if e.src in adj and e.dst in adj:
+            key = tuple(sorted((e.src, e.dst)))
+            if key not in seen:
+                seen.add(key)
+                adj[e.src].append(e.dst)
+                adj[e.dst].append(e.src)
+    return adj
+
+
+def articulation_points(graph: Graph, kind: EdgeKind = EdgeKind.CALL) -> List[str]:
+    """Cut vertices: whose removal disconnects the graph (Tarjan, undirected)."""
+    adj = _undirected(graph, kind)
+    nodes = list(adj)
+    disc: Dict[str, int] = {}
+    low: Dict[str, int] = {}
+    parent: Dict[str, Optional[str]] = {}
+    visited: set = set()
+    ap: set = set()
+    time = 0
+
+    def dfs(u: str) -> None:
+        nonlocal time
+        visited.add(u)
+        disc[u] = low[u] = time
+        time += 1
+        children = 0
+        for v in adj[u]:
+            if v not in visited:
+                parent[v] = u
+                children += 1
+                dfs(v)
+                low[u] = min(low[u], low[v])
+                if parent.get(u) is None and children > 1:
+                    ap.add(u)
+                if parent.get(u) is not None and low[v] >= disc[u]:
+                    ap.add(u)
+            elif v != parent.get(u):
+                low[u] = min(low[u], disc[v])
+
+    for n in nodes:
+        if n not in visited:
+            parent[n] = None
+            dfs(n)
+    return sorted(ap)
+
+
+def bridges(graph: Graph, kind: EdgeKind = EdgeKind.CALL) -> List[Tuple[str, str]]:
+    """Bridge edges: whose removal disconnects the graph (Tarjan)."""
+    adj = _undirected(graph, kind)
+    nodes = list(adj)
+    disc: Dict[str, int] = {}
+    low: Dict[str, int] = {}
+    parent: Dict[str, Optional[str]] = {}
+    visited: set = set()
+    result: List[Tuple[str, str]] = []
+    time = 0
+
+    def dfs(u: str) -> None:
+        nonlocal time
+        visited.add(u)
+        disc[u] = low[u] = time
+        time += 1
+        for v in adj[u]:
+            if v not in visited:
+                parent[v] = u
+                dfs(v)
+                low[u] = min(low[u], low[v])
+                if low[v] > disc[u]:
+                    result.append((u, v))
+            elif v != parent.get(u):
+                low[u] = min(low[u], disc[v])
+
+    for n in nodes:
+        if n not in visited:
+            parent[n] = None
+            dfs(n)
+    return result
+
+
+def vertex_connectivity(graph: Graph, sources: Sequence[str], targets: Sequence[str],
+                        kind: EdgeKind = EdgeKind.CALL) -> int:
+    """Minimum number of internal vertices separating sources from targets."""
+    value, _ = min_vertex_cut(graph, sources, targets, kind)
+    return value
+
+
+# ---------------------------------------------------------------------------
 # Spectral centralities (pure-Python power iteration)
 # ---------------------------------------------------------------------------
 def eigenvector_centrality(

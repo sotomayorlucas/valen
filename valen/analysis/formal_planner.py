@@ -17,7 +17,7 @@ narrative (technique-by-technique) and the cheapest route, not just a boolean.
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Sequence
+from typing import Any, Dict, List, Optional, Sequence
 
 import z3
 
@@ -30,8 +30,13 @@ def synthesize_plan(
     targets: Sequence[str],
     kind: EdgeKind = EdgeKind.CALL,
     max_steps: int = 8,
+    compound_actions: Optional[Sequence[Dict[str, Any]]] = None,
 ) -> List[Dict[str, Any]]:
     """Minimal-cost ordered action sequences to each reachable target.
+
+    ``compound_actions`` are AND-precondition actions: each is ``{sources: [...],
+    target, relation, technique, cost}`` and only fires when *all* sources are
+    compromised (e.g. "DCSync requires Domain Admins AND a session on a DC").
 
     Returns ``[{target, cost, steps: [{from, to, relation, technique, cost}]}]``.
     """
@@ -44,20 +49,35 @@ def synthesize_plan(
 
     edges = [(e.src, e.dst, e.attrs) for e in graph.edges(kind)
              if e.src in idx and e.dst in idx]
-    if not edges:
+    compounds = []
+    for c in compound_actions or []:
+        srcs = [s for s in (c.get("sources") or []) if s in idx]
+        tgt = c.get("target", "")
+        if srcs and tgt in idx:
+            compounds.append({"sources": srcs, "target": tgt,
+                              "relation": c.get("relation", "AND"),
+                              "technique": c.get("technique", ""),
+                              "cost": float(c.get("cost", 1.0))})
+    if not edges and not compounds:
         return []
 
     opt = z3.Optimize()
-    taken = [z3.Bool(f"t{i}") for i in range(len(edges))]
+    n_edges = len(edges)
+    taken = [z3.Bool(f"t{i}") for i in range(n_edges + len(compounds))]
 
-    # cost as a Real objective
-    cost = z3.RealVal(0)
-    for i, (_, _, a) in enumerate(edges):
+    def action_cost(i: int) -> float:
+        if i < n_edges:
+            a = edges[i][2]
+        else:
+            a = compounds[i - n_edges]
         try:
-            c = float(a.get("cost", 1.0))
+            return float(a.get("cost", 1.0))
         except (TypeError, ValueError):
-            c = 1.0
-        cost = cost + z3.If(taken[i], z3.RealVal(c), z3.RealVal(0))
+            return 1.0
+
+    cost = z3.RealVal(0)
+    for i in range(len(taken)):
+        cost = cost + z3.If(taken[i], z3.RealVal(action_cost(i)), z3.RealVal(0))
 
     has = [[z3.Bool(f"h{st}_{n}") for n in range(len(nodes))]
            for st in range(max_steps + 1)]
@@ -69,6 +89,10 @@ def synthesize_plan(
             for i, (m, d, _) in enumerate(edges):
                 if d == nid:
                     succ = z3.Or(succ, z3.And(taken[i], has[st][idx[m]]))
+            for j, c in enumerate(compounds):
+                if c["target"] == nid:
+                    pre = z3.And([has[st][idx[s]] for s in c["sources"]])
+                    succ = z3.Or(succ, z3.And(taken[n_edges + j], pre))
             opt.add(has[st + 1][n] == succ)
 
     opt.minimize(cost)
@@ -89,15 +113,20 @@ def synthesize_plan(
         for i, (m, d, a) in enumerate(edges):
             if z3.is_true(model.eval(taken[i], model_completion=True)):
                 chosen.append((m, d, a, i))
+        for j, c in enumerate(compounds):
+            if z3.is_true(model.eval(taken[n_edges + j], model_completion=True)):
+                chosen.append(("&".join(c["sources"]), c["target"], c, n_edges + j))
 
-        # order by earliest step the source becomes compromised
         def first_step(nid: str) -> int:
             for st in range(max_steps + 1):
                 if z3.is_true(model.eval(has[st][idx[nid]], model_completion=True)):
                     return st
             return max_steps
 
-        ordered = sorted(chosen, key=lambda e: (first_step(e[0]), float(e[2].get("cost", 1.0))))
+        def src_steps(from_field: str) -> int:
+            return max(first_step(s) for s in from_field.split("&"))
+
+        ordered = sorted(chosen, key=lambda e: (src_steps(e[0]), action_cost(e[3])))
         steps = [{
             "from": m, "to": d,
             "relation": a.get("ad_relation", a.get("relation", "")),
@@ -106,12 +135,14 @@ def synthesize_plan(
         } for m, d, a, _ in ordered]
 
         total = sum(s["cost"] for s in steps)
+        entry = next(iter(sources))
         plans.append({
             "target": target,
             "cost": round(total, 3),
             "steps": steps,
-            "path": [sources and next(iter(sources)), *[s["to"] for s in steps]],
-            "labels": [labels.get(s["from"], s["from"]) for s in steps] + [labels.get(target, target)],
+            "path": [entry, *[s["to"] for s in steps]],
+            "labels": [labels.get(s["from"].split("&")[0], s["from"].split("&")[0]) for s in steps]
+                      + [labels.get(target, target)],
         })
         opt.pop()
 

@@ -4,11 +4,15 @@ import json
 from pathlib import Path
 
 from valen.analysis.network import (
+    articulation_points,
+    bridges,
     eigenvector_centrality,
     hitting_probabilities,
+    hitting_probabilities_exact,
     hits,
     katz_centrality,
     min_vertex_cut,
+    vertex_connectivity,
     weighted_shortest_paths,
 )
 from valen.analysis.formal_planner import synthesize_plan
@@ -152,3 +156,43 @@ def test_synthesize_attack_ad():
     # BOB cannot reach DA (only the domain via DCSync)
     bob_plans = synthesize_attack(ad, ["BOB"])
     assert all(p["target"] != da for p in bob_plans)
+
+
+def test_synthesize_plan_and_preconditions():
+    g = Graph()
+    for n in ["s", "a", "b", "t"]:
+        g.add_node(n, NodeKind.GATE, n)
+    g.add_edge("s", "a", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T1", "cost": 1})
+    g.add_edge("s", "b", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T2", "cost": 1})
+    # t requires BOTH a and b (compound action); without it, t is unreachable
+    assert synthesize_plan(g, ["s"], ["t"], max_steps=4) == []
+    plans = synthesize_plan(g, ["s"], ["t"], max_steps=4, compound_actions=[
+        {"sources": ["a", "b"], "target": "t", "relation": "AND", "technique": "T99", "cost": 5},
+    ])
+    assert plans and plans[0]["cost"] == 7.0
+    assert plans[0]["steps"][-1]["relation"] == "AND"
+
+
+def test_hitting_probabilities_exact_matches_iterative():
+    g = Graph()
+    for n in ["s", "a", "b", "t", "x"]:
+        g.add_node(n, NodeKind.GATE, n)
+    g.add_edge("s", "a", EdgeKind.CALL)
+    g.add_edge("s", "b", EdgeKind.CALL)
+    g.add_edge("a", "t", EdgeKind.CALL)
+    g.add_edge("b", "x", EdgeKind.CALL)
+    it = hitting_probabilities(g, ["t"])
+    ex = hitting_probabilities_exact(g, ["t"])
+    for n in ["s", "a", "b", "t"]:
+        assert abs(it[n] - ex[n]) < 1e-6
+
+
+def test_articulation_points_and_bridges():
+    g = Graph()
+    for n in ["a", "b", "c", "d", "e"]:
+        g.add_node(n, NodeKind.GATE, n)
+    for u, v in [("a", "b"), ("b", "c"), ("c", "a"), ("c", "d"), ("d", "e")]:
+        g.add_edge(u, v, EdgeKind.CALL)
+    assert articulation_points(g) == ["c", "d"]
+    assert set(bridges(g)) == {("c", "d"), ("d", "e")}
+    assert vertex_connectivity(g, ["c"], ["e"]) == 1
