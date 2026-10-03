@@ -28,3 +28,19 @@ dashboard.html
 benchmarks/exploit_results.json
 benchmarks/report.html
 benchmarks/report.pdf
+
+# LaTeX build artifacts
+*.aux
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+
+# live/generated report formats (embed random lab tokens)
+benchmarks/report.md
+benchmarks/report.json
+benchmarks/report.sarif
