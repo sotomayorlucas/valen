@@ -6,6 +6,17 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Added — Red-team platform track
+- **Live AD collection** (`valen/redteam/ad/live.py`): bloodhound-python command
+  builder + merge of its per-key JSON into the AD graph; `POST /api/ad/collect`.
+- **C2 session queue**: `SliverClient` (gRPC-first, shell fallback) and
+  `save_sessions()` persist live implants as `c2` runs so the operation board
+  shows them; `/api/c2/sessions` gains `save`/`engagement_id`.
+- **Credential recovery** (`valen/redteam/creds.py`): hashcat/john potfile parsing
+  + recording as `creds` runs (Credential Access/T1555); `POST /api/creds/potfile`.
+- **Evidence artifacts**: `artifacts` table + `GET/POST /api/engagements/{id}/artifacts`.
+- **Release tooling**: `just publish-wheel` (build + twine), `just docker-push`,
+  `[release]` extra; the server image builds end-to-end (Rust core compiled,
+  all grammars + z3 + litellm installed).
 - **Team server** (multi-user): users + roles (viewer/operator/admin) + sessions
   (`valen/authz.py`), scoped engagements with membership (`store.py`), live
   activity over SSE (`valen/events.py`, `GET /api/events`), per-route RBAC,
@@ -22,8 +33,7 @@ this project aims to follow [Semantic Versioning](https://semver.org/).
 - **Operation board** (`valen/ops.py`): per-engagement kill-chain board with
   ATT&CK techniques (T1xxx), live-refreshed over SSE; `GET /api/operations` and
   an "Operations" tab (with agent approvals).
-- **Live execution** (`valen/redteam/exec.py` + C2/AD runners): an allowlisted,
-  shell-free, timeout-bounded tool runner; `SliverRunner` and `ADRunner` drive
+- **Live execution** (`valen/redteam/exec.py` + C2/AD runners): an allowlisted,  shell-free, timeout-bounded tool runner; `SliverRunner` and `ADRunner` drive
   `sliver-client`/`impacket`/`kerbrute`/`hashcat` when installed; the agent
   approval path can run an approved action (`execute:true` + `--allow-exec`),
   accounting it as an `exec` run. `GET /api/exec/tools`.

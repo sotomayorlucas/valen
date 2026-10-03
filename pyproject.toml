@@ -46,6 +46,8 @@ dev = [
     "ruff",
     "litellm",
 ]
+# Building & publishing distributions.
+release = ["build", "twine"]
 
 [project.scripts]
 valen = "valen.cli:main"

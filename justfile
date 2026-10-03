@@ -120,6 +120,16 @@ docker-up:         # levanta el servidor en http://127.0.0.1:8000
 docker-down:       # detiene y borra el contenedor
     docker compose down
 
+# --- release ---------------------------------------------------------------
+
+publish-wheel:     # sdist+wheel y upload a PyPI (TWINE_USERNAME/TWINE_PASSWORD)
+    {{PY}} -m build
+    {{PY}} -m twine upload dist/*
+
+docker-push tag="latest": # sube la imagen a un registry (set REGISTRY)
+    docker tag valen:latest {{REGISTRY}}/valen:{{tag}}
+    docker push {{REGISTRY}}/valen:{{tag}}
+
 test-agent:        # solo el harness de pentest
     {{PY}} -m pytest tests/test_autopentest.py -q
 
