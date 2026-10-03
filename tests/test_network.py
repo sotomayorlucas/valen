@@ -11,6 +11,7 @@ from valen.analysis.network import (
     min_vertex_cut,
     weighted_shortest_paths,
 )
+from valen.analysis.formal_planner import synthesize_plan
 from valen.ir import EdgeKind, Graph, NodeKind
 from valen.redteam.ad import (
     cheapest_paths,
@@ -123,3 +124,31 @@ def test_password_ranking_and_batches():
     assert all("passpass" not in c["password"] for c in ranked)
     batches = spray_batches("C", "d", "u.txt", candidates=["a", "b", "c"], per_batch=2)
     assert len(batches) == 3 and batches[0]["command"][0] == "kerbrute"
+
+
+def test_synthesize_plan_finds_cheapest():
+    g = Graph()
+    for n in ["s", "a", "b", "t"]:
+        g.add_node(n, NodeKind.GATE, n)
+    g.add_edge("s", "a", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T1", "cost": 1})
+    g.add_edge("s", "b", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T2", "cost": 10})
+    g.add_edge("a", "t", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T3", "cost": 1})
+    g.add_edge("b", "t", EdgeKind.CALL, attrs={"relation": "assume", "technique": "T4", "cost": 1})
+    plans = synthesize_plan(g, ["s"], ["t"], max_steps=4)
+    assert plans and plans[0]["target"] == "t"
+    assert plans[0]["cost"] == 2.0          # s->a->t (1+1), not s->b->t (11)
+    assert [s["to"] for s in plans[0]["steps"]] == ["a", "t"]
+
+
+def test_synthesize_attack_ad():
+    ad = _ad()
+    from valen.redteam.ad import node_id, synthesize_attack
+
+    plans = synthesize_attack(ad, ["ALICE"])
+    by_target = {p["target"]: p for p in plans}
+    da = node_id("group", "DOMAIN ADMINS@CORP.LOCAL")
+    assert by_target[da]["cost"] == 3.0
+    assert [s["technique"] for s in by_target[da]["steps"]] == ["T1098"]
+    # BOB cannot reach DA (only the domain via DCSync)
+    bob_plans = synthesize_attack(ad, ["BOB"])
+    assert all(p["target"] != da for p in bob_plans)

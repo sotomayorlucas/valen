@@ -35,6 +35,7 @@ from .paths import (
     chokepoints,
     high_value_targets,
     hitting_rank,
+    synthesize_attack,
 )
 
 __all__ = [
@@ -53,6 +54,7 @@ __all__ = [
     "chokepoints",
     "hitting_rank",
     "cheapest_paths",
+    "synthesize_attack",
     "attack_plan",
     "kerberoast_command",
     "asrep_command",

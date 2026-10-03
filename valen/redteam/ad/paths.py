@@ -142,3 +142,17 @@ def cheapest_paths(ad: ADGraph, entries: Optional[List[str]] = None,
                     "length": len(path) - 1,
                     "path": [labels.get(p, p) for p in path]})
     return out
+
+
+def synthesize_attack(ad: ADGraph, entries: Optional[List[str]] = None,
+                      max_steps: int = 8) -> List[Dict[str, Any]]:
+    """Minimal-cost ordered exploit plans (Z3 Optimize bounded model checking).
+
+    Unlike ``attack_paths`` (boolean reachability), this returns the *ordered
+    sequence of actions* (technique-by-technique) with the cheapest total cost.
+    """
+    from ...analysis.formal_planner import synthesize_plan
+
+    sources = owned_principals(ad, entries)
+    targets = high_value_targets(ad)
+    return synthesize_plan(ad.graph, sources, targets, max_steps=max_steps)
