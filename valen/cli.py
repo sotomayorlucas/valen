@@ -308,6 +308,26 @@ def _client_main(argv: list[str]) -> int:
     return call("POST", args.args[0], payload)
 
 
+def _ad_main(argv: list[str]) -> int:
+    """Active Directory attack-graph analysis (SharpHound JSON -> plan)."""
+    parser = argparse.ArgumentParser(prog="valen ad",
+                                     description="Active Directory attack-graph analysis.")
+    parser.add_argument("--data", required=True,
+                        help="BloodHound/SharpHound JSON file")
+    parser.add_argument("--entries", default="",
+                        help="comma-separated owned users (e.g. ALICE,BOB)")
+    args = parser.parse_args(argv)
+
+    from .redteam.ad import attack_plan, parse_sharphound
+
+    data = json.loads(Path(args.data).read_text())
+    ad = parse_sharphound(data)
+    entries = [e for e in args.entries.split(",") if e.strip()] or None
+    plan = attack_plan(ad, entries)
+    print(json.dumps(plan, indent=2))
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     if argv is None:
         argv = sys.argv[1:]
@@ -322,6 +342,8 @@ def main(argv: list[str] | None = None) -> int:
         return server_main(argv[1:])
     if argv and argv[0] == "client":
         return _client_main(argv[1:])
+    if argv and argv[0] == "ad":
+        return _ad_main(argv[1:])
     if argv and argv[0] == "config":
         from .config import main as config_main
 

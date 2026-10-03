@@ -102,6 +102,10 @@ docker run --rm -p 127.0.0.1:8000:8000 -v valen-data:/data valen
 # toolkit completo: -e VALEN_TOKEN=... -p ... --allow-exec
 ```
 
+**Demo (Black Hat Arsenal / DEF CON)**: `./scripts/demo.sh` levanta el server,
+el lab crAPI y corre pentest + reporte en un comando. Ver `docs/arsenal.md`.
+Paper: `docs/en/valen_full_paper.pdf` · slides: `docs/en/valen_full_slides.pdf`.
+
 **Modelo de confianza** (single-operator, pensado para tu máquina):
 
 - Escucha en `127.0.0.1` y **no ejecuta código** salvo que arranques con `--allow-exec`
