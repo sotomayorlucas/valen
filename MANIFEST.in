@@ -1,0 +1,12 @@
+include README.md LICENSE CHANGELOG.md pyproject.toml requirements.txt
+include justfile Makefile Dockerfile.server docker-compose.yml .dockerignore
+
+recursive-include examples *.py *.json *.c *.cpp *.rs *.cs *.go *.php *.rb *.js *.ts *.asm *.yaml *.yml *.xml *.sol
+recursive-include benchmarks *.py *.json *.csv
+recursive-include tests *.py
+recursive-include tests/fixtures *.json
+recursive-include docs *.md *.tex *.pdf
+recursive-include core *.rs *.toml *.lock
+recursive-include agent *.py
+recursive-include scripts *.sh *.py
+recursive-include formal *.lean
