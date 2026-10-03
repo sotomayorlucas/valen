@@ -29,6 +29,7 @@ from .collect import (
 from .graph import ADGraph, RELATION_META, node_id
 from .live import bloodhound_command, collect, parse_collection_dir
 from .paths import (
+    ad_compound_actions,
     attack_paths,
     betweenness_ranking,
     cheapest_paths,
@@ -56,6 +57,7 @@ __all__ = [
     "hitting_rank",
     "cheapest_paths",
     "synthesize_attack",
+    "ad_compound_actions",
     "multi_target_plans",
     "attack_plan",
     "kerberoast_command",

@@ -141,3 +141,65 @@ class PCFG:
             "structures": len(self.structures),
             "terminal_classes": len(self.terminals),
         }
+
+
+class MarkovGuesser:
+    """Character-level n-gram (Markov) password guesser (OMEN-lite).
+
+    Learns context -> next-char transition probabilities from a corpus and
+    generates guesses in decreasing probability via beam search. Complements the
+    PCFG: PCFG captures *structure*, the Markov model captures *char-level*
+    plausibility (e.g. ``p4ss`` vs. ``p@ss``).
+    """
+
+    def __init__(self, order: int = 3, beam_width: int = 2000) -> None:
+        self.order = order
+        self.beam_width = beam_width
+        self.transitions: Dict[Tuple[str, ...], Counter] = {}
+        self._total = 0
+
+    def train(self, passwords: Sequence[str]) -> "MarkovGuesser":
+        for pw in passwords:
+            self._train_one(pw)
+        return self
+
+    def _train_one(self, password: str) -> None:
+        seq = ("<",) * (self.order - 1) + tuple(password) + (">",)
+        for i in range(self.order - 1, len(seq)):
+            ctx = seq[i - (self.order - 1):i]
+            self.transitions.setdefault(ctx, Counter())[seq[i]] += 1
+        self._total += 1
+
+    def _probs(self, ctx: Tuple[str, ...]) -> List[Tuple[str, float]]:
+        c = self.transitions.get(ctx)
+        if not c:
+            return []
+        total = sum(c.values())
+        return [(ch, cnt / total) for ch, cnt in c.most_common()]
+
+    def generate(self, n: int = 100, max_len: int = 16) -> List[Dict[str, float]]:
+        if self._total == 0:
+            return []
+        start = ("<",) * (self.order - 1)
+        beam: List[Tuple[str, float]] = [("", 0.0)]  # (prefix, log-prob)
+        done: List[Tuple[str, float]] = []
+        for _ in range(max_len):
+            nxt: List[Tuple[str, float]] = []
+            for prefix, logp in beam:
+                ctx = (start + tuple(prefix))[-(self.order - 1):]
+                for ch, p in self._probs(ctx):
+                    if ch == ">":
+                        done.append((prefix, logp + math.log(p)))
+                    else:
+                        nxt.append((prefix + ch, logp + math.log(p)))
+            nxt.sort(key=lambda kv: -kv[1])
+            beam = nxt[:self.beam_width]
+        done.sort(key=lambda kv: -kv[1])
+        return [{"password": pw, "prob": round(math.exp(lp), 9)}
+                for pw, lp in done[:n]]
+
+    def rank(self, n: int = 100, max_len: int = 16) -> List[Dict[str, float]]:
+        return self.generate(n, max_len=max_len)
+
+    def summary(self) -> Dict[str, Any]:
+        return {"passwords": self._total, "contexts": len(self.transitions)}

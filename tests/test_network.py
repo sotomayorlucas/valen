@@ -27,7 +27,7 @@ from valen.redteam.ad import (
     parse_sharphound,
 )
 from valen.redteam.creds import rank_passwords, spray_batches
-from valen.redteam.pcfg import PCFG, structure_of, tokenize
+from valen.redteam.pcfg import PCFG, MarkovGuesser, structure_of, tokenize
 
 FIXTURE = Path(__file__).resolve().parent / "fixtures" / "ad_sharphound.json"
 
@@ -161,6 +161,48 @@ def test_pcfg_from_potfile_seeds_when_empty(tmp_path):
     p = PCFG.from_potfile(str(tmp_path / "nope"))
     assert p._total > 0  # fell back to the seed corpus
     assert p.generate(5)
+
+
+def test_markov_guesser_monotonic_and_unique():
+    from valen.redteam.pcfg import _SEED_CORPUS
+
+    m = MarkovGuesser(order=3).train(_SEED_CORPUS)
+    g = m.generate(300)
+    probs = [x["prob"] for x in g]
+    assert all(probs[i] >= probs[i + 1] - 1e-9 for i in range(len(probs) - 1))
+    assert len({x["password"] for x in g}) == len(g)
+    # it recovers corpus-like strings (substrings/tokens from the seed)
+    joined = {x["password"] for x in g}
+    assert "password" in joined and "123456" in joined
+
+
+def test_ad_compound_actions_require_and_preconditions():
+    from valen.redteam.ad import ad_compound_actions
+
+    # build a synthetic AD with a DA group + a Domain Controllers group + a domain
+    import json
+    ad = parse_sharphound(json.loads(FIXTURE.read_text()))
+    from valen.ir import EdgeKind, NodeKind
+
+    from valen.redteam.ad.graph import node_id
+    ad.graph.add_node(node_id("group", "DOMAIN CONTROLLERS@CORP.LOCAL"),
+                      NodeKind.GATE, "DOMAIN CONTROLLERS@CORP.LOCAL")
+    ad.graph.add_node(node_id("computer", "DC01.CORP.LOCAL"),
+                      NodeKind.GATE, "DC01.CORP.LOCAL")
+    # DC01 is a member of DOMAIN CONTROLLERS
+    ad.graph.add_edge(node_id("computer", "DC01.CORP.LOCAL"),
+                      node_id("group", "DOMAIN CONTROLLERS@CORP.LOCAL"),
+                      EdgeKind.CALL,
+                      attrs={"relation": "assume", "ad_relation": "MemberOf",
+                             "technique": "T1069.002", "cost": 1.0})
+    ad.records["groups"].append({"name": "DOMAIN CONTROLLERS@CORP.LOCAL", "domain": "CORP.LOCAL"})
+    ad.records["computers"].append({"name": "DC01.CORP.LOCAL", "domain": "CORP.LOCAL"})
+
+    comp = ad_compound_actions(ad)
+    assert comp, "expected a DCSync compound action"
+    assert comp[0]["relation"] == "DCSync"
+    # the compound action has two sources (DA group + DC group)
+    assert len(comp[0]["sources"]) == 2
 
 
 def test_synthesize_plan_finds_cheapest():

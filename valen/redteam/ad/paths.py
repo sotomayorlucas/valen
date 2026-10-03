@@ -145,17 +145,48 @@ def cheapest_paths(ad: ADGraph, entries: Optional[List[str]] = None,
 
 
 def synthesize_attack(ad: ADGraph, entries: Optional[List[str]] = None,
-                      max_steps: int = 8) -> List[Dict[str, Any]]:
+                      max_steps: int = 8,
+                      compound_actions: Optional[List[Dict[str, Any]]] = None) -> List[Dict[str, Any]]:
     """Minimal-cost ordered exploit plans (Z3 Optimize bounded model checking).
 
     Unlike ``attack_paths`` (boolean reachability), this returns the *ordered
     sequence of actions* (technique-by-technique) with the cheapest total cost.
+    ``compound_actions`` are AND-precondition actions (see ``ad_compound_actions``).
     """
     from ...analysis.formal_planner import synthesize_plan
 
     sources = owned_principals(ad, entries)
     targets = high_value_targets(ad)
-    return synthesize_plan(ad.graph, sources, targets, max_steps=max_steps)
+    compounds = compound_actions if compound_actions is not None else ad_compound_actions(ad)
+    return synthesize_plan(ad.graph, sources, targets, max_steps=max_steps,
+                           compound_actions=compounds)
+
+
+def ad_compound_actions(ad: ADGraph) -> List[Dict[str, Any]]:
+    """Default AND-precondition actions from common AD attack patterns.
+
+    Each entry is ``{sources:[...], target, relation, technique, cost}`` and only
+    fires when *all* sources are compromised. The canonical example: DCSync
+    requires controlling (or membership in) a Domain Admins group \emph{and} a
+    session on a Domain Controller. Returned only when the graph has the
+    ingredients; the operator may override per engagement.
+    """
+    from .graph import node_id
+
+    da = next((g["name"] for g in ad.records["groups"]
+               if "DOMAIN ADMINS" in g["name"].upper()), None)
+    dcs = next((g["name"] for g in ad.records["groups"]
+                if "DOMAIN CONTROLLERS" in g["name"].upper()), None)
+    domain = ad.graph.meta.get("domain") or (ad.records["domains"][0]["name"]
+                                             if ad.records["domains"] else "")
+    out: List[Dict[str, Any]] = []
+    if da and dcs and domain:
+        out.append({
+            "sources": [node_id("group", da), node_id("group", dcs)],
+            "target": node_id("domain", domain),
+            "relation": "DCSync", "technique": "T1003.006", "cost": 5.0,
+        })
+    return out
 
 
 def multi_target_plans(ad: ADGraph, entries: Optional[List[str]] = None,

@@ -85,7 +85,8 @@ def gpp_from_xml(xml_text: str) -> List[Dict[str, Any]]:
 
 
 # -- attack plan ------------------------------------------------------------
-def attack_plan(ad, entries: Optional[List[str]] = None) -> Dict[str, Any]:
+def attack_plan(ad, entries: Optional[List[str]] = None,
+                compound_actions: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """Deterministic AD attack plan: roastable creds + ranked tier-0 paths."""
     from .collect import asrep_roastable, kerberoastable
     from .paths import (
@@ -110,6 +111,7 @@ def attack_plan(ad, entries: Optional[List[str]] = None) -> Dict[str, Any]:
         "chokepoints": chokepoints(ad, entries),
         "hitting": hitting_rank(ad, entries),
         "cheapest_paths": cheapest_paths(ad, entries),
-        "synthesized_plans": synthesize_attack(ad, entries),
+        "synthesized_plans": synthesize_attack(ad, entries,
+                                              compound_actions=compound_actions),
         "multi_target_plans": multi_target_plans(ad, entries),
     }
